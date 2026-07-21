@@ -10,6 +10,11 @@ import {
   useScene,
   type ZoneNode,
 } from '@pascal-app/core'
+import {
+  resolveBuiltInNodeUiText,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 import { useViewer } from '@pascal-app/viewer'
 import { Icon } from '@iconify/react'
 import { Move, Trash2 } from 'lucide-react'
@@ -45,6 +50,8 @@ export function ParametricInspector({
   nodeId,
   onClose,
 }: { footer?: React.ReactNode; nodeId?: AnyNodeId; onClose?: () => void } = {}) {
+  const { t } = usePascalTranslation('nodes')
+  const { t: commonT } = usePascalTranslation('common')
   const selectedIdFromSelection = useViewer((s) => s.selection.selectedIds[0]) as
     | AnyNodeId
     | undefined
@@ -138,7 +145,7 @@ export function ParametricInspector({
   }
 
   const presentation = def.presentation
-  const title = presentation?.label ?? nodeType ?? ''
+  const title = resolveLocalizedLabel({ ...presentation, kind: nodeType ?? undefined }, t)
   const iconNode = renderIcon(presentation?.icon)
   const canMove = !!def.capabilities.movable
   const canDelete = def.capabilities.deletable !== false
@@ -174,10 +181,10 @@ export function ParametricInspector({
         </Suspense>
       )}
       {(canMove || canDelete || (parametrics.actions && parametrics.actions.length > 0)) && (
-        <PanelSection title="Actions">
+        <PanelSection title={t('ui.actions')}>
           <ActionGroup className={isZone ? 'flex-col' : undefined}>
             {canMove && (
-              <ActionButton icon={<Move className="h-4 w-4" />} label="Move" onClick={handleMove} />
+              <ActionButton icon={<Move className="h-4 w-4" />} label={t('ui.move')} onClick={handleMove} />
             )}
             {parametrics.actions?.map((action, i) => (
               <ParamActionButton action={action} key={`paramaction-${i}`} nodeId={selectedId} />
@@ -188,13 +195,13 @@ export function ParametricInspector({
                   <ActionButton
                     className="w-full flex-none"
                     icon={<Trash2 className="h-4 w-4 text-red-400" />}
-                    label="Delete"
+                    label={commonT('actions.delete')}
                     onClick={() => handleDelete(false)}
                   />
                   <ActionButton
                     className="w-full flex-none"
                     icon={<Trash2 className="h-4 w-4 text-red-400" />}
-                    label="Delete with contents"
+                    label={t('ui.deleteWithContents')}
                     onClick={() => handleDelete(true)}
                   />
                 </>
@@ -202,7 +209,7 @@ export function ParametricInspector({
                 <ActionButton
                   className="border-red-500/40 text-red-200 hover:bg-red-500/15"
                   icon={<Trash2 className="h-4 w-4" />}
-                  label="Delete"
+                  label={commonT('actions.delete')}
                   onClick={() => handleDelete()}
                 />
               ))}
@@ -289,7 +296,9 @@ interface FieldRendererProps {
 }
 
 function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
+  const { t } = usePascalTranslation('nodes')
   const key = String(field.key)
+  const localizedKey = resolveBuiltInNodeUiText(prettifyKey(key), t)
   // Subscribe only to this field's value. Zustand compares with ===, so when
   // another field on the same node changes (which produces a new node object
   // reference), this primitive value stays equal and the field doesn't
@@ -316,7 +325,7 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
       const precision = precisionForStep(step)
       return (
         <SliderControl
-          label={prettifyKey(key)}
+          label={localizedKey}
           max={field.max}
           min={field.min}
           onChange={(next) => onUpdate({ [key]: next } as Partial<AnyNode>)}
@@ -333,7 +342,7 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
       return (
         <ToggleControl
           checked={checked}
-          label={prettifyKey(key)}
+          label={localizedKey}
           onChange={(next) => onUpdate({ [key]: next } as Partial<AnyNode>)}
         />
       )
@@ -345,14 +354,17 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
         return (
           <SegmentedControl
             onChange={(next) => onUpdate({ [key]: next } as Partial<AnyNode>)}
-            options={field.options.map((opt) => ({ label: prettifyEnumValue(opt), value: opt }))}
+            options={field.options.map((opt) => ({
+              label: resolveBuiltInNodeUiText(prettifyEnumValue(opt), t),
+              value: opt,
+            }))}
             value={str}
           />
         )
       }
       return (
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-foreground/80 text-xs">{prettifyKey(key)}</span>
+          <span className="text-foreground/80 text-xs">{localizedKey}</span>
           <select
             className="rounded-md border border-border/50 bg-[#2C2C2E] px-2 py-1 text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-foreground/30"
             onChange={(e) => onUpdate({ [key]: e.target.value } as Partial<AnyNode>)}
@@ -360,7 +372,7 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
           >
             {field.options.map((opt) => (
               <option key={opt} value={opt}>
-                {prettifyEnumValue(opt)}
+                {resolveBuiltInNodeUiText(prettifyEnumValue(opt), t)}
               </option>
             ))}
           </select>
@@ -372,7 +384,7 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
       const str = typeof value === 'string' ? value : '#888888'
       return (
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-foreground/80 text-xs">{prettifyKey(key)}</span>
+          <span className="text-foreground/80 text-xs">{localizedKey}</span>
           <div className="flex items-center gap-2">
             <input
               className="h-6 w-8 cursor-pointer rounded border border-border/50 bg-transparent"

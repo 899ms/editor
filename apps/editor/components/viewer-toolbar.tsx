@@ -2,6 +2,11 @@
 
 import { Icon as IconifyIcon } from '@iconify/react'
 import {
+  resolveLocalizedDescription,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -63,7 +68,8 @@ function requestWalkthroughPointerLock() {
   if (document.pointerLockElement === canvas) return
 
   try {
-    canvas.requestPointerLock?.()
+    const request = canvas.requestPointerLock?.() as Promise<void> | undefined
+    request?.catch(() => {})
   } catch {
     return
   }
@@ -78,10 +84,11 @@ function ToolbarTooltip({ children, label }: { children: ReactNode; label: strin
   )
 }
 
-const VIEW_MODES: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
+const VIEW_MODES: { id: ViewMode; label: string; labelKey: string; icon: React.ReactNode }[] = [
   {
     id: '3d',
     label: '3D',
+    labelKey: 'editor:view.mode.3d',
     icon: (
       <Image
         alt=""
@@ -95,6 +102,7 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
   {
     id: '2d',
     label: '2D',
+    labelKey: 'editor:view.mode.2d',
     icon: (
       <Image
         alt=""
@@ -108,32 +116,52 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
   {
     id: 'split',
     label: 'Split',
+    labelKey: 'editor:view.mode.split',
     icon: <Columns2 className="h-3 w-3" />,
   },
 ]
 
 const levelModeOrder = ['stacked', 'exploded', 'solo'] as const
-const levelModeLabels: Record<string, string> = {
-  manual: 'Stack',
-  stacked: 'Stack',
-  exploded: 'Exploded',
-  solo: 'Solo',
+const levelModeLabels: Record<string, { label: string; labelKey: string }> = {
+  manual: { label: 'Manual', labelKey: 'editor:view.scene.manual' },
+  stacked: { label: 'Stack', labelKey: 'editor:view.scene.stack' },
+  exploded: { label: 'Exploded', labelKey: 'editor:view.scene.exploded' },
+  solo: { label: 'Solo', labelKey: 'editor:view.scene.solo' },
 }
 
 const wallModeOrder = ['cutaway', 'up', 'down', 'translucent'] as const
-const wallModeConfig: Record<string, { icon: string; label: string }> = {
-  up: { icon: '/icons/room.webp', label: 'Full height' },
-  cutaway: { icon: '/icons/wallcut.webp', label: 'Cutaway' },
-  down: { icon: '/icons/walllow.webp', label: 'Low' },
-  translucent: { icon: '/icons/wall.webp', label: 'Translucent' },
+const wallModeConfig: Record<string, { icon: string; label: string; labelKey: string }> = {
+  up: { icon: '/icons/room.webp', label: 'Full height', labelKey: 'editor:view.walls.fullHeight' },
+  cutaway: { icon: '/icons/wallcut.webp', label: 'Cutaway', labelKey: 'editor:view.walls.cutaway' },
+  down: { icon: '/icons/walllow.webp', label: 'Low', labelKey: 'editor:view.walls.low' },
+  translucent: {
+    icon: '/icons/wall.webp',
+    label: 'Translucent',
+    labelKey: 'editor:view.walls.translucent',
+  },
 }
 
 const SHADING_OPTIONS = [
-  { id: 'solid', name: 'Solid', detail: 'Flat and fast — no ambient occlusion', icon: Box },
-  { id: 'rendered', name: 'Rendered', detail: 'Full ambient occlusion', icon: Sparkles },
+  {
+    id: 'solid',
+    name: 'Solid',
+    nameKey: 'editor:display.shading.solid.name',
+    detail: 'Flat and fast — no ambient occlusion',
+    detailKey: 'editor:display.shading.solid.detail',
+    icon: Box,
+  },
+  {
+    id: 'rendered',
+    name: 'Rendered',
+    nameKey: 'editor:display.shading.rendered.name',
+    detail: 'Full ambient occlusion',
+    detailKey: 'editor:display.shading.rendered.detail',
+    icon: Sparkles,
+  },
 ] as const
 
 function ViewModeControl() {
+  const { t } = usePascalTranslation('editor')
   const viewMode = useEditor((state) => state.viewMode)
   const setViewMode = useEditor((state) => state.setViewMode)
 
@@ -141,10 +169,11 @@ function ViewModeControl() {
     <div className={TOOLBAR_CONTAINER}>
       {VIEW_MODES.map((mode) => {
         const isActive = viewMode === mode.id
+        const label = resolveLocalizedLabel(mode, t)
         return (
-          <ToolbarTooltip key={mode.id} label={mode.label}>
+          <ToolbarTooltip key={mode.id} label={label}>
             <button
-              aria-label={mode.label}
+              aria-label={label}
               aria-pressed={isActive}
               className={cn(
                 'flex items-center justify-center gap-1.5 px-2.5 font-medium text-xs transition-colors',
@@ -156,7 +185,7 @@ function ViewModeControl() {
               type="button"
             >
               {mode.icon}
-              <span>{mode.label}</span>
+              <span>{label}</span>
             </button>
           </ToolbarTooltip>
         )
@@ -166,6 +195,7 @@ function ViewModeControl() {
 }
 
 function CollapseSidebarButton() {
+  const { t } = usePascalTranslation('editor')
   const isCollapsed = useSidebarStore((state) => state.isCollapsed)
   const setIsCollapsed = useSidebarStore((state) => state.setIsCollapsed)
 
@@ -175,9 +205,11 @@ function CollapseSidebarButton() {
 
   return (
     <div className={TOOLBAR_CONTAINER}>
-      <ToolbarTooltip label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+      <ToolbarTooltip
+        label={isCollapsed ? t('toolbar.expandSidebar') : t('toolbar.collapseSidebar')}
+      >
         <button
-          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={isCollapsed ? t('toolbar.expandSidebar') : t('toolbar.collapseSidebar')}
           className={TOOLBAR_BTN}
           onClick={toggle}
           type="button"
@@ -194,6 +226,7 @@ function CollapseSidebarButton() {
 }
 
 function LevelModeToggle() {
+  const { t } = usePascalTranslation('editor')
   const levelMode = useViewer((state) => state.levelMode)
   const setLevelMode = useViewer((state) => state.setLevelMode)
   const isDefault = levelMode === 'stacked' || levelMode === 'manual'
@@ -209,8 +242,9 @@ function LevelModeToggle() {
     if (next) setLevelMode(next)
   }
 
-  const label = `Levels: ${levelMode === 'manual' ? 'Manual' : (levelModeLabels[levelMode] ?? 'Stack')}`
-
+  const modeDescriptor = levelModeLabels[levelMode] ?? levelModeLabels.stacked!
+  const modeLabel = resolveLocalizedLabel(modeDescriptor, t)
+  const label = t('toolbar.levels', { mode: modeLabel })
   return (
     <ToolbarTooltip label={label}>
       <button
@@ -229,16 +263,18 @@ function LevelModeToggle() {
         ) : (
           <IconifyIcon height={14} icon="charm:stack-push" width={14} />
         )}
-        <span className="font-medium text-xs">{levelModeLabels[levelMode] ?? 'Stack'}</span>
+        <span className="font-medium text-xs">{modeLabel}</span>
       </button>
     </ToolbarTooltip>
   )
 }
 
 function WallModeToggle() {
+  const { t } = usePascalTranslation('editor')
   const wallMode = useViewer((state) => state.wallMode)
   const setWallMode = useViewer((state) => state.setWallMode)
   const config = wallModeConfig[wallMode] ?? wallModeConfig.cutaway!
+  const modeLabel = resolveLocalizedLabel(config, t)
 
   const cycle = () => {
     const index = wallModeOrder.indexOf(wallMode as (typeof wallModeOrder)[number])
@@ -247,7 +283,7 @@ function WallModeToggle() {
   }
 
   return (
-    <ToolbarTooltip label={`Walls: ${config.label}`}>
+    <ToolbarTooltip label={t('toolbar.walls', { mode: modeLabel })}>
       <button
         className={cn(
           TOOLBAR_BTN,
@@ -260,7 +296,7 @@ function WallModeToggle() {
         type="button"
       >
         <Image alt="" className="h-4 w-4 object-contain" height={16} src={config.icon} width={16} />
-        <span className="font-medium text-xs">{config.label}</span>
+        <span className="font-medium text-xs">{modeLabel}</span>
       </button>
     </ToolbarTooltip>
   )
@@ -270,14 +306,40 @@ function WallModeToggle() {
 // camera projection, units, render mode, edges and scene theme.
 
 const EDGE_OPTIONS = [
-  { id: 'off', name: 'Off', detail: 'No edge lines' },
-  { id: 'soft', name: 'Soft', detail: 'Faint outline of major creases' },
-  { id: 'strong', name: 'Strong', detail: 'Crisp, opaque edge lines' },
-] as const satisfies readonly { id: EdgeMode; name: string; detail: string }[]
+  {
+    id: 'off',
+    name: 'Off',
+    nameKey: 'editor:display.edgeMode.off.name',
+    detail: 'No edge lines',
+    detailKey: 'editor:display.edgeMode.off.detail',
+  },
+  {
+    id: 'soft',
+    name: 'Soft',
+    nameKey: 'editor:display.edgeMode.soft.name',
+    detail: 'Faint outline of major creases',
+    detailKey: 'editor:display.edgeMode.soft.detail',
+  },
+  {
+    id: 'strong',
+    name: 'Strong',
+    nameKey: 'editor:display.edgeMode.strong.name',
+    detail: 'Crisp, opaque edge lines',
+    detailKey: 'editor:display.edgeMode.strong.detail',
+  },
+] as const satisfies readonly {
+  id: EdgeMode
+  name: string
+  nameKey: string
+  detail: string
+  detailKey: string
+}[]
 
 const SUBMENU_CONTENT_CLASS = 'min-w-56 rounded-xl border-border/45 bg-popover/95 backdrop-blur-xl'
 
 function DisplayMenu() {
+  const { t } = usePascalTranslation('editor')
+  const { t: commonT } = usePascalTranslation('common')
   const showGrid = useViewer((state) => state.showGrid)
   const setShowGrid = useViewer((state) => state.setShowGrid)
   const showMeasurements = useViewer((state) => state.showMeasurements)
@@ -301,6 +363,18 @@ function DisplayMenu() {
     SHADING_OPTIONS.find((option) => option.id === shading) ?? SHADING_OPTIONS[0]
   const activeEdges = EDGE_OPTIONS.find((option) => option.id === edges) ?? EDGE_OPTIONS[0]
   const activeTheme = getSceneTheme(sceneTheme)
+  const activeShadingName = resolveLocalizedLabel(
+    { label: activeShading.name, labelKey: activeShading.nameKey },
+    t,
+  )
+  const activeEdgesName = resolveLocalizedLabel(
+    { label: activeEdges.name, labelKey: activeEdges.nameKey },
+    t,
+  )
+  const activeThemeName = resolveLocalizedLabel(
+    { label: activeTheme.name, labelKey: `editor:display.themes.${activeTheme.id}` },
+    t,
+  )
 
   // Keep the menu open when flipping a toggle.
   const keepOpen = (event: Event, fn: () => void) => {
@@ -310,15 +384,15 @@ function DisplayMenu() {
 
   return (
     <DropdownMenu>
-      <ToolbarTooltip label="Display settings">
+      <ToolbarTooltip label={t('display.settings')}>
         <DropdownMenuTrigger asChild>
           <button
-            aria-label="Display settings"
+            aria-label={t('display.settings')}
             className={cn(TOOLBAR_BTN, 'w-auto gap-1.5 px-2.5 text-foreground/90')}
             type="button"
           >
             <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
-            <span className="font-medium text-xs">Display</span>
+            <span className="font-medium text-xs">{t('view.display')}</span>
           </button>
         </DropdownMenuTrigger>
       </ToolbarTooltip>
@@ -330,7 +404,7 @@ function DisplayMenu() {
       >
         <DropdownMenuItem onSelect={(e) => keepOpen(e, () => setShowGrid(!showGrid))}>
           <Grid2X2 className="h-4 w-4" />
-          <span>Grid</span>
+          <span>{t('display.grid')}</span>
           {showGrid ? (
             <Eye className="ml-auto h-4 w-4 text-foreground" />
           ) : (
@@ -341,7 +415,7 @@ function DisplayMenu() {
           onSelect={(e) => keepOpen(e, () => setShowMeasurements(!showMeasurements))}
         >
           <Ruler className="h-4 w-4" />
-          <span>Measurements</span>
+          <span>{t('display.measurements')}</span>
           {showMeasurements ? (
             <Eye className="ml-auto h-4 w-4 text-foreground" />
           ) : (
@@ -350,15 +424,17 @@ function DisplayMenu() {
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={(e) => keepOpen(e, () => setMagneticSnap(!magneticSnap))}>
           <Magnet className="h-4 w-4" />
-          <span>Magnetic snap</span>
+          <span>{t('display.magneticSnap')}</span>
           <span className="ml-auto text-muted-foreground text-xs">
-            {magneticSnap ? 'On' : 'Off'}
+            {magneticSnap ? commonT('states.on') : commonT('states.off')}
           </span>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={(e) => keepOpen(e, () => setShadows(!shadows))}>
           <Contrast className="h-4 w-4" />
-          <span>Shadows</span>
-          <span className="ml-auto text-muted-foreground text-xs">{shadows ? 'On' : 'Off'}</span>
+          <span>{t('display.shadows')}</span>
+          <span className="ml-auto text-muted-foreground text-xs">
+            {shadows ? commonT('states.on') : commonT('states.off')}
+          </span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) =>
@@ -372,9 +448,11 @@ function DisplayMenu() {
             icon={cameraMode === 'perspective' ? 'icon-park-outline:perspective' : 'vaadin:grid'}
             width={16}
           />
-          <span>Camera</span>
+          <span>{t('display.camera')}</span>
           <span className="ml-auto text-muted-foreground text-xs">
-            {cameraMode === 'perspective' ? 'Perspective' : 'Orthographic'}
+            {cameraMode === 'perspective'
+              ? t('display.cameraMode.perspective')
+              : t('display.cameraMode.orthographic')}
           </span>
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -383,9 +461,9 @@ function DisplayMenu() {
           <span className="flex h-4 w-4 items-center justify-center font-semibold text-[10px]">
             {unit === 'metric' ? 'm' : 'ft'}
           </span>
-          <span>Units</span>
+          <span>{t('display.units')}</span>
           <span className="ml-auto text-muted-foreground text-xs">
-            {unit === 'metric' ? 'Metric' : 'Imperial'}
+            {unit === 'metric' ? t('display.unitSystem.metric') : t('display.unitSystem.imperial')}
           </span>
         </DropdownMenuItem>
 
@@ -394,18 +472,26 @@ function DisplayMenu() {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <activeShading.icon className="h-4 w-4" />
-            <span>Render</span>
-            <span className="ml-auto text-muted-foreground text-xs">{activeShading.name}</span>
+            <span>{t('display.render')}</span>
+            <span className="ml-auto text-muted-foreground text-xs">{activeShadingName}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className={SUBMENU_CONTENT_CLASS}>
             {SHADING_OPTIONS.map((option) => {
               const OptionIcon = option.icon
+              const name = resolveLocalizedLabel(
+                { label: option.name, labelKey: option.nameKey },
+                t,
+              )
+              const detail = resolveLocalizedDescription(
+                { description: option.detail, descriptionKey: option.detailKey },
+                t,
+              )
               return (
                 <DropdownMenuItem key={option.id} onSelect={() => setShading(option.id)}>
                   <OptionIcon className="h-4 w-4" />
                   <div className="flex flex-col">
-                    <span className="text-foreground">{option.name}</span>
-                    <span className="text-muted-foreground text-xs">{option.detail}</span>
+                    <span className="text-foreground">{name}</span>
+                    <span className="text-muted-foreground text-xs">{detail}</span>
                   </div>
                   {shading === option.id ? (
                     <Check className="ml-auto h-4 w-4 text-foreground" />
@@ -419,32 +505,48 @@ function DisplayMenu() {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <PenLine className="h-4 w-4" />
-            <span>Edges</span>
-            <span className="ml-auto text-muted-foreground text-xs">{activeEdges.name}</span>
+            <span>{t('display.edges')}</span>
+            <span className="ml-auto text-muted-foreground text-xs">{activeEdgesName}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className={SUBMENU_CONTENT_CLASS}>
-            {EDGE_OPTIONS.map((option) => (
-              <DropdownMenuItem key={option.id} onSelect={() => setEdges(option.id)}>
-                <div className="flex flex-col">
-                  <span className="text-foreground">{option.name}</span>
-                  <span className="text-muted-foreground text-xs">{option.detail}</span>
-                </div>
-                {edges === option.id ? <Check className="ml-auto h-4 w-4 text-foreground" /> : null}
-              </DropdownMenuItem>
-            ))}
+            {EDGE_OPTIONS.map((option) => {
+              const name = resolveLocalizedLabel(
+                { label: option.name, labelKey: option.nameKey },
+                t,
+              )
+              const detail = resolveLocalizedDescription(
+                { description: option.detail, descriptionKey: option.detailKey },
+                t,
+              )
+              return (
+                <DropdownMenuItem key={option.id} onSelect={() => setEdges(option.id)}>
+                  <div className="flex flex-col">
+                    <span className="text-foreground">{name}</span>
+                    <span className="text-muted-foreground text-xs">{detail}</span>
+                  </div>
+                  {edges === option.id ? (
+                    <Check className="ml-auto h-4 w-4 text-foreground" />
+                  ) : null}
+                </DropdownMenuItem>
+              )
+            })}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <SwatchBook className="h-4 w-4" />
-            <span>Theme</span>
+            <span>{t('display.theme')}</span>
             <span className="ml-auto truncate text-muted-foreground text-xs">
-              {activeTheme.name}
+              {activeThemeName}
             </span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="min-w-48 rounded-xl border-border/45 bg-popover/95 backdrop-blur-xl">
             {SCENE_THEMES.map((theme) => {
+              const label = resolveLocalizedLabel(
+                { label: theme.name, labelKey: `editor:display.themes.${theme.id}` },
+                t,
+              )
               const swatches = (['wall', 'roof', 'floor', 'glazing'] as const).map(
                 (role) => theme.clayTints?.[role] ?? CLAY_PALETTE[role],
               )
@@ -458,7 +560,7 @@ function DisplayMenu() {
                       <span key={`${theme.id}-${index}`} style={{ backgroundColor: color }} />
                     ))}
                   </span>
-                  <span className="text-foreground">{theme.name}</span>
+                  <span className="text-foreground">{label}</span>
                   {sceneTheme === theme.id ? (
                     <Check className="ml-auto h-4 w-4 text-foreground" />
                   ) : null}
@@ -473,6 +575,7 @@ function DisplayMenu() {
 }
 
 function WalkthroughButton() {
+  const { t } = usePascalTranslation('editor')
   const isFirstPersonMode = useEditor((state) => state.isFirstPersonMode)
   const setFirstPersonMode = useEditor((state) => state.setFirstPersonMode)
   const handleClick = useCallback(() => {
@@ -486,7 +589,7 @@ function WalkthroughButton() {
   }, [isFirstPersonMode, setFirstPersonMode])
 
   return (
-    <ToolbarTooltip label="Walkthrough">
+    <ToolbarTooltip label={t('toolbar.walkthrough')}>
       <button
         className={cn(
           TOOLBAR_BTN,
@@ -502,15 +605,17 @@ function WalkthroughButton() {
 }
 
 function PreviewButton() {
+  const { t } = usePascalTranslation('editor')
+
   return (
-    <ToolbarTooltip label="Preview mode">
+    <ToolbarTooltip label={t('toolbar.previewMode')}>
       <button
         className="flex items-center gap-1.5 px-2.5 font-medium text-muted-foreground/80 text-xs transition-colors hover:bg-white/8 hover:text-foreground/90"
         onClick={() => useEditor.getState().setPreviewMode(true)}
         type="button"
       >
         <Eye className="h-3.5 w-3.5 shrink-0" />
-        <span>Preview</span>
+        <span>{t('view.preview')}</span>
       </button>
     </ToolbarTooltip>
   )

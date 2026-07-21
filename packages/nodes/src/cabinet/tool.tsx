@@ -30,6 +30,7 @@ import {
   triggerSFX,
   useEditor,
   useFacingPose,
+  useNodeUiText,
   usePlacementPreview,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
@@ -250,6 +251,7 @@ function wallHitFromWallEvent(event: WallEvent): WallHit | null {
 }
 
 const CabinetTool = () => {
+  const uiText = useNodeUiText()
   const activeLevelId = useViewer((s) => s.selection.levelId)
   const unit = useViewer((s) => s.unit)
   const [placement, setPlacement] = useState<CabinetPlacement | null>(null)
@@ -1002,16 +1004,16 @@ const CabinetTool = () => {
   )
   const placementLabel = stretch
     ? placement.valid
-      ? `${draftSegments.length + 1} leg${draftSegments.length + 1 === 1 ? '' : 's'} · ${stretch.modules.length} module${stretch.modules.length === 1 ? '' : 's'} · Click to continue · Double-click/Esc to finish`
+      ? `${draftSegments.length + 1} ${uiText(draftSegments.length + 1 === 1 ? 'leg' : 'legs')} · ${stretch.modules.length} ${uiText(stretch.modules.length === 1 ? 'module' : 'modules')} · ${uiText('Click to continue')} · ${uiText('Double-click/Esc to finish')}`
       : null
     : !placement.valid
       ? null
       : placement.snappedToWall
         ? placement.snapReason === 'cabinet-edge'
-          ? 'Edge snap'
+          ? uiText('Edge snap')
           : placement.snapReason === 'corner'
-            ? 'Corner snap'
-            : 'Wall snap'
+            ? uiText('Corner snap')
+            : uiText('Wall snap')
         : null
   const labelPosition = stretch
     ? runLocalToPlan({ position: placement.position, rotation: placement.yaw }, [

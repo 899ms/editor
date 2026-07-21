@@ -49,6 +49,10 @@ export function RegisteredToolHelper({
         return {
           keys: [hint.key],
           label: shiftPressed && isBypassHint ? 'Guided constraints bypassed' : hint.label,
+          labelKey:
+            shiftPressed && isBypassHint
+              ? 'editor:contextual.hints.guidedBypass'
+              : hint.labelKey,
           active: shiftPressed && isBypassHint,
         }
       })}

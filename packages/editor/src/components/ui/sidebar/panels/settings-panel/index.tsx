@@ -1,11 +1,13 @@
 import { clearSceneHistory, emitter, useScene, validateBuildJson } from '@pascal-app/core'
+import { type PascalLocale, usePascalLocale, usePascalTranslation } from '@pascal-app/i18n'
 import { useViewer } from '@pascal-app/viewer'
 import { TreeView, VisualJson } from '@visual-json/react'
-import { Camera, Download, Map as MapIcon, Save, Trash2, Upload } from 'lucide-react'
+import { Camera, Download, Languages, Map as MapIcon, Save, Trash2, Upload } from 'lucide-react'
 import {
   type KeyboardEvent,
   type SyntheticEvent,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -157,6 +159,80 @@ const buildSceneGraphValue = (
   }
 }
 
+const VISUAL_JSON_UI_KEYS = {
+  Collapse: 'settings.sceneGraph.collapse',
+  Expand: 'settings.sceneGraph.expand',
+  'Expand all': 'settings.sceneGraph.expandAll',
+  'Collapse all': 'settings.sceneGraph.collapseAll',
+  'Expand all children': 'settings.sceneGraph.expandAllChildren',
+  'Collapse all children': 'settings.sceneGraph.collapseAllChildren',
+  'Copy path': 'settings.sceneGraph.copyPath',
+  'Copy value as JSON': 'settings.sceneGraph.copyJson',
+} as const
+
+function isVisualJsonUiLabel(value: string): value is keyof typeof VISUAL_JSON_UI_KEYS {
+  return Object.hasOwn(VISUAL_JSON_UI_KEYS, value)
+}
+
+function LocalizedSceneGraphTree({ value }: { value: SceneGraphValue }) {
+  const { t } = usePascalTranslation('editor')
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    const localize = () => {
+      for (const element of root.querySelectorAll<HTMLElement>('*')) {
+        const currentAria = element.getAttribute('aria-label')
+        const currentTitle = element.getAttribute('title')
+        const storedAttributeSource = element.dataset.pascalI18nAttributeSource
+        const attributeSource =
+          storedAttributeSource && isVisualJsonUiLabel(storedAttributeSource)
+            ? storedAttributeSource
+            : currentAria && isVisualJsonUiLabel(currentAria)
+              ? currentAria
+              : currentTitle && isVisualJsonUiLabel(currentTitle)
+                ? currentTitle
+                : null
+
+        if (attributeSource) {
+          element.dataset.pascalI18nAttributeSource = attributeSource
+          const translated = t(VISUAL_JSON_UI_KEYS[attributeSource])
+          if (currentAria) element.setAttribute('aria-label', translated)
+          if (currentTitle) element.setAttribute('title', translated)
+        }
+
+        if (element.childElementCount !== 0) continue
+        const currentText = element.textContent?.trim() ?? ''
+        const storedTextSource = element.dataset.pascalI18nTextSource
+        const textSource =
+          storedTextSource && isVisualJsonUiLabel(storedTextSource)
+            ? storedTextSource
+            : isVisualJsonUiLabel(currentText)
+              ? currentText
+              : null
+        if (!textSource) continue
+
+        element.dataset.pascalI18nTextSource = textSource
+        element.textContent = t(VISUAL_JSON_UI_KEYS[textSource])
+      }
+    }
+
+    localize()
+    const observer = new MutationObserver(localize)
+    observer.observe(root, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [t])
+
+  return (
+    <div className="h-full w-full" ref={rootRef}>
+      <VisualJson value={value}>
+        <TreeView showCounts />
+      </VisualJson>
+    </div>
+  )
+}
 export interface ProjectVisibility {
   isPrivate: boolean
   showScansPublic: boolean
@@ -177,6 +253,9 @@ export function SettingsPanel({
   projectVisibility,
   onVisibilityChange,
 }: SettingsPanelProps = {}) {
+  const { t } = usePascalTranslation('editor')
+  const { t: commonT } = usePascalTranslation('common')
+  const { locale, setLocale } = usePascalLocale()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const nodes = useScene((state) => state.nodes)
   const rootNodeIds = useScene((state) => state.rootNodeIds)
@@ -241,7 +320,7 @@ export function SettingsPanel({
               {
                 severity: 'error',
                 code: 'invalid_json',
-                message: 'File could not be parsed as JSON.',
+                message: t('settings.saveLoad.invalidJson'),
               },
             ],
             warnings: [],
@@ -312,15 +391,42 @@ export function SettingsPanel({
 
   return (
     <div className="flex flex-col gap-6 p-3">
+      <div className="space-y-3">
+        <label className="font-medium text-muted-foreground text-xs uppercase">
+          {commonT('language.interfaceLanguage')}
+        </label>
+        <p className="text-muted-foreground text-xs">{t('settings.languageDescription')}</p>
+        <div className="flex items-center gap-2">
+          <Languages aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+          <select
+            aria-label={commonT('language.interfaceLanguage')}
+            className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+            onChange={(event) => {
+              void setLocale(event.target.value as PascalLocale)
+            }}
+            value={locale}
+          >
+            <option value="zh-CN">{commonT('language.simplifiedChinese')}</option>
+            <option value="en">{commonT('language.english')}</option>
+          </select>
+        </div>
+      </div>
+
       {/* Visibility Section (only for cloud projects) */}
       {projectId && !isLocalProject && (
         <div className="space-y-3">
-          <label className="font-medium text-muted-foreground text-xs uppercase">Visibility</label>
+          <label className="font-medium text-muted-foreground text-xs uppercase">{t('settings.sections.visibility')}</label>
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-sm">Public</div>
+              <div className="font-medium text-sm">{t('settings.visibility.public')}</div>
               <div className="text-muted-foreground text-xs">
-                {projectVisibility?.isPrivate ? 'Only you' : 'Anyone'} can view
+                {t('settings.visibility.canView', {
+                  audience: t(
+                    projectVisibility?.isPrivate
+                      ? 'settings.visibility.onlyYou'
+                      : 'settings.visibility.anyone',
+                  ),
+                })}
               </div>
             </div>
             <Switch
@@ -330,8 +436,8 @@ export function SettingsPanel({
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-sm">Show 3D Scans</div>
-              <div className="text-muted-foreground text-xs">Visible to public viewers</div>
+              <div className="font-medium text-sm">{t('settings.visibility.showScans')}</div>
+              <div className="text-muted-foreground text-xs">{t('settings.visibility.visibleToPublic')}</div>
             </div>
             <Switch
               checked={projectVisibility?.showScansPublic ?? true}
@@ -340,8 +446,8 @@ export function SettingsPanel({
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-sm">Show Floorplans</div>
-              <div className="text-muted-foreground text-xs">Visible to public viewers</div>
+              <div className="font-medium text-sm">{t('settings.visibility.showFloorplans')}</div>
+              <div className="text-muted-foreground text-xs">{t('settings.visibility.visibleToPublic')}</div>
             </div>
             <Switch
               checked={projectVisibility?.showGuidesPublic ?? true}
@@ -350,8 +456,8 @@ export function SettingsPanel({
           </div>
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-medium text-sm">Shadows</div>
-              <div className="text-muted-foreground text-xs">Cast shadows from lights</div>
+              <div className="font-medium text-sm">{t('settings.visibility.shadows')}</div>
+              <div className="text-muted-foreground text-xs">{t('settings.visibility.castShadows')}</div>
             </div>
             <Switch
               checked={shadows}
@@ -363,17 +469,17 @@ export function SettingsPanel({
 
       {/* Export Section */}
       <div className="space-y-4">
-        <label className="font-medium text-muted-foreground text-xs uppercase">Export</label>
+        <label className="font-medium text-muted-foreground text-xs uppercase">{t('settings.sections.export')}</label>
 
         <div className="space-y-2">
-          <div className="font-medium text-muted-foreground text-xs">3D model</div>
+          <div className="font-medium text-muted-foreground text-xs">{t('settings.export.model3d')}</div>
           <Button
             className="w-full justify-start gap-2"
             onClick={() => exportScene?.('glb')}
             variant="outline"
           >
             <Download className="size-4" />
-            Export GLB
+            {t('settings.export.glb')}
           </Button>
           <Button
             className="w-full justify-start gap-2"
@@ -381,7 +487,7 @@ export function SettingsPanel({
             variant="outline"
           >
             <Download className="size-4" />
-            Export STL
+            {t('settings.export.stl')}
           </Button>
           <Button
             className="w-full justify-start gap-2"
@@ -389,19 +495,19 @@ export function SettingsPanel({
             variant="outline"
           >
             <Download className="size-4" />
-            Export OBJ
+            {t('settings.export.obj')}
           </Button>
         </div>
 
         <div className="space-y-2">
-          <div className="font-medium text-muted-foreground text-xs">Floorplan</div>
+          <div className="font-medium text-muted-foreground text-xs">{t('settings.export.floorplan')}</div>
           <Button
             className="w-full justify-start gap-2"
             onClick={() => exportFloorplanPdf('full')}
             variant="outline"
           >
             <MapIcon className="size-4" />
-            Full floorplan
+            {t('settings.export.fullFloorplan')}
           </Button>
           <Button
             className="w-full justify-start gap-2"
@@ -409,7 +515,7 @@ export function SettingsPanel({
             variant="outline"
           >
             <MapIcon className="size-4" />
-            Structure only
+            {t('settings.export.structureOnly')}
           </Button>
         </div>
       </div>
@@ -417,7 +523,7 @@ export function SettingsPanel({
       {/* Thumbnail Section (only for cloud projects) */}
       {projectId && !isLocalProject && (
         <div className="space-y-2">
-          <label className="font-medium text-muted-foreground text-xs uppercase">Thumbnail</label>
+          <label className="font-medium text-muted-foreground text-xs uppercase">{t('settings.sections.thumbnail')}</label>
           <Button
             className="w-full justify-start gap-2"
             disabled={isGeneratingThumbnail}
@@ -425,18 +531,22 @@ export function SettingsPanel({
             variant="outline"
           >
             <Camera className="size-4" />
-            {isGeneratingThumbnail ? 'Generating...' : 'Generate Thumbnail'}
+            {t(
+              isGeneratingThumbnail
+                ? 'settings.thumbnail.generating'
+                : 'settings.thumbnail.generate',
+            )}
           </Button>
         </div>
       )}
 
       {/* Save/Load Section */}
       <div className="space-y-2">
-        <label className="font-medium text-muted-foreground text-xs uppercase">Save & Load</label>
+        <label className="font-medium text-muted-foreground text-xs uppercase">{t('settings.sections.saveLoad')}</label>
 
         <Button className="w-full justify-start gap-2" onClick={handleSaveBuild} variant="outline">
           <Save className="size-4" />
-          Save Build
+          {t('settings.saveLoad.save')}
         </Button>
 
         <Button
@@ -445,7 +555,7 @@ export function SettingsPanel({
           variant="outline"
         >
           <Upload className="size-4" />
-          Load Build
+          {t('settings.saveLoad.load')}
         </Button>
 
         <input
@@ -465,27 +575,27 @@ export function SettingsPanel({
 
       {/* Audio Section */}
       <div className="space-y-2">
-        <label className="font-medium text-muted-foreground text-xs uppercase">Audio</label>
+        <label className="font-medium text-muted-foreground text-xs uppercase">{t('settings.sections.audio')}</label>
         <AudioSettingsDialog />
       </div>
 
       {/* Keyboard Section */}
       <div className="space-y-2">
-        <label className="font-medium text-muted-foreground text-xs uppercase">Keyboard</label>
+        <label className="font-medium text-muted-foreground text-xs uppercase">{t('settings.sections.keyboard')}</label>
         <KeyboardShortcutsDialog />
       </div>
 
       {/* Scene Graph */}
       <div className="space-y-1">
-        <label className="font-medium text-muted-foreground text-xs uppercase">Scene Graph</label>
+        <label className="font-medium text-muted-foreground text-xs uppercase">{t('settings.sections.sceneGraph')}</label>
         <Dialog>
           <DialogTrigger asChild>
             <Button className="h-auto justify-start p-0 text-sm" variant="link">
-              Explore scene graph
+              {t('settings.sceneGraph.explore')}
             </Button>
           </DialogTrigger>
           <DialogContent className="h-[80vh] max-w-[95vw] gap-0 overflow-hidden border-0 bg-[#1e1e1e] p-0 shadow-none sm:max-w-5xl">
-            <DialogTitle className="sr-only">Scene Graph</DialogTitle>
+            <DialogTitle className="sr-only">{t('settings.sections.sceneGraph')}</DialogTitle>
             <div
               className="flex h-full min-h-0 w-full min-w-0 *:h-full *:w-full *:overflow-y-auto"
               onContextMenuCapture={blockSceneGraphMutations}
@@ -493,9 +603,7 @@ export function SettingsPanel({
               onDropCapture={blockSceneGraphMutations}
               onKeyDownCapture={blockSceneGraphDeletion}
             >
-              <VisualJson value={sceneGraphValue}>
-                <TreeView showCounts />
-              </VisualJson>
+              <LocalizedSceneGraphTree value={sceneGraphValue} />
             </div>
           </DialogContent>
         </Dialog>
@@ -503,7 +611,7 @@ export function SettingsPanel({
 
       {/* Danger Zone */}
       <div className="space-y-2">
-        <label className="font-medium text-destructive text-xs uppercase">Danger Zone</label>
+        <label className="font-medium text-destructive text-xs uppercase">{t('settings.sections.dangerZone')}</label>
 
         <Button
           className="w-full justify-start gap-2"
@@ -511,7 +619,7 @@ export function SettingsPanel({
           variant="destructive"
         >
           <Trash2 className="size-4" />
-          Clear & Start New
+          {t('settings.dangerZone.clear')}
         </Button>
       </div>
     </div>

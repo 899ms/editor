@@ -1,5 +1,6 @@
 'use client'
 
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { useViewer } from '@pascal-app/viewer'
 import {
   Box,
@@ -21,23 +22,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover'
 import { ActionButton } from './action-button'
 
 const measurementOptions = [
-  { kind: 'distance', label: 'Distance', icon: Ruler },
-  { kind: 'angle', label: 'Angle', icon: Triangle },
-  { kind: 'area', label: 'Area', icon: Square },
-  { kind: 'perimeter', label: 'Perimeter', icon: Waypoints },
-  { kind: 'volume', label: 'Volume', icon: Box },
+  { kind: 'distance', labelKey: 'measurement.distance', icon: Ruler },
+  { kind: 'angle', labelKey: 'measurement.angle', icon: Triangle },
+  { kind: 'area', labelKey: 'measurement.area', icon: Square },
+  { kind: 'perimeter', labelKey: 'measurement.perimeter', icon: Waypoints },
+  { kind: 'volume', labelKey: 'measurement.volume', icon: Box },
 ] as const satisfies readonly {
   kind: CreatableMeasurementKind
-  label: string
+  labelKey: string
   icon: typeof Ruler
 }[]
 
 const measurementMenuOptions = [
-  { kind: 'smart', label: 'Smart', icon: ScanSearch },
+  { kind: 'smart', labelKey: 'measurement.smart', icon: ScanSearch },
   ...measurementOptions,
 ] as const
 
 export function MeasurementControl() {
+  const { t } = usePascalTranslation('editor')
+  const { t: commonT } = usePascalTranslation('common')
   const [isOpen, setIsOpen] = useState(false)
   const mode = useEditor((state) => state.mode)
   const tool = useEditor((state) => state.tool)
@@ -57,7 +60,8 @@ export function MeasurementControl() {
   const isActive = mode === 'build' && tool === 'measurement'
   const isSmartActive = isActive && activeToolKind === 'smart'
   const SelectedIcon = isSmartActive ? ScanSearch : selectedOption.icon
-  const selectedLabel = isSmartActive ? 'Smart' : selectedOption.label
+  const selectedLabel = t(isSmartActive ? 'measurement.smart' : selectedOption.labelKey)
+  const measureLabel = t('measurement.measureType', { type: selectedLabel })
 
   const activateMeasurement = (kind: CreatableMeasurementKind) => {
     setPhase('structure')
@@ -88,7 +92,7 @@ export function MeasurementControl() {
     <Popover onOpenChange={setIsOpen} open={isOpen}>
       <div className="flex items-center">
         <ActionButton
-          aria-label={`Measure: ${selectedLabel}`}
+          aria-label={measureLabel}
           aria-pressed={isActive}
           className={cn(
             'rounded-r-none p-0 text-muted-foreground',
@@ -96,7 +100,7 @@ export function MeasurementControl() {
               ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20'
               : 'hover:bg-cyan-500/15 hover:text-cyan-400',
           )}
-          label={`Measure: ${selectedLabel}`}
+          label={measureLabel}
           onClick={handlePrimaryClick}
           shortcut="M"
           size="icon"
@@ -109,7 +113,7 @@ export function MeasurementControl() {
           <button
             aria-expanded={isOpen}
             aria-haspopup="menu"
-            aria-label="Measurement options"
+            aria-label={t('measurement.options')}
             className={cn(
               'flex h-11 w-6 items-center justify-center rounded-r-lg text-muted-foreground transition-colors',
               isOpen
@@ -132,7 +136,7 @@ export function MeasurementControl() {
         side="top"
         sideOffset={14}
       >
-        <div aria-label="Measurement type" className="space-y-1" role="menu">
+        <div aria-label={t('measurement.type')} className="space-y-1" role="menu">
           {measurementMenuOptions.map((option) => {
             const OptionIcon = option.icon
             const isSmart = option.kind === 'smart'
@@ -158,7 +162,7 @@ export function MeasurementControl() {
                 type="button"
               >
                 <OptionIcon aria-hidden="true" className="h-4 w-4" />
-                <span>{option.label}</span>
+                <span>{t(option.labelKey)}</span>
                 {isSelected ? <Check aria-hidden="true" className="ml-auto h-4 w-4" /> : null}
               </button>
             )
@@ -178,8 +182,10 @@ export function MeasurementControl() {
             ) : (
               <EyeOff aria-hidden="true" className="h-4 w-4" />
             )}
-            <span>Show measurements</span>
-            <span className="ml-auto text-xs">{showMeasurements ? 'On' : 'Off'}</span>
+            <span>{t('measurement.show')}</span>
+            <span className="ml-auto text-xs">
+              {showMeasurements ? commonT('states.on') : commonT('states.off')}
+            </span>
           </button>
         </div>
       </PopoverContent>

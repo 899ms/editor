@@ -6,6 +6,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
+import { useNodeUiText } from '../../ui/controls/node-ui-text'
 import {
   buildSvgAnnularSectorPath,
   buildSvgArcPath,
@@ -127,6 +128,8 @@ export const FloorplanStairLayer = memo(function FloorplanStairLayer({
   selectedIdSet,
   stairEntries,
 }: FloorplanStairLayerProps) {
+  const nodeUi = useNodeUiText()
+
   if (stairEntries.length === 0) {
     return null
   }
@@ -479,7 +482,7 @@ export const FloorplanStairLayer = memo(function FloorplanStairLayer({
                 vectorEffect="non-scaling-stroke"
               />
             ))}
-            <title>{stair.name || 'Staircase'}</title>
+            <title>{stair.name || nodeUi('Staircase')}</title>
             {stairSymbol}
           </g>
         )

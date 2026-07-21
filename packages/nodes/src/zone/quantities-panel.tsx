@@ -12,7 +12,9 @@ import {
   formatAreaLabel,
   formatLinearMeasurement,
   formatVolumeLabel,
+  NodeUiText,
   PanelSection,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { useMemo } from 'react'
@@ -29,10 +31,11 @@ function ZonePlanSketch({
   polygon: readonly Point2D[]
   unit: 'metric' | 'imperial'
 }) {
+  const uiText = useNodeUiText()
   if (polygon.length < 3) {
     return (
       <div className="flex h-28 items-center justify-center rounded-md border border-border/50 text-muted-foreground text-xs">
-        Zone boundary unavailable
+        <NodeUiText>Zone boundary unavailable</NodeUiText>
       </div>
     )
   }
@@ -61,7 +64,7 @@ function ZonePlanSketch({
 
   return (
     <svg
-      aria-label="Top view with zone edge dimensions"
+      aria-label={uiText('Top view with zone edge dimensions')}
       className="h-auto w-full rounded-md border border-cyan-950/20 bg-[#f8faf7]"
       role="img"
       viewBox={`0 0 ${viewWidth} ${viewHeight}`}
@@ -135,23 +138,29 @@ function QuantityRow({
   label: string
   quantity: ZoneQuantityValue
 }) {
+  const uiText = useNodeUiText()
+  const detail = quantity.status === 'available' ? quantity.note : quantity.reason
+
   return (
     <div className="rounded-md border border-border/50 bg-background/35 px-2.5 py-2">
       <div className="flex items-baseline gap-2">
         <span className="font-mono font-semibold text-cyan-600 text-[10px]">{abbreviation}</span>
-        <span className="text-muted-foreground text-xs">{label}</span>
+        <span className="text-muted-foreground text-xs">
+          <NodeUiText>{label}</NodeUiText>
+        </span>
         <span className="ml-auto font-mono font-medium text-foreground text-xs tabular-nums">
-          {quantity.status === 'available' ? format(quantity.value) : 'Not proven'}
+          {quantity.status === 'available' ? format(quantity.value) : uiText('Not proven')}
         </span>
       </div>
       <div className="mt-1 text-[10px] text-muted-foreground leading-snug">
-        {quantity.status === 'available' ? quantity.note : quantity.reason}
+        {detail ? uiText(detail) : null}
       </div>
     </div>
   )
 }
 
 export default function ZoneQuantitiesPanel() {
+  const uiText = useNodeUiText()
   const selectedZoneId = useViewer((state) => state.selection.zoneId)
   const unit = useViewer((state) => state.unit)
   const nodes = useScene((state) => state.nodes)
@@ -198,7 +207,7 @@ export default function ZoneQuantitiesPanel() {
         <div className="flex items-center border-cyan-950/15 border-b px-2.5 py-2">
           <span className="font-semibold text-[11px]">{effectiveZone.name}</span>
           <span className="ml-auto rounded-full border border-cyan-800/25 bg-cyan-50 px-2 py-0.5 text-cyan-900 text-[9px]">
-            {report.classification === 'enclosed-room' ? 'Enclosed room' : 'Footprint only'}
+            {uiText(report.classification === 'enclosed-room' ? 'Enclosed room' : 'Footprint only')}
           </span>
         </div>
         <div className="flex items-baseline gap-2 px-2.5 py-2 font-mono text-[10px]">

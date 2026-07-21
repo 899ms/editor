@@ -50,6 +50,8 @@ export const siteDefinition: NodeDefinition<typeof SiteNode> = {
 
   presentation: {
     label: 'Site',
+    labelKey: 'nodes:kinds.site',
+    descriptionKey: 'nodes:descriptions.site',
     description: 'The top-level container holding buildings, zones, and the property boundary.',
     icon: { kind: 'url', src: '/icons/site-flag.webp' },
     paletteSection: 'site',

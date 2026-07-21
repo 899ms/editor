@@ -1,6 +1,7 @@
 'use client'
 
 import { useScene } from '@pascal-app/core'
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   lingoUnitSpec,
@@ -37,6 +38,9 @@ export function MetricControl({
   unit = '',
   restoreOnCommit = true,
 }: MetricControlProps) {
+  const { t } = usePascalTranslation('nodes')
+  const localizedLabel =
+    typeof label === 'string' ? resolveBuiltInNodeUiText(label, t) : label
   const {
     isImperial,
     displayUnit,
@@ -310,7 +314,7 @@ export function MetricControl({
         )}
         onPointerDown={handlePointerDown}
       >
-        {label}
+        {localizedLabel}
       </div>
 
       <div className="flex shrink-0 justify-end">

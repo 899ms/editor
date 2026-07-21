@@ -8,6 +8,7 @@ import {
   type MaterialTarget,
   toLibraryMaterialRef,
 } from '@pascal-app/core'
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { useEffect, useState } from 'react'
 import { triggerSFX } from '../../../lib/sfx-bus'
 
@@ -33,6 +34,8 @@ export function MaterialPicker({
   onSelectMaterialPreset,
   disabled = false,
 }: MaterialPickerProps) {
+  const { t } = usePascalTranslation('nodes')
+  const nodeUi = (value: string) => resolveBuiltInNodeUiText(value, t)
   const [selectedCategory, setSelectedCategory] = useState<(typeof MATERIAL_CATEGORIES)[number]>(
     MATERIAL_CATEGORIES[0],
   )
@@ -77,7 +80,7 @@ export function MaterialPicker({
             }}
             type="button"
           >
-            {getCategoryLabel(category)}
+            {nodeUi(getCategoryLabel(category))}
           </button>
         ))}
       </div>
@@ -104,7 +107,7 @@ export function MaterialPicker({
               <div className="relative aspect-square w-full overflow-hidden rounded-lg">
                 {item.previewThumbnailUrl ? (
                   <img
-                    alt={item.label}
+                    alt={nodeUi(item.label)}
                     className="h-full w-full object-cover"
                     src={item.previewThumbnailUrl}
                   />
@@ -116,7 +119,7 @@ export function MaterialPicker({
                 )}
               </div>
               <span className="truncate px-0.5 text-left font-medium text-[11px] text-muted-foreground group-hover:text-foreground">
-                {item.label}
+                {nodeUi(item.label)}
               </span>
             </button>
           )

@@ -9,7 +9,7 @@ import {
   type RoofSegmentNode,
   useScene,
 } from '@pascal-app/core'
-import { ActionButton, ActionGroup, PanelSection, triggerSFX } from '@pascal-app/editor'
+import { ActionButton, ActionGroup, PanelSection, triggerSFX, useNodeUiText } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { useShallow } from 'zustand/react/shallow'
 import { computeEaveY } from './eave-snap'
@@ -56,6 +56,7 @@ function nextOutletOffset(gutter: GutterNode): number {
  * on it, and each row's ✕ removes both the downspout and its outlet.
  */
 export default function DownspoutsPanel() {
+  const uiText = useNodeUiText()
   const selectedId = useViewer((s) => s.selection.selectedIds[0]) as AnyNodeId | undefined
   const setSelection = useViewer((s) => s.setSelection)
 
@@ -140,10 +141,10 @@ export default function DownspoutsPanel() {
               onClick={() => handleSelectDownspout(d.id as AnyNodeId)}
               type="button"
             >
-              {d.name || `Downspout ${i + 1}`}
+              {d.name || `${uiText('Downspout')} ${i + 1}`}
             </button>
             <button
-              aria-label="Remove downspout"
+              aria-label={uiText('Remove downspout')}
               className="ml-2 text-muted-foreground text-xs transition-colors hover:text-red-400"
               onClick={() => handleRemove(d)}
               type="button"

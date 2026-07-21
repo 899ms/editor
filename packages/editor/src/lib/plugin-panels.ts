@@ -5,12 +5,14 @@ export type EditorHostPanelWorkspace = string & {}
 export type EditorHostPanel = {
   id: string
   label: string
+  labelKey?: string
   icon: IconRef
   component: LazyComponent
   kinds?: readonly string[]
   workspaces?: readonly EditorHostPanelWorkspace[]
   pluginId?: string
   description?: string
+  descriptionKey?: string
   creator?: {
     name: string
     url?: string

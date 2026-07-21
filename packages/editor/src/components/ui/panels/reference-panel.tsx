@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText, useEditorUiText } from '../editor-ui-text'
 import {
   type AnyNode,
   type GuideNode,
@@ -31,16 +32,21 @@ import { PanelWrapper } from './panel-wrapper'
 
 type ReferenceNode = ScanNode | GuideNode
 
-function getScaleStatus(guide: GuideNode, scaleReferenceVisible: boolean) {
+function getScaleStatus(
+  guide: GuideNode,
+  scaleReferenceVisible: boolean,
+  ui: (value: string) => string,
+) {
   const reference = guide.scaleReference
   if (!reference) {
-    return 'Uncalibrated'
+    return ui('Uncalibrated')
   }
 
-  return `${scaleReferenceVisible ? 'Scaled' : 'Scaled (hidden)'} · ${reference.label}`
+  return `${ui(scaleReferenceVisible ? 'Scaled' : 'Scaled (hidden)')} · ${reference.label}`
 }
 
 export function ReferencePanel() {
+  const ui = useEditorUiText()
   const selectedReferenceId = useEditor((s) => s.selectedReferenceId)
   const setSelectedReferenceId = useEditor((s) => s.setSelectedReferenceId)
   const guideUi = useEditor((s) =>
@@ -167,7 +173,7 @@ export function ReferencePanel() {
   const isScan = node.type === 'scan'
   const guideLocked = !isScan && guideUi?.locked === true
   const scaleReferenceVisible = !isScan && guideUi?.scaleReferenceVisible !== false
-  const scaleStatus = isScan ? null : getScaleStatus(node, scaleReferenceVisible)
+  const scaleStatus = isScan ? null : getScaleStatus(node, scaleReferenceVisible, ui)
 
   return (
     <PanelWrapper
@@ -240,7 +246,7 @@ export function ReferencePanel() {
 
             {isAssetMissing && (
               <div className="rounded-md border border-amber-500/35 bg-amber-500/10 px-2 py-1.5 text-amber-700 text-xs dark:text-amber-300">
-                Overlay image unavailable. Replace the image to restore it.
+                <EditorUiText>Overlay image unavailable. Replace the image to restore it.</EditorUiText>
               </div>
             )}
           </PanelSection>
@@ -258,9 +264,11 @@ export function ReferencePanel() {
 
             {!node.scaleReference && (
               <p className="px-0.5 text-muted-foreground text-xs leading-snug">
-                {isScaleFlowActive
-                  ? 'Click both ends of a known distance on the plan, then type its real length.'
-                  : 'Draw a line over a known dimension on the plan, then type its real length to scale the image exactly.'}
+                {ui(
+                  isScaleFlowActive
+                    ? 'Click both ends of a known distance on the plan, then type its real length.'
+                    : 'Draw a line over a known dimension on the plan, then type its real length to scale the image exactly.',
+                )}
               </p>
             )}
 
@@ -333,7 +341,7 @@ export function ReferencePanel() {
         <SliderControl
           label={
             <>
-              X<sub className="ml-[1px] text-[11px] opacity-70">pos</sub>
+              X<sub className="ml-[1px] text-[11px] opacity-70"><EditorUiText>pos</EditorUiText></sub>
             </>
           }
           max={50}
@@ -351,7 +359,7 @@ export function ReferencePanel() {
         <SliderControl
           label={
             <>
-              Y<sub className="ml-[1px] text-[11px] opacity-70">pos</sub>
+              Y<sub className="ml-[1px] text-[11px] opacity-70"><EditorUiText>pos</EditorUiText></sub>
             </>
           }
           max={50}
@@ -369,7 +377,7 @@ export function ReferencePanel() {
         <SliderControl
           label={
             <>
-              Z<sub className="ml-[1px] text-[11px] opacity-70">pos</sub>
+              Z<sub className="ml-[1px] text-[11px] opacity-70"><EditorUiText>pos</EditorUiText></sub>
             </>
           }
           max={50}
@@ -390,7 +398,7 @@ export function ReferencePanel() {
         <SliderControl
           label={
             <>
-              Y<sub className="ml-[1px] text-[11px] opacity-70">rot</sub>
+              Y<sub className="ml-[1px] text-[11px] opacity-70"><EditorUiText>rot</EditorUiText></sub>
             </>
           }
           max={180}
@@ -430,7 +438,7 @@ export function ReferencePanel() {
         <SliderControl
           label={
             <>
-              XYZ<sub className="ml-[1px] text-[11px] opacity-70">scale</sub>
+              <EditorUiText>XYZ</EditorUiText><sub className="ml-[1px] text-[11px] opacity-70"><EditorUiText>scale</EditorUiText></sub>
             </>
           }
           max={10}

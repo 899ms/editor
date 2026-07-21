@@ -301,12 +301,18 @@ export const fenceDefinition: NodeDefinition<typeof FenceNode> = {
   },
 
   toolHints: [
-    { key: 'Left click', label: 'Set fence start / end' },
-    { key: 'Esc', label: 'Cancel' },
+    {
+      key: 'Left click',
+      label: 'Set fence start / end',
+      labelKey: 'editor:contextual.hints.setFenceEndpoints',
+    },
+    { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 
   presentation: {
     label: 'Fence',
+    labelKey: 'nodes:kinds.fence',
+    descriptionKey: 'nodes:descriptions.fence',
     description: 'A straight or curved fence segment with configurable posts and infill.',
     icon: { kind: 'url', src: '/icons/fence.webp' },
     paletteSection: 'structure',

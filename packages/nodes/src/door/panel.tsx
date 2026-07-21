@@ -5,6 +5,7 @@ import {
   ActionButton,
   ActionGroup,
   cn,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
@@ -12,6 +13,7 @@ import {
   ToggleControl,
   triggerSFX,
   useEditor,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Copy, DoorOpen, FlipHorizontal2, Move, Trash2 } from 'lucide-react'
@@ -133,6 +135,7 @@ function isSameDoorValue(current: unknown, next: unknown): boolean {
 }
 
 export default function DoorPanel() {
+  const uiText = useNodeUiText()
   const selectedId = useViewer((s) => s.selection.selectedIds[0])
   const setSelection = useViewer((s) => s.setSelection)
   const deleteNode = useScene((s) => s.deleteNode)
@@ -575,7 +578,7 @@ export default function DoorPanel() {
                   type="button"
                 >
                   <DoorOpen className="h-4 w-4 shrink-0" />
-                  <span className="truncate font-medium">{option.label}</span>
+                  <span className="truncate font-medium">{uiText(option.label)}</span>
                 </button>
               )
             })}
@@ -587,7 +590,10 @@ export default function DoorPanel() {
         <SliderControl
           label={
             <>
-              X<sub className="ml-[1px] text-[11px] opacity-70">wall</sub>
+              X
+              <sub className="ml-[1px] text-[11px] opacity-70">
+                <NodeUiText>wall</NodeUiText>
+              </sub>
             </>
           }
           max={10}
@@ -615,7 +621,7 @@ export default function DoorPanel() {
           <div className="flex flex-col gap-2 px-1 pb-1">
             <div className="space-y-1">
               <span className="font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-                Panels
+                <NodeUiText>Panels</NodeUiText>
               </span>
               <SegmentedControl
                 onChange={(v) => handleUpdate({ leafCount: v === '2' ? 2 : 4 })}
@@ -646,7 +652,7 @@ export default function DoorPanel() {
           <div className="flex flex-col gap-2 px-1 pb-1">
             <div className="space-y-1">
               <span className="font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-                {doorType === 'pocket' ? 'Pocket' : doorType === 'barn' ? 'Rail' : 'Panel'}
+                {uiText(doorType === 'pocket' ? 'Pocket' : doorType === 'barn' ? 'Rail' : 'Panel')}
               </span>
               <SegmentedControl
                 onChange={(v) => handleUpdate({ slideDirection: v })}
@@ -990,7 +996,7 @@ export default function DoorPanel() {
                 {supportsHingeSide && (
                   <div className="space-y-1">
                     <span className="font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-                      Hinges Side
+                      <NodeUiText>Hinges Side</NodeUiText>
                     </span>
                     <SegmentedControl
                       onChange={(v) => handleUpdate({ hingesSide: v })}
@@ -1004,7 +1010,7 @@ export default function DoorPanel() {
                 )}
                 <div className="space-y-1">
                   <span className="font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-                    Direction
+                    <NodeUiText>Direction</NodeUiText>
                   </span>
                   <SegmentedControl
                     onChange={(v) => handleUpdate({ swingDirection: v })}
@@ -1067,7 +1073,7 @@ export default function DoorPanel() {
                   {supportsHandleSide && (
                     <div className="space-y-1">
                       <span className="font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-                        Handle Side
+                        <NodeUiText>Handle Side</NodeUiText>
                       </span>
                       <SegmentedControl
                         onChange={(v) => handleUpdate({ handleSide: v })}
@@ -1122,7 +1128,9 @@ export default function DoorPanel() {
                 return (
                   <div className="mb-2 flex flex-col gap-1" key={i}>
                     <div className="flex items-center justify-between pb-1">
-                      <span className="font-medium text-white/80 text-xs">Segment {i + 1}</span>
+                      <span className="font-medium text-white/80 text-xs">
+                        <NodeUiText>Segment</NodeUiText> {i + 1}
+                      </span>
                     </div>
 
                     <SegmentedControl

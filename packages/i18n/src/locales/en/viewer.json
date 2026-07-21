@@ -1,0 +1,11 @@
+{
+  "errors": {
+    "renderingFailed": "The 3D view could not be rendered.",
+    "webgpuUnavailable": "WebGPU is unavailable in this browser.",
+    "viewerUnavailableTitle": "3D viewer unavailable",
+    "viewerUnavailableDescription": "This browser or environment does not expose WebGPU or WebGL, so Pascal cannot render the 3D scene here. Try opening the editor in a browser with hardware acceleration enabled."
+  },
+  "status": {
+    "loadingScene": "Loading scene"
+  }
+}

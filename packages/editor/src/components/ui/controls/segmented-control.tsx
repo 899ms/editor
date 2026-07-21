@@ -1,5 +1,6 @@
 'use client'
 
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { cn } from '../../../lib/utils'
 
 interface SegmentedControlProps<T extends string> {
@@ -15,6 +16,7 @@ export function SegmentedControl<T extends string>({
   options,
   className,
 }: SegmentedControlProps<T>) {
+  const { t } = usePascalTranslation('nodes')
   return (
     <div
       className={cn(
@@ -36,7 +38,11 @@ export function SegmentedControl<T extends string>({
             onClick={() => onChange(option.value)}
             type="button"
           >
-            <span className="relative z-10 flex items-center gap-1.5">{option.label}</span>
+            <span className="relative z-10 flex items-center gap-1.5">
+              {typeof option.label === 'string'
+                ? resolveBuiltInNodeUiText(option.label, t)
+                : option.label}
+            </span>
           </button>
         )
       })}

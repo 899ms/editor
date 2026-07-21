@@ -19,6 +19,7 @@ import {
   useAlignmentGuides,
   useDragAction,
   useInteractionScope,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -94,6 +95,7 @@ function pickAngleLabel(args: {
 }
 
 export const MoveFenceEndpointTool: React.FC<{ target: MovingFenceEndpoint }> = ({ target }) => {
+  const uiText = useNodeUiText()
   const fenceId = target.fence.id
   const endpoint = target.endpoint
   const initialPoint: FencePlanPoint =
@@ -277,7 +279,7 @@ export const MoveFenceEndpointTool: React.FC<{ target: MovingFenceEndpoint }> = 
                 : 'border-border/70 bg-background/90 text-foreground/80'
             }`}
           >
-            {altPressed ? 'Detach endpoint' : 'Drag endpoint'}
+            {uiText(altPressed ? 'Detach endpoint' : 'Drag endpoint')}
           </div>
         </div>
       </Html>

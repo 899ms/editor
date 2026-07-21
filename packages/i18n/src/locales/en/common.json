@@ -1,0 +1,35 @@
+{
+  "actions": {
+    "add": "Add",
+    "apply": "Apply",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "done": "Done",
+    "edit": "Edit",
+    "open": "Open",
+    "redo": "Redo",
+    "remove": "Remove",
+    "reset": "Reset",
+    "save": "Save",
+    "undo": "Undo"
+  },
+  "language": {
+    "english": "English",
+    "interfaceLanguage": "Interface language",
+    "simplifiedChinese": "Simplified Chinese"
+  },
+  "states": {
+    "error": "Error",
+    "loading": "Loading",
+    "off": "Off",
+    "on": "On",
+    "saved": "Saved",
+    "saving": "Saving"
+  },
+  "count": {
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items"
+  }
+}

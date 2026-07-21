@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import {
   type AnyNode,
   type AnyNodeId,
@@ -635,6 +636,7 @@ function FloorplanExtrusionControl({
   sceneRotationDeg: number
   unitsPerPixel: number
 }) {
+  const ui = useEditorUiText()
   const unit = useViewer((state) => state.unit)
   const extrusionHeight = useMeasurementDraft((state) => state.extrusionHeight)
   const points = useMeasurementDraft((state) => state.points)
@@ -696,14 +698,14 @@ function FloorplanExtrusionControl({
           }}
         >
           <label className="sr-only" htmlFor="measurement-extrusion-height">
-            Extrusion height
+            <EditorUiText>Extrusion height</EditorUiText>
           </label>
           <div className="relative min-w-0 flex-1">
             <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center font-medium text-muted-foreground text-xs">
               H
             </span>
             <input
-              aria-label="Extrusion height"
+              aria-label={ui('Extrusion height')}
               className="h-8 w-full rounded-md border border-border bg-background pr-7 pl-6 text-sm outline-none focus:border-cyan-400"
               id="measurement-extrusion-height"
               inputMode="decimal"
@@ -744,7 +746,7 @@ function FloorplanExtrusionControl({
             onClick={commit}
             type="button"
           >
-            Create
+            <EditorUiText>Create</EditorUiText>
           </button>
         </div>
       </foreignObject>
@@ -753,6 +755,7 @@ function FloorplanExtrusionControl({
 }
 
 export function FloorplanMeasurementToolLayer() {
+  const ui = useEditorUiText()
   const groupRef = useRef<SVGGElement>(null)
   const vertexGesture = useRef<{
     pointerId: number
@@ -1470,7 +1473,7 @@ export function FloorplanMeasurementToolLayer() {
             x={axisGuide.to[0]}
             y={axisGuide.to[2] - 24 * unitsPerPixel}
           >
-            {axisGuide.proximity ? 'ALIGN ' : ''}
+            {axisGuide.proximity ? `${ui('ALIGN')} ` : ''}
             {axisGuide.axis.toUpperCase()}
           </text>
           {axisGuide.snapped ? (

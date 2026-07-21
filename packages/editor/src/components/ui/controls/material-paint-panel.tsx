@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText } from '../editor-ui-text'
 import {
   type AnyNodeId,
   generateSceneMaterialId,
@@ -92,7 +93,7 @@ export function MaterialPaintPanel() {
           variant={paintEraser ? 'default' : 'outline'}
         >
           <Eraser />
-          Erase
+          <EditorUiText>Erase</EditorUiText>
         </Button>
         <Button
           className="flex-1"
@@ -102,7 +103,7 @@ export function MaterialPaintPanel() {
           variant="outline"
         >
           <RotateCcw />
-          Reset all
+          <EditorUiText>Reset all</EditorUiText>
         </Button>
       </div>
 
@@ -120,7 +121,7 @@ export function MaterialPaintPanel() {
       <div className="mt-2 shrink-0 space-y-1.5 border-border/60 border-t pt-2">
         <div className="flex items-center justify-between">
           <span className="font-medium text-muted-foreground text-xs uppercase tracking-[0.12em]">
-            Scene materials
+            <EditorUiText>Scene materials</EditorUiText>
           </span>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -134,7 +135,7 @@ export function MaterialPaintPanel() {
                 <Plus />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Add material</TooltipContent>
+            <TooltipContent><EditorUiText>Add material</EditorUiText></TooltipContent>
           </Tooltip>
         </div>
         <div className="subtle-scrollbar max-h-56 overflow-y-auto">
@@ -142,7 +143,7 @@ export function MaterialPaintPanel() {
             <SceneMaterialList autoEditId={autoEditMaterialId} />
           ) : (
             <p className="px-0.5 py-1 text-muted-foreground text-xs">
-              No custom materials yet — add one with +.
+              <EditorUiText>No custom materials yet — add one with +.</EditorUiText>
             </p>
           )}
         </div>

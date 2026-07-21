@@ -30,6 +30,8 @@ import {
   ToggleControl,
   triggerSFX,
   useEditor,
+  NodeUiText,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Copy, Move, Plus, Trash2 } from 'lucide-react'
@@ -60,6 +62,7 @@ const STAIR_SLAB_OPENING_OPTIONS: { label: string; value: StairSlabOpeningMode }
 ]
 
 export default function StairPanel() {
+  const uiText = useNodeUiText()
   const selectedId = useViewer((s) => s.selection.selectedIds[0])
   const selectedCount = useViewer((s) => s.selection.selectedIds.length)
   const setSelection = useViewer((s) => s.setSelection)
@@ -259,7 +262,7 @@ export default function StairPanel() {
 
           <div className="space-y-1.5">
             <div className="px-1 text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
-              From Level
+              <NodeUiText>From Level</NodeUiText>
             </div>
             <select
               className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-3 text-foreground text-sm"
@@ -268,7 +271,7 @@ export default function StairPanel() {
             >
               {levels.map((level) => (
                 <option key={level.id} value={level.id}>
-                  {level.name || `Level ${level.level + 1}`}
+                  {level.name || `${uiText('Level')} ${level.level + 1}`}
                 </option>
               ))}
             </select>
@@ -276,7 +279,7 @@ export default function StairPanel() {
 
           <div className="space-y-1.5">
             <div className="px-1 text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
-              To Level
+              <NodeUiText>To Level</NodeUiText>
             </div>
             <select
               className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-3 text-foreground text-sm"
@@ -285,7 +288,7 @@ export default function StairPanel() {
             >
               {levels.map((level) => (
                 <option key={level.id} value={level.id}>
-                  {level.name || `Level ${level.level + 1}`}
+                  {level.name || `${uiText('Level')} ${level.level + 1}`}
                 </option>
               ))}
             </select>
@@ -314,7 +317,7 @@ export default function StairPanel() {
             <>
               <div className="space-y-1.5">
                 <div className="px-1 text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
-                  Landing
+                  <NodeUiText>Landing</NodeUiText>
                 </div>
                 <SegmentedControl
                   onChange={(value) => handleUpdate({ topLandingMode: value })}
@@ -349,8 +352,8 @@ export default function StairPanel() {
                 onClick={() => handleSelectSegment(seg.id)}
                 type="button"
               >
-                <span className="truncate">{seg.name || `Segment ${i + 1}`}</span>
-                <span className="text-muted-foreground text-xs capitalize">{seg.segmentType}</span>
+                <span className="truncate">{seg.name || `${uiText('Segment')} ${i + 1}`}</span>
+                <span className="text-muted-foreground text-xs capitalize">{uiText(seg.segmentType)}</span>
               </button>
             ))}
           </div>

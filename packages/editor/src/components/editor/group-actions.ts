@@ -441,13 +441,11 @@ export function duplicateSelectionAndPickUp(): boolean {
  * Delete every selected node — same semantics as the keyboard Delete arm,
  * including the accidental-bulk-delete confirm.
  */
-export function deleteSelection(): boolean {
+export function deleteSelection(getConfirmationMessage: (count: number) => string): boolean {
   const selectedIds = useViewer.getState().selection.selectedIds as AnyNodeId[]
   if (selectedIds.length === 0) return false
   if (selectedIds.length >= BULK_DELETE_THRESHOLD) {
-    const confirmed = window.confirm(
-      `Delete ${selectedIds.length} selected elements? This cannot be undone if the undo history is exhausted.`,
-    )
+    const confirmed = window.confirm(getConfirmationMessage(selectedIds.length))
     if (!confirmed) return false
   }
   sfxEmitter.emit('sfx:structure-delete')

@@ -283,7 +283,7 @@ function buildModuleSymbol(
   // Appliance labels live in world space with `upright` so they read
   // horizontally regardless of run rotation and plan-view rotation.
   const worldChildren: FloorplanGeometry[] = []
-  const label = dashed || !showCompartments ? null : moduleLabel(stack)
+  const label = dashed || !showCompartments ? null : modulePlanAbbreviation(stack)
   if (label) {
     worldChildren.push({
       kind: 'text',
@@ -377,7 +377,7 @@ function compartmentSymbol(
 }
 
 /** Standard plan abbreviation for the module's appliance content. */
-function moduleLabel(stack: CabinetCompartment[]): string | null {
+function modulePlanAbbreviation(stack: CabinetCompartment[]): string | null {
   if (stack.some((c) => isFridgeCompartmentType(c.type))) return 'REF'
   if (stack.some((c) => c.type === 'dishwasher')) return 'DW'
   const hasOven = stack.some((c) => c.type === 'oven')

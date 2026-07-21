@@ -124,11 +124,13 @@ export const WalkthroughControls = () => {
     if (walkthroughMode && controlsRef.current) {
       // Feature detection: some browsers (Facebook/Instagram in-app, older Safari)
       // don't support pointer lock on the canvas element
-      if (typeof controlsRef.current.lock === 'function') {
+      const canvas = controlsRef.current.domElement
+      if (canvas && typeof canvas.requestPointerLock === 'function') {
         try {
-          controlsRef.current.lock()
+          const request = canvas.requestPointerLock() as Promise<void> | undefined
+          request?.catch(() => {})
         } catch {
-          // Silently ignore — pointer lock unavailable in this browser context
+          // Pointer lock is optional in restricted browser contexts.
         }
       }
     }

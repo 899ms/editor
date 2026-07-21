@@ -1047,26 +1047,33 @@ export const cabinetDefinition: NodeDefinition<typeof CabinetNode> = {
   },
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Click', label: 'Place cabinet' },
+    { key: 'Click', label: 'Place cabinet', labelKey: 'editor:contextual.hints.placeCabinet' },
     {
       key: 'I',
-      label: 'Placement type',
+      label: 'Placement type', labelKey: 'editor:contextual.hints.placementType',
       chip: {
         subscribe: (onChange) => useCabinetPlacementType.subscribe(onChange),
         value: () => useCabinetPlacementType.getState().type,
         cycle: () => void useCabinetPlacementType.getState().cycleType(),
         labels: { cabinet: 'Type: Cabinet', island: 'Type: Island' },
+        labelKeys: {
+          cabinet: 'editor:contextual.cabinet.typeCabinet',
+          island: 'editor:contextual.cabinet.typeIsland',
+        },
         icons: { cabinet: 'lucide:rectangle-horizontal', island: 'lucide:table-2' },
         tooltip: 'Placement type — click or press I to toggle',
+        tooltipKey: 'editor:contextual.cabinet.tooltip',
       },
     },
-    { key: 'Alt', label: 'Force place' },
-    { key: 'R / T', label: 'Rotate' },
-    { key: 'Esc', label: 'Cancel run / exit' },
+    { key: 'Alt', label: 'Force place', labelKey: 'editor:contextual.hints.forcePlace' },
+    { key: 'R / T', label: 'Rotate', labelKey: 'editor:contextual.hints.rotate' },
+    { key: 'Esc', label: 'Cancel run / exit', labelKey: 'editor:contextual.hints.cancelRunExit' },
   ],
 
   presentation: {
     label: 'Modular Cabinet',
+    labelKey: 'nodes:kinds.cabinet',
+    descriptionKey: 'nodes:descriptions.cabinet',
     description: 'A configurable parametric base cabinet.',
     icon: { kind: 'url', src: '/icons/item.webp' },
     paletteSection: 'furnish',
@@ -1233,6 +1240,8 @@ export const cabinetModuleDefinition: NodeDefinition<typeof CabinetModuleNode> =
 
   presentation: {
     label: 'Cabinet Module',
+    labelKey: 'nodes:kinds.cabinetModule',
+    descriptionKey: 'nodes:descriptions.cabinetModule',
     description: 'An editable module inside a modular cabinet run.',
     icon: { kind: 'url', src: '/icons/item.webp' },
     paletteSection: 'furnish',

@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { CreateSceneButton } from '@/components/save-button'
 import type { SceneMeta } from '@/components/scene-loader'
+import { getRequestI18n } from '@/lib/server-locale'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,16 +34,17 @@ async function fetchScenes(): Promise<SceneMeta[]> {
   return payload.scenes ?? []
 }
 
-function formatDate(iso: string): string {
+function formatDate(iso: string, locale: string): string {
   try {
-    return new Date(iso).toLocaleString()
+    return new Date(iso).toLocaleString(locale)
   } catch {
     return iso
   }
 }
 
 export default async function ScenesPage() {
-  const scenes = await fetchScenes()
+  const [scenes, requestI18n] = await Promise.all([fetchScenes(), getRequestI18n()])
+  const { i18n, locale } = requestI18n
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,26 +55,28 @@ export default async function ScenesPage() {
               className="text-muted-foreground transition-colors hover:text-foreground"
               href="/"
             >
-              Home
+              {i18n.t('editor:navigation.home')}
             </Link>
             <span className="text-muted-foreground">/</span>
-            <span className="font-medium text-foreground">Scenes</span>
+            <span className="font-medium text-foreground">
+              {i18n.t('editor:navigation.scenes')}
+            </span>
           </nav>
           <CreateSceneButton />
         </div>
       </header>
 
       <main className="container mx-auto max-w-5xl px-6 py-12">
-        <h1 className="mb-2 font-bold text-3xl">Your scenes</h1>
+        <h1 className="mb-2 font-bold text-3xl">{i18n.t('editor:scenes.heading')}</h1>
         <p className="mb-8 text-muted-foreground text-sm">
           {scenes.length === 0
-            ? 'No scenes yet. Create one to get started.'
-            : `${scenes.length} scene${scenes.length === 1 ? '' : 's'}.`}
+            ? i18n.t('editor:scenes.emptyHint')
+            : i18n.t('editor:scenes.count', { count: scenes.length })}
         </p>
 
         {scenes.length === 0 ? (
           <div className="rounded-xl border border-border/60 border-dashed bg-background p-12 text-center">
-            <p className="text-muted-foreground text-sm">You haven&apos;t saved any scenes yet.</p>
+            <p className="text-muted-foreground text-sm">{i18n.t('editor:scenes.empty')}</p>
             <div className="mt-4 flex justify-center">
               <CreateSceneButton />
             </div>
@@ -94,7 +98,9 @@ export default async function ScenesPage() {
                         src={scene.thumbnailUrl}
                       />
                     ) : (
-                      <span className="text-muted-foreground text-xs">No thumbnail</span>
+                      <span className="text-muted-foreground text-xs">
+                        {i18n.t('editor:scenes.noThumbnail')}
+                      </span>
                     )}
                   </div>
                   <div className="mt-3">
@@ -102,8 +108,8 @@ export default async function ScenesPage() {
                       {scene.name}
                     </h2>
                     <div className="mt-1 flex items-center justify-between text-muted-foreground text-xs">
-                      <span>{scene.nodeCount} nodes</span>
-                      <time dateTime={scene.updatedAt}>{formatDate(scene.updatedAt)}</time>
+                      <span>{i18n.t('editor:scenes.nodeCount', { count: scene.nodeCount })}</span>
+                      <time dateTime={scene.updatedAt}>{formatDate(scene.updatedAt, locale)}</time>
                     </div>
                   </div>
                 </Link>

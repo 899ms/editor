@@ -109,16 +109,18 @@ export const pipeSegmentDefinition: NodeDefinition<typeof PipeSegmentNode> = {
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Click', label: 'Start run' },
-    { key: 'Click again', label: 'Place it (waste falls ¼″/ft)' },
-    { key: 'Q', label: 'Waste / vent' },
-    { key: '[ / ]', label: 'Pipe size down / up' },
-    { key: 'Alt + drag', label: 'Vertical stack ↕, click to place' },
-    { key: 'Esc', label: 'Cancel start point' },
+    { key: 'Click', label: 'Start run', labelKey: 'editor:contextual.hints.startRun' },
+    { key: 'Click again', label: 'Place it (waste falls ¼″/ft)', labelKey: 'editor:contextual.hints.placeWasteSlope' },
+    { key: 'Q', label: 'Waste / vent', labelKey: 'editor:contextual.hints.wasteVent' },
+    { key: '[ / ]', label: 'Pipe size down / up', labelKey: 'editor:contextual.hints.pipeSize' },
+    { key: 'Alt + drag', label: 'Vertical stack ↕, click to place', labelKey: 'editor:contextual.hints.verticalStack' },
+    { key: 'Esc', label: 'Cancel start point', labelKey: 'editor:contextual.hints.cancelStartPoint' },
   ],
 
   presentation: {
     label: 'DWV Pipe',
+    labelKey: 'nodes:kinds.pipeSegment',
+    descriptionKey: 'nodes:descriptions.pipeSegment',
     description:
       'Drain / waste / vent pipe run — waste lines fall at ¼″ per foot, vents run level or vertical.',
     icon: { kind: 'url', src: '/icons/dwv-pipes.webp' },

@@ -181,10 +181,17 @@ export {
   ViewToggles as ViewerToolbarLeft,
 } from './components/ui/action-menu/view-toggles'
 export { useCommandPalette } from './components/ui/command-palette'
+export { EditorUiText, useEditorUiText } from './components/ui/editor-ui-text'
+export {
+  resolveLocalizedDescription,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 export { ActionButton, ActionGroup } from './components/ui/controls/action-button'
 export { MaterialPaintPanel } from './components/ui/controls/material-paint-panel'
 export { MaterialPicker } from './components/ui/controls/material-picker'
 export { MetricControl } from './components/ui/controls/metric-control'
+export { NodeUiText, useNodeUiText } from './components/ui/controls/node-ui-text'
 export { PanelSection } from './components/ui/controls/panel-section'
 export { SegmentedControl } from './components/ui/controls/segmented-control'
 export { SliderControl } from './components/ui/controls/slider-control'

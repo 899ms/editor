@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import { Icon } from '@iconify/react'
 import {
   type AnyNode,
@@ -56,6 +57,7 @@ import {
   type ZoneNode as ZoneNodeType,
 } from '@pascal-app/core'
 import { useSegmentDraftChain, useWallSnapIndicator } from '@pascal-app/editor'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { getSceneTheme, useViewer } from '@pascal-app/viewer'
 import { Command, Ruler } from 'lucide-react'
 import {
@@ -476,11 +478,13 @@ function FloorplanCompassButton({
   onAlignNorth: () => void
   needleRef?: React.RefObject<SVGSVGElement | null>
 }) {
+  const { t } = usePascalTranslation('editor')
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <button
-          aria-label="Align view to north"
+          aria-label={t('floorplan.alignNorth')}
           className="group absolute bottom-3 left-3 z-30 flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/85 shadow-sm backdrop-blur-md transition hover:bg-white hover:shadow-md dark:border-white/10 dark:bg-neutral-900/85 dark:hover:bg-neutral-900"
           onClick={(event) => {
             event.preventDefault()
@@ -506,7 +510,7 @@ function FloorplanCompassButton({
           </span>
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right">Align view to north</TooltipContent>
+      <TooltipContent side="right">{t('floorplan.alignNorth')}</TooltipContent>
     </Tooltip>
   )
 }
@@ -3612,6 +3616,7 @@ function FloorplanReferenceScaleDraftLine({
   unit: 'metric' | 'imperial'
   unitsPerPixel: number
 }) {
+  const ui = useEditorUiText()
   const cursor = useFloorplanDraftPreview((s) => s.cursorPoint)
   if (!cursor) {
     return null
@@ -3621,7 +3626,7 @@ function FloorplanReferenceScaleDraftLine({
     <FloorplanReferenceScaleLine
       end={cursor}
       isDraft
-      label={`Ref ${formatMeasurement(
+      label={`${ui('Ref')} ${formatMeasurement(
         Math.hypot(cursor[0] - start[0], cursor[1] - start[1]),
         unit,
       )}`}
@@ -3785,7 +3790,7 @@ function FloorplanGuideHandleHint({
             rotationModifierPressed ? 'opacity-40' : 'opacity-100',
           )}
         >
-          <span className="font-medium text-[11px] lowercase leading-none">resize</span>
+          <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>resize</EditorUiText></span>
           <Icon
             aria-hidden="true"
             className="h-3.5 w-3.5 shrink-0"
@@ -3800,11 +3805,11 @@ function FloorplanGuideHandleHint({
             rotationModifierPressed ? 'opacity-100' : 'opacity-40',
           )}
         >
-          <span className="font-medium text-[11px] lowercase leading-none">rotate</span>
+          <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>rotate</EditorUiText></span>
           {isMacPlatform ? (
             <Command aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
           ) : (
-            <span className="font-mono text-[10px] uppercase leading-none">ctrl</span>
+            <span className="font-mono text-[10px] uppercase leading-none"><EditorUiText>ctrl</EditorUiText></span>
           )}
           <Icon
             aria-hidden="true"
@@ -3816,9 +3821,9 @@ function FloorplanGuideHandleHint({
 
         {showScaleHint && (
           <div className="flex items-center gap-1.5 opacity-40">
-            <span className="font-medium text-[11px] lowercase leading-none">set scale</span>
+            <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>set scale</EditorUiText></span>
             <Ruler aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-            <span className="font-medium text-[11px] lowercase leading-none">panel</span>
+            <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>panel</EditorUiText></span>
           </div>
         )}
       </div>
@@ -5198,6 +5203,7 @@ export function FloorplanPanel({
 }: {
   compassHost?: HTMLElement | null
 }) {
+  const ui = useEditorUiText()
   const viewportHostRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const floorplanSceneRef = useRef<SVGGElement>(null)
@@ -11093,9 +11099,11 @@ export function FloorplanPanel({
 
         {referenceScaleDraft && (
           <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 rounded-md border bg-background/95 px-3 py-2 text-center text-sm shadow-sm">
-            {referenceScaleDraft.start
-              ? 'Click the other end of that distance'
-              : 'Click one end of a distance you know — e.g. a dimension printed on the plan'}
+            {ui(
+              referenceScaleDraft.start
+                ? 'Click the other end of that distance'
+                : 'Click one end of a distance you know — e.g. a dimension printed on the plan',
+            )}
           </div>
         )}
 
@@ -11121,17 +11129,16 @@ export function FloorplanPanel({
                 <Ruler className="h-4 w-4 text-foreground/80" />
               </div>
               <div className="min-w-0">
-                <div className="font-medium text-sm">Set overlay scale</div>
+                <div className="font-medium text-sm"><EditorUiText>Set overlay scale</EditorUiText></div>
                 <div className="mt-0.5 text-muted-foreground text-xs leading-4">
-                  Enter the real-world length of the line you just drew. The image will resize to
-                  match it.
+                  <EditorUiText>Enter the real-world length of the line you just drew. The image will resize to match it.</EditorUiText>
                 </div>
               </div>
             </div>
 
             <div className="mb-3 rounded-xl border border-border/70 bg-white/5 px-3 py-2">
               <div className="text-[11px] text-muted-foreground uppercase tracking-wide">
-                Drawn line
+                <EditorUiText>Drawn line</EditorUiText>
               </div>
               <div className="mt-1 font-medium text-sm">
                 {formatMeasurement(pendingReferenceScale.measuredLengthUnits, unit)}
@@ -11140,7 +11147,7 @@ export function FloorplanPanel({
 
             <label className="block">
               <span className="mb-1.5 block font-medium text-muted-foreground text-xs">
-                Real length
+                <EditorUiText>Real length</EditorUiText>
               </span>
               <div className="grid grid-cols-[1fr_8.25rem] gap-2">
                 <input
@@ -11150,7 +11157,7 @@ export function FloorplanPanel({
                     referenceScaleInputError ? 'border-destructive/60' : 'border-border',
                   )}
                   onChange={(event) => setReferenceScaleValue(event.target.value)}
-                  placeholder={`e.g. 3.5, 180cm or 5'11"`}
+                  placeholder={ui(`e.g. 3.5, 180cm or 5'11"`)}
                   type="text"
                   value={referenceScaleValue}
                 />
@@ -11161,10 +11168,10 @@ export function FloorplanPanel({
                   }
                   value={referenceScaleUnit}
                 >
-                  <option value="meters">Meters</option>
-                  <option value="centimeters">Centimeters</option>
-                  <option value="feet">Feet</option>
-                  <option value="inches">Inches</option>
+                  <option value="meters"><EditorUiText>Meters</EditorUiText></option>
+                  <option value="centimeters"><EditorUiText>Centimeters</EditorUiText></option>
+                  <option value="feet"><EditorUiText>Feet</EditorUiText></option>
+                  <option value="inches"><EditorUiText>Inches</EditorUiText></option>
                 </select>
               </div>
               <span
@@ -11173,16 +11180,19 @@ export function FloorplanPanel({
                   referenceScaleInputError ? 'text-destructive' : 'text-muted-foreground',
                 )}
               >
-                {referenceScaleInputError ??
-                  referenceScaleHint ??
-                  'Any decimal works. Use the known real length, not the drawn value.'}
+                {referenceScaleInputError
+                  ? ui(referenceScaleInputError)
+                  : (referenceScaleHint ??
+                    ui('Any decimal works. Use the known real length, not the drawn value.'))}
               </span>
             </label>
 
             <div className="mt-3 rounded-lg bg-muted/45 px-3 py-2 text-muted-foreground text-xs">
               {pendingReferenceImageScaleFactor
-                ? `Image will scale ${formatNumber(pendingReferenceImageScaleFactor, 3)}x from the first point.`
-                : 'Enter a length greater than 0.'}
+                ? `${ui('Image will scale')} ${formatNumber(pendingReferenceImageScaleFactor, 3)}${ui(
+                    'x from the first point.',
+                  )}`
+                : ui('Enter a length greater than 0.')}
             </div>
 
             <div className="mt-4 flex justify-end gap-2">
@@ -11191,14 +11201,14 @@ export function FloorplanPanel({
                 onClick={() => setPendingReferenceScale(null)}
                 type="button"
               >
-                Cancel
+                <EditorUiText>Cancel</EditorUiText>
               </button>
               <button
                 className="h-8 rounded-lg bg-foreground px-3 font-medium text-background text-xs transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!pendingReferenceMetersPerUnit}
                 type="submit"
               >
-                Save Scale
+                <EditorUiText>Save Scale</EditorUiText>
               </button>
             </div>
           </form>
@@ -11206,7 +11216,7 @@ export function FloorplanPanel({
 
         {levelNode?.type !== 'level' && !hasAmbientBuildingLevel ? (
           <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
-            Switch to a building level to view and edit the floorplan.
+            <EditorUiText>Switch to a building level to view and edit the floorplan.</EditorUiText>
           </div>
         ) : isFloorplanOpen ? (
           // The panel stays mounted in 3D mode (display:none) to keep the

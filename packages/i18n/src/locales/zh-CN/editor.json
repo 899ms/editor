@@ -1,0 +1,1553 @@
+{
+  "tabs": {
+    "build": "建造",
+    "items": "项目",
+    "scene": "场景",
+    "settings": "设置"
+  },
+  "settings": {
+    "languageDescription": "选择编辑器界面使用的语言。",
+    "title": "设置",
+    "sections": {
+      "visibility": "可见性",
+      "export": "导出",
+      "thumbnail": "缩略图",
+      "saveLoad": "保存与载入",
+      "audio": "音频",
+      "keyboard": "键盘",
+      "sceneGraph": "场景结构",
+      "dangerZone": "危险操作"
+    },
+    "visibility": {
+      "public": "公开",
+      "onlyYou": "仅你自己",
+      "anyone": "任何人",
+      "canView": "{{audience}}可以查看",
+      "showScans": "显示 3D 扫描模型",
+      "showFloorplans": "显示平面图",
+      "visibleToPublic": "对公开访问者可见",
+      "shadows": "阴影",
+      "castShadows": "由灯光投射阴影"
+    },
+    "export": {
+      "model3d": "3D 模型",
+      "glb": "导出 GLB",
+      "stl": "导出 STL",
+      "obj": "导出 OBJ",
+      "floorplan": "平面图",
+      "fullFloorplan": "完整平面图",
+      "structureOnly": "仅结构"
+    },
+    "thumbnail": {
+      "generate": "生成缩略图",
+      "generating": "正在生成..."
+    },
+    "saveLoad": {
+      "save": "保存工程",
+      "load": "载入工程",
+      "invalidJson": "无法将文件解析为 JSON。"
+    },
+    "sceneGraph": {
+      "explore": "查看场景结构",
+      "collapse": "折叠",
+      "expand": "展开",
+      "expandAll": "全部展开",
+      "collapseAll": "全部折叠",
+      "expandAllChildren": "展开所有子项",
+      "collapseAllChildren": "折叠所有子项",
+      "copyPath": "复制路径",
+      "copyJson": "复制 JSON 值"
+    },
+    "dangerZone": {
+      "clear": "清空并新建"
+    },
+    "loadDialog": {
+      "ready": "可以导入",
+      "cannotImport": "无法导入此文件",
+      "nodeCount_one": "{{count}} 个节点",
+      "nodeCount_other": "{{count}} 个节点",
+      "errorCount_one": "{{count}} 个错误",
+      "errorCount_other": "{{count}} 个错误",
+      "warningCount_one": "{{count}} 条警告",
+      "warningCount_other": "{{count}} 条警告",
+      "structure": "结构",
+      "floorArea": "建筑面积",
+      "noRecognisedNodes": "文件中没有可识别的节点。",
+      "showMore": "再显示 {{count}} 条",
+      "schemaDetails_one": "数据结构详情（{{count}} 个节点）",
+      "schemaDetails_other": "数据结构详情（{{count}} 个节点）",
+      "hide": "收起",
+      "show": "展开",
+      "replaceScene": "替换当前场景",
+      "stats": {
+        "sites": "场地",
+        "buildings": "建筑",
+        "levels": "楼层",
+        "walls": "墙体",
+        "doors": "门",
+        "windows": "窗",
+        "items": "对象",
+        "slabs": "楼板",
+        "ceilings": "天花板",
+        "zones": "空间区域",
+        "scans": "扫描模型"
+      }
+    },
+    "audioDialog": {
+      "title": "音频设置",
+      "description": "调整音量级别和静音设置。",
+      "masterVolume": "主音量",
+      "radioVolume": "广播音量",
+      "soundEffects": "音效",
+      "unmuteAll": "取消全部静音",
+      "muteAll": "全部静音"
+    },
+    "keyboardDialog": {
+      "trigger": "键盘快捷键",
+      "title": "键盘快捷键",
+      "description": "快捷键会随当前操作变化。引导约束默认启用；执行操作时按住 Shift 可自由调整。",
+      "categories": {
+        "navigation": {
+          "title": "编辑器导航",
+          "shortcuts": {
+            "0": {
+              "action": "切换到场地阶段"
+            },
+            "1": {
+              "action": "切换到结构阶段"
+            },
+            "2": {
+              "action": "切换到布置阶段"
+            },
+            "3": {
+              "action": "切换到布置图层"
+            },
+            "4": {
+              "action": "切换到空间区域图层"
+            },
+            "5": {
+              "action": "选择当前建筑的上一层"
+            },
+            "6": {
+              "action": "选择当前建筑的下一层"
+            },
+            "7": {
+              "action": "展开或收起侧栏"
+            }
+          }
+        },
+        "modes": {
+          "title": "模式与历史记录",
+          "shortcuts": {
+            "0": {
+              "action": "切换到选择模式"
+            },
+            "1": {
+              "action": "切换到建造模式"
+            },
+            "2": {
+              "action": "启用上次使用的测量工具"
+            },
+            "3": {
+              "action": "切换到删除模式"
+            },
+            "4": {
+              "action": "取消当前工具并返回选择模式"
+            },
+            "5": {
+              "action": "删除选中的对象"
+            },
+            "6": {
+              "action": "撤销"
+            },
+            "7": {
+              "action": "重做"
+            }
+          }
+        },
+        "selection": {
+          "title": "选择",
+          "shortcuts": {
+            "0": {
+              "action": "在多选中添加或移除对象",
+              "note": "可在选择模式下用于 3D 画布、2D 平面图和场景结构。"
+            },
+            "1": {
+              "action": "在画布多选中添加或移除对象",
+              "note": "在场景结构中，按住 Shift 单击可像文件浏览器一样选择可见范围。"
+            },
+            "2": {
+              "action": "移动整个多选对象组",
+              "note": "选中两个以上对象后，可在 2D 或 3D 中拖动对象组或其虚线框；也可单击拾取，再次单击放置。"
+            },
+            "3": {
+              "action": "围绕中心将多选对象组旋转 ±45°",
+              "note": "携带对象组移动时同样有效。"
+            },
+            "4": {
+              "action": "清除选择",
+              "note": "单击空白处也可清除选择。"
+            }
+          }
+        },
+        "directManipulation": {
+          "title": "直接操作",
+          "shortcuts": {
+            "0": {
+              "action": "移动光标下选中的可移动对象",
+              "note": "选择单个对象后在选择模式中拖动。默认启用引导吸附和参考线。"
+            },
+            "1": {
+              "action": "旋转光标下选中的对象",
+              "note": "选择单个对象后在选择模式中左右拖动。默认按 15° 步进吸附。"
+            },
+            "2": {
+              "action": "自由旋转",
+              "note": "拖动时按住 Shift 可跳过 15° 旋转步进。"
+            }
+          }
+        },
+        "drawing": {
+          "title": "绘图工具",
+          "shortcuts": {
+            "0": {
+              "action": "暂时跳过引导吸附和角度约束",
+              "note": "执行当前操作时按住。被动参考线或测量反馈仍可能显示。"
+            },
+            "1": {
+              "action": "自由旋转并跳过默认的 15° 吸附",
+              "note": "拖动旋转手柄或执行直接旋转时按住。"
+            }
+          }
+        },
+        "placement": {
+          "title": "对象放置",
+          "shortcuts": {
+            "0": {
+              "action": "旋转对象；选中门时，R 切换开关状态，T 关闭"
+            },
+            "1": {
+              "action": "操作选中的节点；门、窗以及柜门和抽屉会执行开合动画"
+            },
+            "2": {
+              "action": "暂时跳过放置校验约束",
+              "note": "放置时按住。"
+            }
+          }
+        },
+        "camera": {
+          "title": "相机",
+          "shortcuts": {
+            "0": {
+              "action": "平移相机",
+              "note": "沿屏幕空间移动，效果类似拖动画面。"
+            },
+            "1": {
+              "action": "平移相机",
+              "note": "按住鼠标中键拖动，或按住空格键并用鼠标左键拖动。"
+            },
+            "2": {
+              "action": "环绕相机",
+              "note": "按住鼠标右键拖动。"
+            }
+          }
+        }
+      }
+    }
+  },
+  "localEditor": {
+    "createNew": "新建场景",
+    "notice": "本地编辑器 — 场景不会自动保存。",
+    "openRecentScenes": "打开最近场景"
+  },
+  "navigation": {
+    "home": "首页",
+    "privacy": "隐私政策",
+    "scenes": "场景",
+    "terms": "服务条款",
+    "allScenes": "全部场景",
+    "backToEditor": "返回编辑器",
+    "browseScenes": "浏览场景"
+  },
+  "view": {
+    "display": "显示",
+    "mode": {
+      "2d": "2D",
+      "3d": "3D",
+      "split": "分屏"
+    },
+    "preview": "预览",
+    "scene": {
+      "exploded": "分层展开",
+      "manual": "手动",
+      "solo": "单独显示",
+      "stack": "堆叠"
+    },
+    "walls": {
+      "cutaway": "剖切",
+      "fullHeight": "全高显示",
+      "low": "低墙",
+      "translucent": "半透明"
+    }
+  },
+  "toolbar": {
+    "collapseSidebar": "收起侧栏",
+    "expandSidebar": "展开侧栏",
+    "levels": "楼层：{{mode}}",
+    "previewMode": "预览模式",
+    "walkthrough": "漫游",
+    "walls": "墙体：{{mode}}"
+  },
+  "display": {
+    "camera": "相机",
+    "cameraMode": {
+      "orthographic": "正交",
+      "perspective": "透视"
+    },
+    "edges": "边线",
+    "edgeMode": {
+      "off": {
+        "detail": "不显示边线",
+        "name": "关闭"
+      },
+      "soft": {
+        "detail": "淡化主要折线轮廓",
+        "name": "柔和"
+      },
+      "strong": {
+        "detail": "清晰、不透明的边线",
+        "name": "强烈"
+      }
+    },
+    "grid": "网格",
+    "magneticSnap": "磁性捕捉",
+    "measurements": "测量标注",
+    "render": "渲染",
+    "settings": "显示设置",
+    "shading": {
+      "rendered": {
+        "detail": "完整环境光遮蔽",
+        "name": "渲染"
+      },
+      "solid": {
+        "detail": "平面快速显示，无环境光遮蔽",
+        "name": "实体"
+      }
+    },
+    "shadows": "阴影",
+    "theme": "主题",
+    "themes": {
+      "blueprint": "蓝图",
+      "mediterranean": "地中海",
+      "night": "夜间",
+      "overcast": "阴天",
+      "paper": "纸面",
+      "studio": "工作室",
+      "sunset": "日落",
+      "twilight": "暮光",
+      "verdant": "绿意"
+    },
+    "units": "单位",
+    "unitSystem": {
+      "imperial": "英制",
+      "metric": "公制"
+    }
+  },
+  "build": {
+    "actions": {
+      "addFitting": "添加配件",
+      "addTrap": "添加存水弯",
+      "followLineset": "沿冷媒管组绘制"
+    },
+    "categories": {
+      "architecture": "建筑",
+      "mep": "机电",
+      "structure": "结构"
+    },
+    "features": "附属构件",
+    "help": {
+      "followOff": "沿现有冷媒管组旁绘制管线（F）。",
+      "followOn": "点击一组冷媒管，在其旁边铺设管线。"
+    },
+    "kinds": {
+      "ceiling": "天花板",
+      "column": "柱",
+      "door": "门",
+      "duct": "风管",
+      "dwvPipe": "排水通气管",
+      "elevator": "电梯",
+      "fence": "围栏",
+      "hvacEquipment": "暖通设备",
+      "lineset": "冷媒管组",
+      "liquidLine": "液管",
+      "mep": "机电",
+      "painting": "材质涂刷",
+      "register": "风口",
+      "roof": "屋顶",
+      "shelf": "搁板",
+      "slab": "楼板",
+      "spawn": "出生点",
+      "stair": "楼梯",
+      "wall": "墙体",
+      "window": "窗"
+    }
+  },
+  "tools": {
+    "delete": "删除",
+    "measure": "测量",
+    "select": "选择",
+    "zone": "空间区域"
+  },
+  "scenes": {
+    "create": "新建场景",
+    "defaultName": "未命名场景",
+    "empty": "尚未保存任何场景。",
+    "emptyHint": "还没有场景，请先新建一个。",
+    "heading": "我的场景",
+    "noThumbnail": "暂无缩略图",
+    "nodeCount_one": "{{count}} 个节点",
+    "nodeCount_other": "{{count}} 个节点",
+    "count_one": "共 {{count}} 个场景。",
+    "count_other": "共 {{count}} 个场景。",
+    "notFound": "未找到场景",
+    "notFoundDescription": "找不到 ID 为 {{id}} 的场景。"
+  },
+  "save": {
+    "createFailed": "无法新建场景。",
+    "creating": "正在新建…",
+    "saveFailed": "无法保存场景。",
+    "saved": "已保存",
+    "saving": "正在保存…",
+    "save": "保存",
+    "saveAs": "另存为…",
+    "noScene": "没有可保存的场景",
+    "conflict": "保存冲突，请重新加载后继续",
+    "failedWithStatus": "保存失败（{{status}}）",
+    "saveAsFailed": "另存为失败",
+    "saveAsFailedWithStatus": "另存为失败（{{status}}）",
+    "newNamePrompt": "新场景名称",
+    "conflictTitle": "另一个会话已先保存，是否重新加载？",
+    "conflictDescription": "当前改动尚未保存。重新加载可获取最新版本。",
+    "reload": "重新加载",
+    "dismiss": "暂不处理",
+    "connectionClosed": "实时场景连接已关闭"
+  },
+  "levels": {
+    "ground": "首层",
+    "floor": "第 {{number}} 层",
+    "basement": "地下 {{number}} 层",
+    "reorder": "调整 {{name}} 的顺序",
+    "dragToReorder": "拖动调整顺序",
+    "duplicate": "复制楼层",
+    "duplicateWithOptions": "按选项复制...",
+    "pasteSelection": "粘贴已复制的选择",
+    "delete": "删除楼层",
+    "groundCannotDelete": "首层不能删除",
+    "addAbove": "在上方添加楼层",
+    "addBelow": "在下方添加楼层",
+    "insertHere": "在此插入楼层",
+    "add": "添加楼层",
+    "empty": "暂无楼层",
+    "deleteConfirmation": "确定要删除 {{name}} 吗？该楼层中的所有墙体、楼板和对象都将被永久移除。",
+    "duplicateDialog": {
+      "title": "复制楼层",
+      "description": "选择要从 {{name}} 复制的内容。",
+      "thisLevel": "此楼层",
+      "confirm": "复制",
+      "presets": {
+        "everything": {
+          "label": "全部内容",
+          "description": "结构、材质、家具和参考资料。"
+        },
+        "structure": {
+          "label": "仅结构",
+          "description": "复制墙体、楼板、屋顶、楼梯、窗和门，不含饰面。"
+        },
+        "structureMaterials": {
+          "label": "结构和材质",
+          "description": "复制结构及当前材质和饰面设置。"
+        },
+        "structureFurniture": {
+          "label": "结构和家具",
+          "description": "复制结构、饰面和已放置对象，不含参考图。"
+        }
+      }
+    }
+  },
+  "walkthrough": {
+    "exit": "退出漫游",
+    "spawnHint": "请从“建造”页签放置出生点，以控制漫游的起始位置。",
+    "move": "移动",
+    "jump": "跳跃",
+    "sprint": "疾跑",
+    "interact": "交互",
+    "close": "关闭",
+    "lookAround": "单击后环顾四周"
+  },
+  "sitePanel": {
+    "propertyLine": "用地边界",
+    "area": "面积：",
+    "perimeter": "周长：",
+    "addPoint": "添加顶点",
+    "scan": "扫描",
+    "guide": "参考图",
+    "scanDefault": "三维扫描",
+    "guideDefault": "参考图像",
+    "level": "楼层",
+    "layers": {
+      "structure": "结构",
+      "furnish": "陈设",
+      "zones": "空间区域"
+    },
+    "selectedObjects_one": "已选择 {{count}} 个对象",
+    "selectedObjects_other": "已选择 {{count}} 个对象",
+    "clearSelection": "清除选择",
+    "selectLevel": "请选择楼层以查看内容",
+    "noZones": "此楼层暂无空间区域。",
+    "addZone": "添加一个",
+    "noElements": "此楼层暂无构件",
+    "building": "建筑",
+    "site": "场地",
+    "noBuildings": "暂无建筑",
+    "zoneDefault": "空间区域（{{area}}）",
+    "upload": {
+      "action": "上传扫描模型或平面图",
+      "uploading": "正在上传{{type}}... {{progress}}%",
+      "invalidType": "文件类型无效，请上传 .glb/.gltf 扫描模型或图像。",
+      "tooLarge": "文件过大（{{size}} MB），最大允许 200 MB。",
+      "guideFailed": "无法添加该参考图像。",
+      "noProject": "当前没有打开的项目，请先打开项目。"
+    },
+    "camera": {
+      "snapshot": "相机快照",
+      "view": "查看快照",
+      "update": "更新快照",
+      "take": "拍摄快照",
+      "clear": "清除快照"
+    }
+  },
+  "camera": {
+    "orbitLeft": "向左旋转",
+    "orbitRight": "向右旋转",
+    "topView": "顶视图",
+    "controls": {
+      "actions": {
+        "pan": "平移",
+        "rotate": "旋转",
+        "zoom": "缩放"
+      },
+      "keys": {
+        "leftClick": "鼠标左键",
+        "middleClick": "鼠标中键",
+        "rightClick": "鼠标右键",
+        "scrollWheel": "鼠标滚轮",
+        "space": "空格键"
+      },
+      "hintLabel": "相机操作提示",
+      "dismissHintLabel": "关闭相机操作提示",
+      "dismiss": "关闭"
+    }
+  },
+  "measurement": {
+    "angle": "角度",
+    "area": "面积",
+    "distance": "距离",
+    "measureType": "测量：{{type}}",
+    "options": "测量选项",
+    "perimeter": "周长",
+    "show": "显示测量标注",
+    "smart": "智能",
+    "type": "测量类型",
+    "volume": "体积"
+  },
+  "floorplan": {
+    "alignNorth": "视图对齐正北"
+  },
+  "references": {
+    "empty": "上传 GLB 扫描模型作为扫描参考，或上传蓝图图像作为参考图。",
+    "upload": "上传扫描模型或参考图",
+    "uploadInvalid": "请上传 .glb/.gltf 扫描模型或图像。",
+    "label": "参考对象",
+    "visibility": "{{name}}：{{state}}",
+    "visible": "显示",
+    "hidden": "隐藏",
+    "settings": "参考对象设置",
+    "scans": "扫描模型",
+    "guideImages": "参考图",
+    "scan": "扫描模型",
+    "guideImage": "参考图",
+    "hide": "隐藏{{name}}",
+    "show": "显示{{name}}",
+    "delete": "删除{{name}}",
+    "opacity": "不透明度",
+    "guideSettings": "参考图设置",
+    "scanSettings": "扫描模型设置",
+    "deleteGuide": "删除参考图",
+    "deleteScan": "删除扫描模型",
+    "fileTooLarge": "文件过大，最大允许 200 MB。",
+    "guideFailed": "无法添加该参考图。",
+    "scanUnavailable": "当前无法上传扫描模型。",
+    "openProject": "请先打开项目，再上传扫描模型。",
+    "guideDefault": "参考图 {{number}}",
+    "scanDefault": "扫描模型 {{number}}",
+    "guideCount_one": "此楼层有 {{count}} 张参考图",
+    "guideCount_other": "此楼层有 {{count}} 张参考图",
+    "scanCount_one": "此楼层有 {{count}} 个扫描模型",
+    "scanCount_other": "此楼层有 {{count}} 个扫描模型"
+  },
+  "referenceFloor": {
+    "label": "参考楼层",
+    "withLevel": "参考楼层：{{name}}",
+    "settings": "参考楼层设置",
+    "hide": "隐藏参考楼层",
+    "show": "显示参考楼层",
+    "opacity": "不透明度",
+    "below": "下方第 {{count}} 层",
+    "noLowerLevel": "没有可用的下方楼层。"
+  },
+  "riser": {
+    "diagram": "立管图"
+  },
+  "contextual": {
+    "snapping": {
+      "label": "吸附：{{mode}}",
+      "tooltip": "单击或按 Shift 循环切换吸附模式",
+      "modes": {
+        "grid": "网格",
+        "lines": "线条",
+        "angles": "角度",
+        "off": "关闭"
+      }
+    },
+    "grid": {
+      "step": "网格步长：{{value}} 米",
+      "label": "网格：{{value}} 米",
+      "tooltip": "单击或按 Ctrl 循环切换网格步长"
+    },
+    "continuation": {
+      "label": "连续绘制：{{mode}}",
+      "tooltip": "单击或按 C 循环切换连续绘制模式",
+      "wall": {
+        "room": "房间（自动闭合）",
+        "single": "单段墙体"
+      },
+      "fence": {
+        "continuous": "连续绘制",
+        "single": "单段围栏",
+        "curved": "曲线围栏"
+      },
+      "point": {
+        "once": "放置一次",
+        "repeat": "连续放置"
+      }
+    },
+    "fence": {
+      "type": "类型：{{type}}",
+      "typeAria": "围栏类型：{{type}}",
+      "continuationAria": "围栏连续绘制：{{mode}}",
+      "straight": "直线",
+      "curved": "曲线",
+      "single": "直线：单段",
+      "continuous": "直线：连续",
+      "typeTooltip": "单击或按 T 切换直线与曲线围栏",
+      "continuationTooltip": "单击或按 C 切换直线围栏连续绘制模式",
+      "continuationUnavailable": "曲线围栏模式下不能切换直线连续绘制",
+      "finishCurve": "完成曲线（或双击）"
+    },
+    "paint": {
+      "selectMaterial": "请选择要涂刷的材质",
+      "hoverSurface": "将鼠标移到可涂刷表面",
+      "label": "涂刷：{{scope}}",
+      "scope": "涂刷范围：{{scope}}",
+      "tooltip": "单击或按 Shift 循环切换涂刷范围"
+    },
+    "shortcuts": {
+      "leftClick": "鼠标左键",
+      "middleClick": "鼠标中键",
+      "rightClick": "鼠标右键",
+      "command": "Command 键",
+      "control": "Control 键",
+      "shift": "Shift 键"
+    },
+    "hints": {
+      "setWallEndpoints": "设置墙体起点和终点",
+      "setFenceEndpoints": "设置围栏起点和终点",
+      "cancel": "取消",
+      "guidedBypass": "已临时绕过引导约束",
+      "addRemoveSelection": "向选择中添加或移除对象",
+      "moveSelectionTogether": "单击或拖动选区以整体移动",
+      "rotateSelection45": "将选区旋转 ±45°",
+      "clearSelection": "清除选择（也可单击空白处）",
+      "showRunHandles": "单击控制点显示移动箭头",
+      "detachJoint": "拖动箭头时断开连接",
+      "showFittingHandles": "单击控制点显示移动和旋转手柄",
+      "rotate45": "旋转 ±45°",
+      "switchRotationAxis": "切换旋转轴（Y → X → Z）",
+      "dragSelected": "拖动已选中的可移动对象",
+      "dragRotateSelected": "左右拖动以旋转已选对象",
+      "rotateFreelyActive": "正在自由旋转（无角度步进）",
+      "rotateFreelyHold": "按住可自由旋转",
+      "curve": "调整曲线",
+      "moveControlPoint": "移动控制点",
+      "moveTangent": "移动切线手柄",
+      "moveEndpoint": "移动端点",
+      "moveCorner": "移动角点",
+      "place": "放置",
+      "rotate": "旋转",
+      "forcePlace": "强制放置",
+      "rotateSelection": "将选区旋转 ±45°",
+      "inspectSurfaceDimensions": "检查表面尺寸",
+      "pinMeasurementLens": "固定测量视图",
+      "exitSmartMeasure": "退出智能测量",
+      "placeColumn": "放置柱",
+      "placeChimneyOnRoof": "在屋顶放置烟囱",
+      "placeMeasurementPoint": "放置测量点",
+      "finishMeasurement": "完成测量",
+      "removeLastPoint": "移除上一个点",
+      "finishAndContinue": "完成并继续",
+      "traceCeilingOutline": "绘制天花板轮廓",
+      "finishCeiling": "完成天花板",
+      "placeWindowOnWall": "在墙上放置窗户",
+      "flipSide": "翻转方向",
+      "placeSkylightOnRoof": "在屋顶放置天窗",
+      "placeItem": "放置物品",
+      "cycleSnappingMode": "切换吸附模式",
+      "placeTurbineVent": "在屋顶放置涡轮通风器",
+      "placeBoxVent": "在屋顶放置箱式通风口",
+      "startLiquidLine": "开始绘制液管",
+      "placeLocked45": "放置管段（锁定 45°）",
+      "goVertical": "转为竖向，单击放置",
+      "followLineset": "跟随：沿冷媒管组绘制",
+      "placeUnit": "放置设备",
+      "exit": "退出",
+      "startRun": "开始绘制管路",
+      "placeWasteSlope": "放置管段（排水坡度 ¼ 英寸/英尺）",
+      "wasteVent": "排水 / 通气",
+      "pipeSize": "减小 / 增大管径",
+      "verticalStack": "绘制竖向立管，单击放置",
+      "cancelStartPoint": "取消起点",
+      "placeRidgeVent": "在屋脊放置通风条",
+      "startLineset": "开始绘制冷媒管组",
+      "placeShelf": "放置置物架",
+      "placeFitting": "放置管件",
+      "snapOntoRun": "吸附到管路",
+      "placeGutter": "在屋檐放置檐沟",
+      "placeCabinet": "放置柜体",
+      "placementType": "放置类型",
+      "cancelRunExit": "取消柜组 / 退出",
+      "startSegment": "开始绘制风管",
+      "placeAndContinue": "放置并继续",
+      "ductDiameter": "减小 / 增大风管直径",
+      "roundRectTrunk": "圆形 / 矩形主管",
+      "ceilingFloorHeight": "顶面 / 地面高度",
+      "placeSolarPanel": "在屋顶放置光伏板阵列",
+      "traceSlabOutline": "绘制楼板轮廓",
+      "finishSlab": "完成楼板",
+      "placeEyebrowVent": "在屋顶放置弧形通风窗",
+      "placeDormer": "在屋顶放置老虎窗",
+      "rotateGhost15": "将预览对象旋转 ±15°",
+      "placeRegister": "放置风口",
+      "mountTerminal": "安装到地面 / 顶面 / 墙面",
+      "rotateTerminal45": "旋转 ±45°（地面 / 顶面）",
+      "placeTrap": "放置存水弯",
+      "placeSpawn": "放置出生点",
+      "placeElevator": "放置电梯",
+      "placeDoor": "在墙上放置门",
+      "highlightOutlet": "高亮出水口",
+      "dropDownspout": "从出水口放置落水管",
+      "placeStairs": "放置楼梯",
+      "placeCupola": "在屋顶放置小塔",
+      "plantTree": "种植树木",
+      "plantFlower": "种植花卉",
+      "plantGrass": "种植草丛",
+      "stop": "停止"
+    }
+  },
+  "errors": {
+    "backHome": "返回首页",
+    "reloadEditor": "重新加载编辑器",
+    "sceneDescription": "可以重新加载场景，或返回首页，而无需重启整个应用。",
+    "sceneTitle": "编辑器场景渲染失败"
+  },
+  "itemCatalog": {
+    "categories": {
+      "furniture": "家具",
+      "appliance": "电器",
+      "kitchen": "厨房",
+      "bathroom": "卫浴",
+      "outdoor": "户外"
+    },
+    "search": "搜索...",
+    "noResults": "没有找到“{{query}}”",
+    "all": "全部",
+    "sources": {
+      "library": "内置库",
+      "community": "社区",
+      "mine": "我的"
+    },
+    "tags": {
+      "floor": "地面",
+      "wall": "墙面",
+      "ceiling": "顶面",
+      "countertop": "台面"
+    },
+    "assetNames": {
+      "cactus": "仙人掌",
+      "tv-stand": "电视柜",
+      "dining-table-mo9ms5yh": "餐桌",
+      "single-bed": "单人床",
+      "livingroom-chair": "客厅椅",
+      "small-indoor-plant": "小型盆栽",
+      "column": "装饰柱",
+      "barbell": "杠铃",
+      "toy": "玩具",
+      "barbell-stand": "杠铃架",
+      "books": "书籍",
+      "stool": "高脚凳",
+      "pool-table": "台球桌",
+      "bookshelf": "书架",
+      "coat-rack": "衣帽架",
+      "car-toy": "玩具汽车",
+      "bedside-table": "床头柜",
+      "cabinet": "模块化柜体",
+      "sofa": "沙发",
+      "bunkbed": "双层床",
+      "my-leather-couch-modp80ha": "皮质沙发",
+      "office-table": "办公桌",
+      "dining-table": "餐桌",
+      "guitar": "吉他",
+      "trash-bin": "垃圾桶",
+      "recessed-light": "筒灯",
+      "shelf": "置物架",
+      "table-lamp": "台灯",
+      "ceiling-lamp": "吊灯",
+      "closet": "衣柜",
+      "coffee-table": "茶几",
+      "dining-chair": "餐椅",
+      "dresser": "斗柜",
+      "ikea-kallax-1x4-moa2y49n": "宜家 KALLAX 2×4",
+      "indoor-plant": "室内绿植",
+      "ironing-board": "熨衣板",
+      "double-bed": "双人床",
+      "floor-lamp": "落地灯",
+      "herman-miller-aeron-mo8x36k9": "Herman Miller Aeron 办公椅",
+      "easel": "画架",
+      "lounge-chair": "休闲椅",
+      "office-chair": "办公椅",
+      "piano": "钢琴",
+      "picture": "装饰画",
+      "rectangular-carpet": "长方形地毯",
+      "round-mirror": "圆镜",
+      "round-carpet": "圆形地毯",
+      "threadmill": "跑步机",
+      "standing-desk-mo8wgz95": "升降桌",
+      "sprinkler": "喷淋头",
+      "exit-sign": "安全出口标志",
+      "sewing-machine": "缝纫机",
+      "television": "电视机",
+      "power-outlet-moa09g0o": "电源插座",
+      "ac-block": "空调机组",
+      "stereo-speaker": "音响",
+      "thermostat": "温控器",
+      "toaster": "烤面包机",
+      "kettle": "电热水壶",
+      "hydrant": "消火栓",
+      "fire-detector": "火灾探测器",
+      "smoke-detector": "烟雾探测器",
+      "coffee-machine": "咖啡机",
+      "ceiling-fan": "吊扇",
+      "iron": "熨斗",
+      "air-conditioning": "空调",
+      "computer": "电脑",
+      "alarm-keypad": "报警键盘",
+      "ev-wall-charger": "电动汽车壁挂充电器",
+      "electric-panel": "配电箱",
+      "bathroom-sink": "浴室洗手盆",
+      "shower-angle": "转角淋浴房",
+      "toilet-paper": "卫生纸",
+      "washing-machine": "洗衣机",
+      "shower-rug": "浴室地垫",
+      "bathtub": "浴缸",
+      "laundry-bag": "洗衣袋",
+      "shower-square": "方形淋浴房",
+      "drying-rack": "晾衣架",
+      "toilet": "马桶",
+      "microwave": "微波炉",
+      "cutting-board": "砧板",
+      "kitchen-utensils": "厨房用具",
+      "kitchen-counter": "厨房操作台",
+      "hood": "油烟机",
+      "wooden-kitchen-bar-moa2hhh4": "厨房吧台",
+      "kitchen-cabinet": "厨柜",
+      "kitchen": "整体厨房",
+      "frying-pan": "煎锅",
+      "fruits": "水果",
+      "fridge": "冰箱",
+      "kitchen-shelf": "厨房置物架",
+      "wine-bottle": "葡萄酒瓶",
+      "stove": "炉灶",
+      "ball": "球",
+      "bush": "灌木",
+      "basket-hoop": "篮球架",
+      "parking-spot": "停车位",
+      "palm": "棕榈树",
+      "sunbed": "户外躺椅",
+      "fir-tree": "冷杉",
+      "tree": "树木",
+      "skate": "滑板",
+      "1967-chevrolet-camaro-moa24wsf": "1967 雪佛兰 Camaro",
+      "outdoor-playhouse": "户外儿童屋",
+      "patio-umbrella": "庭院遮阳伞",
+      "pillar": "石柱",
+      "scooter": "滑板车",
+      "tesla": "特斯拉 Model Y",
+      "dishwasher-movn72ls": "洗碗机",
+      "fireplace-movn1fnn": "壁炉"
+    }
+  },
+  "nature": {
+    "title": "自然",
+    "planted": "已种植 {{count}} 个",
+    "modes": {
+      "trees": "树木",
+      "flowers": "花卉",
+      "grass": "草地"
+    },
+    "instructions": {
+      "arming": "单击地面进行种植，按 Esc 停止。",
+      "trees": "先选择树种，再单击地面。",
+      "flowers": "先选择花卉，再单击地面。",
+      "grass": "先选择草种，再单击地面。"
+    },
+    "controls": {
+      "height": "高度",
+      "foliage": "树冠",
+      "trunk": "树干",
+      "bare": "落叶状态",
+      "small": "小",
+      "medium": "中",
+      "large": "大"
+    },
+    "presets": {
+      "oak": "橡树",
+      "pine": "松树",
+      "aspen": "白杨",
+      "ash": "白蜡树",
+      "bush": "灌木",
+      "trellis": "花架",
+      "daisy": "雏菊",
+      "tulip": "郁金香",
+      "lavender": "薰衣草",
+      "meadow": "草甸",
+      "fescue": "羊茅草",
+      "reed": "芦苇"
+    },
+    "footer": {
+      "beforeTool": "树木由",
+      "by": "开发者",
+      "license": "（MIT 许可）"
+    },
+    "description": "用于户外场景的程序化树木、花卉和草地。",
+    "kinds": {
+      "tree": "树木",
+      "flower": "花卉",
+      "grass": "草丛"
+    },
+    "kindDescriptions": {
+      "tree": "程序化树木，可选橡树、松树、白杨、白蜡树、灌木或花架。",
+      "flower": "程序化花卉，可选雏菊、郁金香或薰衣草。",
+      "grass": "程序化草丛，可选草甸、羊茅草或芦苇。"
+    },
+    "groups": {
+      "tree": "树木",
+      "flower": "花卉",
+      "grass": "草丛",
+      "foliage": "树冠",
+      "position": "位置"
+    },
+    "actions": {
+      "randomize": "随机生成",
+      "resetHeight": "重置高度"
+    },
+    "cabinet": {
+      "typeCabinet": "类型：柜体",
+      "typeIsland": "类型：岛台",
+      "tooltip": "放置类型：单击或按 I 切换"
+    },
+    "hints": {
+      "plantTree": "种植树木",
+      "plantFlower": "种植花卉",
+      "plantGrass": "种植草地",
+      "stop": "停止"
+    }
+  },
+  "legacyUiText": {
+    "Add focused tools and content to this project.": "为此项目添加专用工具和内容。",
+    "Adds a new tool panel to the editor.": "为编辑器添加新的工具面板。",
+    "Install": "安装",
+    "Installed": "已安装",
+    "Not installed": "未安装",
+    "Uninstall": "卸载",
+    "Add material": "添加材质",
+    "Add new level": "添加新楼层",
+    "Add one": "添加一个",
+    "All plugins": "全部插件",
+    "Axis": "轴",
+    "back": "返回",
+    "Back": "背面",
+    "Cancel": "取消",
+    "Camera snapshot": "相机快照",
+    "Clear snapshot": "清除快照",
+    "close": "关闭",
+    "Close": "关闭",
+    "Close capture mode": "关闭截取模式",
+    "Collections": "集合",
+    "Collection name…": "集合名称…",
+    "Color": "颜色",
+    "Command Palette": "命令面板",
+    "Create a Pascal plugin": "创建 Pascal 插件",
+    "Create": "创建",
+    "Creator": "创建者",
+    "Crop": "裁剪",
+    "ctrl": "Ctrl",
+    "Curve": "弯曲",
+    "Cutaway": "剖切",
+    "Cut Out": "挖空",
+    "Delete": "删除",
+    "Delete \"": "删除“",
+    "Displays the mobile sidebar.": "显示移动端侧栏。",
+    "Double": "双面",
+    "Drag the area you want to capture": "拖动选择要截取的区域",
+    "Drawn line": "绘制线段",
+    "DWV plumbing isometric": "排水通气轴测图",
+    "DWV riser diagram": "排水通气立管图",
+    "Duplicate": "复制",
+    "Edit": "编辑",
+    "Edit properties": "编辑属性",
+    "Enter the real-world length of the line you just drew. The image will resize to match it.": "请输入刚绘制线段的真实长度，图像将按此比例缩放。",
+    "Erase": "擦除",
+    "Extrusion height": "拉伸高度",
+    "Feet": "英尺",
+    "Find in catalog": "在目录中查找",
+    "Format": "格式",
+    "Front": "正面",
+    "Full Height": "全高显示",
+    "Guides": "辅助线",
+    "Inches": "英寸",
+    "Levels": "楼层",
+    "Loading": "正在加载",
+    "Loading…": "正在加载…",
+    "Low": "低位",
+    "Meters": "米",
+    "Centimeters": "厘米",
+    "Move": "移动",
+    "navigate": "导航",
+    "New": "新建",
+    "No collections yet. Create one to group items together.": "还没有集合。新建集合可将对象归组。",
+    "No commands found.": "没有找到命令。",
+    "No custom materials yet — add one with +.": "还没有自定义材质，请使用 + 添加。",
+    "No drain, waste, or vent pipes yet. Draw plumbing to see the riser diagram.": "尚未绘制排水、废水或通气管。绘制管道后即可查看立管图。",
+    "No zones on this level.": "此楼层还没有空间区域。",
+    "Opacity": "不透明度",
+    "Orbit Left": "向左环绕",
+    "Orbit Right": "向右环绕",
+    "Overlay image unavailable. Replace the image to restore it.": "底图不可用，请替换图像以恢复。",
+    "Paint with": "使用此材质绘制",
+    "panel": "面板",
+    "Plugin": "插件",
+    "Plugins": "插件",
+    "Plugin ID": "插件 ID",
+    "pos": "位置",
+    "R/T rotate": "R/T 旋转",
+    "Rename": "重命名",
+    "Rename to": "重命名为",
+    "Real length": "实际长度",
+    "resize": "调整大小",
+    "Reset all": "全部重置",
+    "Riser Diagram": "立管图",
+    "rot": "旋转",
+    "rotate": "旋转",
+    "Save Scale": "保存比例",
+    "scale": "缩放",
+    "Scans": "扫描模型",
+    "Scene materials": "场景材质",
+    "select": "选择",
+    "Select a level to view and create zones": "选择楼层以查看和创建空间区域",
+    "set scale": "设置比例",
+    "Set overlay scale": "设置底图比例",
+    "Side": "渲染面",
+    "Sidebar": "侧栏",
+    "Site": "场地",
+    "snapshot": "快照",
+    "Something went wrong": "出现了问题",
+    "Switch to a building level to view and edit the floorplan.": "请切换到建筑楼层以查看和编辑平面图。",
+    "Temperature": "温度",
+    "Toggle Sidebar": "切换侧栏",
+    "Top View": "顶视图",
+    "Translucent": "半透明",
+    "Try again": "重试",
+    "Type a new name above…": "请在上方输入新名称…",
+    "Used by": "使用位置",
+    "Vent": "通气",
+    "View plugin": "查看插件",
+    "View snapshot": "查看快照",
+    "Walkthrough": "漫游",
+    "Waste": "排水",
+    "freezes this exact camera angle as a reusable reference for renders & videos.": "可将当前相机角度固定为渲染和视频可复用的参考。",
+    "⚠ no equipment": "⚠ 无设备",
+    "⌥ axis": "⌥ 切换轴",
+    "A snapshot freezes this exact camera angle as a reusable reference for renders & videos.": "快照会固定当前相机角度，可在渲染和视频中重复使用。",
+    "Capture": "拍摄",
+    "Take snapshot": "拍摄快照",
+    "plugin crashed": "插件已崩溃",
+    "This panel hit an error and was unloaded for this session. The rest of the editor is unaffected — reload to try again.": "此面板发生错误，已在本次会话中卸载。编辑器其他部分不受影响，重新加载可再次尝试。",
+    "copy": "副本",
+    "part": "个部件",
+    "parts": "个部件",
+    "Solid": "实体",
+    "Rendered": "渲染",
+    "Flat and fast — no ambient occlusion": "平面快速显示，无环境光遮蔽",
+    "Full ambient occlusion": "完整环境光遮蔽",
+    "Colored": "彩色",
+    "Monochrome": "单色",
+    "Show materials, textures & colors": "显示材质、纹理和颜色",
+    "Flat clay surfaces by role": "按构件角色显示单色表面",
+    "Off": "关闭",
+    "Soft": "柔和",
+    "Strong": "强烈",
+    "No edge lines": "不显示边线",
+    "Faint outline of major creases": "淡化主要折线轮廓",
+    "Crisp, opaque edge lines": "清晰、不透明的边线",
+    "Studio": "工作室",
+    "Paper": "纸面",
+    "Sunset": "日落",
+    "Overcast": "阴天",
+    "Blueprint": "蓝图",
+    "Mediterranean": "地中海",
+    "Twilight": "暮光",
+    "Night": "夜间",
+    "Verdant": "绿意",
+    "Stacked": "堆叠",
+    "Exploded": "展开",
+    "Solo": "单层",
+    "Stack": "堆叠",
+    "Manual": "手动",
+    "Visible": "显示",
+    "Hidden": "隐藏",
+    "Perspective": "透视",
+    "Orthographic": "正交",
+    "Scans: Visible": "扫描模型：显示",
+    "Scans: Hidden": "扫描模型：隐藏",
+    "Guides: Visible": "辅助线：显示",
+    "Guides: Hidden": "辅助线：隐藏",
+    "Camera: Perspective": "相机：透视",
+    "Camera: Orthographic": "相机：正交",
+    "Levels: Manual": "楼层：手动",
+    "Levels: Stacked": "楼层：堆叠",
+    "Levels: Exploded": "楼层：展开",
+    "Levels: Solo": "楼层：单层",
+    "Walls: Full Height": "墙体：全高显示",
+    "Walls: Cutaway": "墙体：剖切",
+    "Walls: Low": "墙体：低位",
+    "Walls: Translucent": "墙体：半透明",
+    "Render: Solid": "渲染：实体",
+    "Render: Rendered": "渲染：完整",
+    "Theme: Studio": "主题：工作室",
+    "Theme: Paper": "主题：纸面",
+    "Theme: Sunset": "主题：日落",
+    "Theme: Overcast": "主题：阴天",
+    "Theme: Blueprint": "主题：蓝图",
+    "Theme: Mediterranean": "主题：地中海",
+    "Theme: Twilight": "主题：暮光",
+    "Theme: Night": "主题：夜间",
+    "Theme: Verdant": "主题：绿意",
+    "Edges: Off": "边线：关闭",
+    "Edges: Soft": "边线：柔和",
+    "Edges: Strong": "边线：强烈",
+    "XYZ": "XYZ",
+    "(Editing)": "（编辑中）",
+    "3D Scan": "三维扫描",
+    "ALIGN": "对齐",
+    "Add Level": "添加楼层",
+    "Align": "对齐",
+    "Alt to detach": "按 Alt 分离",
+    "Any decimal works. Use the known real length, not the drawn value.": "可输入任意小数。请填写真实长度，而不是图上测得的长度。",
+    "Area": "区域",
+    "Bottom": "底部",
+    "Building": "建筑",
+    "Camera": "相机",
+    "Capturing…": "正在拍摄…",
+    "Ceiling Tool": "天花板工具",
+    "Click another surface to replace": "单击其他表面以替换",
+    "Click both ends of a known distance on the plan, then type its real length.": "在平面图上依次单击已知距离的两个端点，然后输入真实长度。",
+    "Click one end of a distance you know — e.g. a dimension printed on the plan": "单击已知距离的一端，例如平面图上标注尺寸的端点",
+    "Click surface to pin": "单击表面以固定",
+    "Click the other end of that distance": "单击该距离的另一端",
+    "Copy Share Link": "复制分享链接",
+    "Delete Level": "删除楼层",
+    "Delete Selection": "删除所选内容",
+    "Direct Manipulation": "直接操作",
+    "Door Tool": "门工具",
+    "Draw a line over a known dimension on the plan, then type its real length to scale the image exactly.": "沿平面图中的已知尺寸绘制线段，再输入真实长度以精确缩放图像。",
+    "Drawing Tools": "绘图工具",
+    "e.g. 3.5, 180cm or 5'11\"": "例如 3.5、180cm 或 5 英尺 11 英寸",
+    "Editor Navigation": "编辑器导航",
+    "Enter a length greater than 0.": "请输入大于 0 的长度。",
+    "Enter Preview": "进入预览",
+    "Esc to cancel": "按 Esc 取消",
+    "Exit Preview": "退出预览",
+    "Exit smart measure": "退出智能测量",
+    "Export & Share": "导出与分享",
+    "Export 3D Model (GLB)": "导出三维模型（GLB）",
+    "Export Scene (JSON)": "导出场景（JSON）",
+    "Filter options…": "筛选选项…",
+    "Go to Level": "前往楼层",
+    "Image will scale": "图像将缩放",
+    "Inspect surface dimensions": "查看表面尺寸",
+    "Item Placement": "物件放置",
+    "Item Tool": "物件工具",
+    "Level Mode": "楼层模式",
+    "Live lens": "实时测量",
+    "Material Paint": "材质绘制",
+    "measurements": "项测量",
+    "Modes & History": "模式与历史",
+    "Pin measurement lens": "固定测量视图",
+    "Pinned": "已固定",
+    "Preset · square": "预设 · 正方形",
+    "Redo": "重做",
+    "Ref": "参考",
+    "Register": "风口",
+    "Rename Level": "重命名楼层",
+    "Rotate the selection ±45°": "将所选对象旋转 ±45°",
+    "Saved": "已保存",
+    "Search actions…": "搜索操作…",
+    "Selection": "选择",
+    "Settings": "设置",
+    "Slab Tool": "楼板工具",
+    "Standard": "标准",
+    "Stair Tool": "楼梯工具",
+    "Staircase": "楼梯",
+    "Switch to Rendered": "切换到完整渲染",
+    "Switch to Solid": "切换到实体显示",
+    "System": "系统",
+    "Take Screenshot": "拍摄屏幕截图",
+    "Take Snapshot": "拍摄快照",
+    "Toggle Fullscreen": "切换全屏",
+    "Type a new name…": "输入新名称…",
+    "Undo": "撤销",
+    "Untitled": "未命名",
+    "Update snapshot": "更新快照",
+    "View": "视图",
+    "Viewer Controls": "查看器控制",
+    "Viewport": "视口",
+    "Wall Mode": "墙体模式",
+    "Wall Tool": "墙体工具",
+    "Window Tool": "窗工具",
+    "Zone Tool": "空间区域工具",
+    "register": "个风口",
+    "registers": "个风口",
+    "run": "个管段",
+    "runs": "个管段",
+    "selected elements? This cannot be undone if the undo history is exhausted.": "个所选构件？如果撤销历史已用尽，此操作将无法恢复。",
+    "x from the first point.": " 倍（相对于第一个点）。",
+    "Edges": "边线",
+    "Hide": "隐藏",
+    "History": "历史记录",
+    "Render": "渲染",
+    "Scaled": "已校准",
+    "Scaled (hidden)": "已校准（已隐藏）",
+    "Scene": "场景",
+    "Show": "显示",
+    "Theme": "主题",
+    "Uncalibrated": "未校准",
+    "Walls": "墙体",
+    "Custom": "自定义",
+    "All matching": "所有匹配表面",
+    "Room": "房间",
+    "This surface": "当前表面",
+    "Whole": "整个",
+    "Angles": "角度",
+    "Grid": "网格",
+    "Lines": "对齐线",
+    "Enter the real length of the line.": "请输入线段的真实长度。",
+    "Enter a length like 3.5, 180cm or 5'11\".": "请输入类似 3.5、180cm 或 5 英尺 11 英寸的长度。",
+    "Length must be greater than 0.": "长度必须大于 0。"
+  },
+  "legal": {
+    "common": {
+      "home": "首页",
+      "terms": "服务条款",
+      "privacy": "隐私政策",
+      "effectiveDate": "生效日期：2026年2月20日",
+      "supportEmail": "support@pascal.app"
+    },
+    "privacy": {
+      "title": "隐私政策",
+      "metadataDescription": "Pascal Editor 与 Pascal 平台隐私政策。",
+      "sections": [
+        {
+          "title": "1. 简介",
+          "blocks": [
+            {
+              "paragraphs": [
+                "Pascal Group Inc.（以下简称“我们”）运营 pascal.app 上的 Pascal Editor 与 Pascal 平台。本隐私政策说明您使用我们的服务时，我们如何收集、使用和保护您的信息。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "2. 我们收集的信息",
+          "blocks": [
+            {
+              "heading": "账户信息",
+              "paragraphs": ["创建账户时，我们会收集："],
+              "items": ["电子邮箱地址", "姓名", "头像", "OAuth 提供方数据（使用 Google 登录时）"]
+            },
+            {
+              "heading": "项目数据",
+              "paragraphs": [
+                "使用本平台时，我们会存储您的项目，包括三维建筑设计、平面图及相关元数据。"
+              ]
+            },
+            {
+              "heading": "使用情况分析",
+              "paragraphs": [
+                "我们使用 Vercel Analytics 和 Speed Insights 收集匿名使用数据，包括页面浏览量、性能指标和一般使用模式，以帮助我们改进平台。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "3. 信息用途",
+          "blocks": [
+            {
+              "paragraphs": ["我们使用您的信息来："],
+              "items": [
+                "提供并维护您的账户",
+                "在不同设备间存储和同步项目",
+                "根据使用模式改进服务",
+                "发送可选的新功能和更新邮件通知（您可在设置中退订）",
+                "回复支持请求",
+                "保障平台安全并防止滥用"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "4. 数据存储",
+          "blocks": [
+            {
+              "paragraphs": [
+                "您的数据通过 Supabase（PostgreSQL 数据库）存储在安全的云基础设施中。我们采取适当的技术和组织措施保护您的数据。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "5. 第三方服务",
+          "blocks": [
+            {
+              "paragraphs": ["我们使用以下第三方服务来运营平台："],
+              "items": [
+                "Google - 用于登录的 OAuth 身份验证",
+                "Vercel - 应用托管、分析和性能监控",
+                "Supabase - 数据库托管和身份验证基础设施"
+              ]
+            },
+            {
+              "paragraphs": ["这些服务各自依据其隐私政策处理您的数据。"]
+            }
+          ]
+        },
+        {
+          "title": "6. Cookie",
+          "blocks": [
+            {
+              "paragraphs": ["我们仅使用平台运行所必需的少量 Cookie："],
+              "items": [
+                "会话 Cookie - 用于身份验证并保持登录状态",
+                "分析 Cookie - 由 Vercel Analytics 用于收集匿名使用数据"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "7. 您的权利",
+          "blocks": [
+            {
+              "paragraphs": ["您有权："],
+              "items": [
+                "访问我们持有的您的个人数据",
+                "要求更正不准确的数据",
+                "要求删除您的数据",
+                "导出您的项目数据",
+                "选择不接收营销信息"
+              ],
+              "contactPrefix": "如需行使上述任何权利，请联系我们："
+            }
+          ]
+        },
+        {
+          "title": "8. 数据保留",
+          "blocks": [
+            {
+              "paragraphs": [
+                "只要您的账户处于活跃状态，我们就会保留您的数据。若您删除账户，我们将在30天内删除个人数据和项目数据，但法律要求保留的某些信息除外。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "9. 未成年人隐私",
+          "blocks": [
+            {
+              "paragraphs": [
+                "本平台不面向13岁以下儿童。我们不会故意收集13岁以下儿童的个人信息。如您认为我们收集了此类信息，请立即联系我们。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "10. 政策变更",
+          "blocks": [
+            {
+              "paragraphs": [
+                "我们可能不时更新本隐私政策。如有重大变更，我们会在平台上发布更新后的政策进行通知。在变更发布后继续使用平台，即表示您接受修订后的政策。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "11. 联系我们",
+          "blocks": [
+            {
+              "contactPrefix": "如对本隐私政策或我们的数据处理方式有疑问，请联系我们："
+            }
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "服务条款",
+      "metadataDescription": "Pascal Editor 与 Pascal 平台服务条款。",
+      "sections": [
+        {
+          "title": "1. 简介",
+          "blocks": [
+            {
+              "paragraphs": [
+                "欢迎使用 Pascal Group Inc.（以下简称“我们”）运营的 Pascal Editor（以下简称“编辑器”）和 pascal.app 上的 Pascal 平台（以下简称“平台”）。访问或使用我们的服务，即表示您同意本服务条款。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "2. 编辑器与平台",
+          "blocks": [
+            {
+              "paragraphs": [
+                "Pascal Editor 是依据 MIT 许可证发布的开源软件。您可以按照 MIT 许可证条款使用、复制、修改、合并、发布、分发、再许可和/或销售编辑器软件的副本。",
+                "Pascal 平台（pascal.app）及其相关服务，包括用户账户、云存储和项目托管，是 Pascal Group Inc. 拥有并运营的专有服务。本条款适用于您对平台的使用。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "3. 账户与身份验证",
+          "blocks": [
+            {
+              "paragraphs": [
+                "使用平台的某些功能需要创建账户。我们通过 Supabase 使用 Google OAuth 和邮箱魔法链接进行身份验证。您有责任保护账户凭据安全，并对账户下发生的所有活动负责。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "4. 可接受的使用方式",
+          "blocks": [
+            {
+              "paragraphs": ["您同意不会："],
+              "items": [
+                "将平台用于任何违法目的或违反适用法律",
+                "上传、共享或分发侵犯知识产权的内容",
+                "尝试未经授权访问平台或其系统",
+                "干扰或破坏平台基础设施",
+                "上传恶意代码、病毒或有害内容",
+                "骚扰、辱骂或伤害其他用户",
+                "使用平台发送垃圾信息或未经请求的通信"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "5. 您的内容与知识产权",
+          "blocks": [
+            {
+              "paragraphs": [
+                "您对在平台上创建或上传的所有内容、项目和数据（以下简称“您的内容”）保留完整所有权。使用平台即表示您授予我们有限许可，仅为向您提供服务而存储、展示和传输您的内容。",
+                "我们不主张对您的内容拥有任何所有权。您可以随时导出或删除您的内容。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "6. 平台所有权",
+          "blocks": [
+            {
+              "paragraphs": [
+                "平台的设计、功能和专有代码归 Pascal Group Inc. 所有，并受知识产权法律保护。编辑器源代码依据 MIT 许可证开源，但平台服务、品牌和基础设施仍属于我们的专有财产。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "7. 账户终止",
+          "blocks": [
+            {
+              "contactPrefix": "如果您违反本条款，或从事我们认定会损害平台或其他用户的行为，我们保留暂停或终止您账户的权利。您也可以随时联系我们删除账户："
+            }
+          ]
+        },
+        {
+          "title": "8. 免责声明",
+          "blocks": [
+            {
+              "paragraphs": [
+                "平台按“现状”和“可用状态”提供，不附带任何明示或默示保证，包括但不限于适销性、特定用途适用性和不侵权的默示保证。",
+                "我们不保证平台不会中断、不会出错或不含有害组件。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "9. 责任限制",
+          "blocks": [
+            {
+              "paragraphs": [
+                "在法律允许的最大范围内，Pascal Group Inc. 不对因您使用平台而产生的任何间接、附带、特殊、后果性或惩罚性损害承担责任，包括数据、利润或商誉损失。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "10. 条款变更",
+          "blocks": [
+            {
+              "paragraphs": [
+                "我们可能不时更新本条款。如有重大变更，我们会在平台上发布更新后的条款进行通知。在变更发布后继续使用平台，即表示您接受修订后的条款。"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "11. 联系我们",
+          "blocks": [
+            {
+              "contactPrefix": "如对本条款有疑问，请联系我们："
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

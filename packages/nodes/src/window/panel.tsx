@@ -11,6 +11,7 @@ import {
   ActionButton,
   ActionGroup,
   cn,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
@@ -439,7 +440,9 @@ export default function WindowPanel() {
                   }
                   type="button"
                 >
-                  <span className="truncate font-medium">{option.label}</span>
+                  <span className="truncate font-medium">
+                    <NodeUiText>{option.label}</NodeUiText>
+                  </span>
                 </button>
               )
             })}
@@ -508,7 +511,10 @@ export default function WindowPanel() {
         <SliderControl
           label={
             <>
-              X<sub className="ml-[1px] text-[11px] opacity-70">pos</sub>
+              X
+              <sub className="ml-[1px] text-[11px] opacity-70">
+                <NodeUiText>pos</NodeUiText>
+              </sub>
             </>
           }
           onChange={(v) => handleUpdate({ position: [v, node.position[1], node.position[2]] })}
@@ -520,7 +526,10 @@ export default function WindowPanel() {
         <SliderControl
           label={
             <>
-              Y<sub className="ml-[1px] text-[11px] opacity-70">pos</sub>
+              Y
+              <sub className="ml-[1px] text-[11px] opacity-70">
+                <NodeUiText>pos</NodeUiText>
+              </sub>
             </>
           }
           onChange={(v) => handleUpdate({ position: [node.position[0], v, node.position[2]] })}
@@ -813,7 +822,7 @@ export default function WindowPanel() {
               {numCols > 1 && (
                 <div className="mt-2 flex flex-col gap-1">
                   <div className="mb-1 px-1 font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-                    Col Widths
+                    <NodeUiText>Col Widths</NodeUiText>
                   </div>
                   {normCols.map((ratio, i) => (
                     <SliderControl
@@ -846,7 +855,7 @@ export default function WindowPanel() {
               {numRows > 1 && (
                 <div className="mt-2 flex flex-col gap-1">
                   <div className="mb-1 px-1 font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-                    Row Heights
+                    <NodeUiText>Row Heights</NodeUiText>
                   </div>
                   {normRows.map((ratio, i) => (
                     <SliderControl

@@ -1,8 +1,26 @@
+'use client'
+
+import { resolveBuiltInEditorUiText, usePascalTranslation } from '@pascal-app/i18n'
 import type * as React from 'react'
 
 import { cn } from '../../../lib/utils'
 
 function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
+  const { t } = usePascalTranslation('editor')
+  const localizedProps = {
+    ...props,
+    'aria-label':
+      typeof props['aria-label'] === 'string'
+        ? resolveBuiltInEditorUiText(props['aria-label'], t)
+        : props['aria-label'],
+    placeholder:
+      typeof props.placeholder === 'string'
+        ? resolveBuiltInEditorUiText(props.placeholder, t)
+        : props.placeholder,
+    title:
+      typeof props.title === 'string' ? resolveBuiltInEditorUiText(props.title, t) : props.title,
+  }
+
   return (
     <input
       className={cn(
@@ -13,7 +31,7 @@ function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
       )}
       data-slot="input"
       type={type}
-      {...props}
+      {...localizedProps}
     />
   )
 }

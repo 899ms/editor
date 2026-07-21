@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText, useEditorUiText } from '../editor-ui-text'
 import type { AnyNodeId, LevelNode } from '@pascal-app/core'
 import { useScene } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
@@ -88,14 +89,16 @@ function Item({
   badge?: string | (() => string)
   navigate?: boolean
 }) {
-  const resolvedLabel = resolve(label)
-  const resolvedBadge = badge ? resolve(badge) : undefined
+  const ui = useEditorUiText()
+  const rawLabel = resolve(label)
+  const resolvedLabel = ui(rawLabel)
+  const resolvedBadge = badge ? ui(resolve(badge)) : undefined
 
   return (
     <Command.Item
       className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-foreground text-sm transition-colors data-[disabled=true]:cursor-not-allowed data-[selected=true]:bg-accent data-[disabled=true]:opacity-40"
       disabled={disabled}
-      keywords={keywords}
+      keywords={[...keywords, rawLabel]}
       onSelect={onSelect}
       value={resolvedLabel}
     >
@@ -129,17 +132,20 @@ function OptionItem({
   icon?: React.ReactNode
   disabled?: boolean
 }) {
+  const ui = useEditorUiText()
+  const resolvedLabel = ui(label)
+
   return (
     <Command.Item
       className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-foreground text-sm transition-colors data-[disabled=true]:cursor-not-allowed data-[selected=true]:bg-accent data-[disabled=true]:opacity-40"
       disabled={disabled}
       onSelect={onSelect}
-      value={label}
+      value={resolvedLabel}
     >
       <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
         {isActive ? <div className="h-1.5 w-1.5 rounded-full bg-primary" /> : icon}
       </span>
-      <span className="flex-1 truncate">{label}</span>
+      <span className="flex-1 truncate">{resolvedLabel}</span>
     </Command.Item>
   )
 }
@@ -164,6 +170,7 @@ export interface CommandPaletteEmptyAction {
 }
 
 function EmptyActionItem({ action }: { action: CommandPaletteEmptyAction }) {
+  const ui = useEditorUiText()
   const count = useCommandState((s) => s.filtered.count)
   const search = useCommandState((s) => s.search)
   if (count > 0) return null
@@ -180,7 +187,7 @@ function EmptyActionItem({ action }: { action: CommandPaletteEmptyAction }) {
       <span className="flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground">
         {action.icon}
       </span>
-      <span className="flex-1 truncate">{action.label(search)}</span>
+      <span className="flex-1 truncate">{ui(action.label(search))}</span>
     </Command.Item>
   )
 }
@@ -189,6 +196,7 @@ function EmptyActionItem({ action }: { action: CommandPaletteEmptyAction }) {
 // Main component
 // ---------------------------------------------------------------------------
 export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEmptyAction }) {
+  const ui = useEditorUiText()
   const { open, setOpen, mode, setMode, pages, inputValue, setInputValue, navigateTo, goBack } =
     useCommandPalette()
 
@@ -293,7 +301,7 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogContent className="max-w-lg gap-0 overflow-hidden p-0" showCloseButton={false}>
-        <DialogTitle className="sr-only">Command Palette</DialogTitle>
+        <DialogTitle className="sr-only"><EditorUiText>Command Palette</EditorUiText></DialogTitle>
 
         {modeView && <modeView.Component onBack={onBack} onClose={onClose} />}
 
@@ -317,20 +325,20 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
                   onClick={goBack}
                   type="button"
                 >
-                  {PAGE_LABEL[page] ?? views.get(page)?.label ?? page}
+                  {ui(PAGE_LABEL[page] ?? views.get(page)?.label ?? page)}
                 </button>
               )}
               <Command.Input
                 autoFocus
                 className="flex h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
                 onValueChange={setInputValue}
-                placeholder={
+                placeholder={ui(
                   page === 'rename-level'
                     ? 'Type a new name…'
                     : page
                       ? 'Filter options…'
-                      : 'Search actions…'
-                }
+                      : 'Search actions…',
+                )}
                 value={inputValue}
               />
             </div>
@@ -338,7 +346,7 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
             <Command.List className="max-h-100 overflow-y-auto p-1.5">
               {(!emptyAction || page) && (
                 <Command.Empty className="py-8 text-center text-muted-foreground text-sm">
-                  No commands found.
+                  <EditorUiText>No commands found.</EditorUiText>
                 </Command.Empty>
               )}
               {emptyAction && !page && <EmptyActionItem action={emptyAction} />}
@@ -354,7 +362,7 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
               {/* ── Root view: render from registry ───────────────────────── */}
               {!page &&
                 Array.from(grouped.entries()).map(([group, groupActions]) => (
-                  <Command.Group heading={group} key={group}>
+                  <Command.Group heading={ui(group)} key={group}>
                     {groupActions.map((action) => (
                       <Item
                         badge={action.badge}
@@ -373,7 +381,7 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
 
               {/* ── Wall Mode sub-page ────────────────────────────────────── */}
               {page === 'wall-mode' && (
-                <Command.Group heading="Wall Mode">
+                <Command.Group heading={ui('Wall Mode')}>
                   {(['cutaway', 'up', 'down', 'translucent'] as const).map((mode) => (
                     <OptionItem
                       isActive={wallMode === mode}
@@ -387,7 +395,7 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
 
               {/* ── Level Mode sub-page ───────────────────────────────────── */}
               {page === 'level-mode' && (
-                <Command.Group heading="Level Mode">
+                <Command.Group heading={ui('Level Mode')}>
                   {(['stacked', 'exploded', 'solo'] as const).map((mode) => (
                     <OptionItem
                       isActive={levelMode === mode}
@@ -401,7 +409,7 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
 
               {/* ── Go to Level sub-page ──────────────────────────────────── */}
               {page === 'goto-level' && (
-                <Command.Group heading="Go to Level">
+                <Command.Group heading={ui('Go to Level')}>
                   {allLevels.map((level) => (
                     <OptionItem
                       isActive={level.id === activeLevelId}
@@ -417,7 +425,7 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
 
               {/* ── Rename Level sub-page ─────────────────────────────────── */}
               {page === 'rename-level' && (
-                <Command.Group heading="Rename Level">
+                <Command.Group heading={ui('Rename Level')}>
                   <Command.Item
                     className="flex cursor-pointer items-center gap-2.5 rounded-md px-2.5 py-2 text-foreground text-sm transition-colors data-[disabled=true]:cursor-not-allowed data-[selected=true]:bg-accent data-[disabled=true]:opacity-40"
                     disabled={!inputValue.trim()}
@@ -443,10 +451,10 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
                     <span className="flex-1 truncate">
                       {inputValue.trim() ? (
                         <>
-                          Rename to <span className="font-medium">"{inputValue.trim()}"</span>
+                          <EditorUiText>Rename to</EditorUiText> <span className="font-medium">"{inputValue.trim()}"</span>
                         </>
                       ) : (
-                        <span className="text-muted-foreground">Type a new name above…</span>
+                        <span className="text-muted-foreground"><EditorUiText>Type a new name above…</EditorUiText></span>
                       )}
                     </span>
                   </Command.Item>
@@ -457,18 +465,18 @@ export function CommandPalette({ emptyAction }: { emptyAction?: CommandPaletteEm
             {/* Footer hint */}
             <div className="flex items-center justify-between border-border/50 border-t px-3 py-2">
               <span className="text-[11px] text-muted-foreground">
-                <Shortcut keys={['↑', '↓']} /> navigate
+                <Shortcut keys={['↑', '↓']} /> <EditorUiText>navigate</EditorUiText>
               </span>
               <span className="text-[11px] text-muted-foreground">
-                <Shortcut keys={['↵']} /> select
+                <Shortcut keys={['↵']} /> <EditorUiText>select</EditorUiText>
               </span>
               {page ? (
                 <span className="text-[11px] text-muted-foreground">
-                  <Shortcut keys={['⌫']} /> back
+                  <Shortcut keys={['⌫']} /> <EditorUiText>back</EditorUiText>
                 </span>
               ) : (
                 <span className="text-[11px] text-muted-foreground">
-                  <Shortcut keys={['Esc']} /> close
+                  <Shortcut keys={['Esc']} /> <EditorUiText>close</EditorUiText>
                 </span>
               )}
             </div>

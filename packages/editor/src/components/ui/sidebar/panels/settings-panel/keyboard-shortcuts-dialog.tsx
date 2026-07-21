@@ -1,3 +1,4 @@
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { Keyboard } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from './../../../../../components/ui/primitives/button'
@@ -172,6 +173,16 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
   },
 ]
 
+const SHORTCUT_CATEGORY_KEYS: Record<string, string> = {
+  'Editor Navigation': 'navigation',
+  'Modes & History': 'modes',
+  Selection: 'selection',
+  'Direct Manipulation': 'directManipulation',
+  'Drawing Tools': 'drawing',
+  'Item Placement': 'placement',
+  Camera: 'camera',
+}
+
 function getDisplayKey(key: string, isMac: boolean): string {
   if (key === 'Cmd/Ctrl') return isMac ? '⌘' : 'Ctrl'
   if (key === 'Delete / Backspace') return isMac ? '⌫' : 'Backspace'
@@ -198,48 +209,60 @@ function ShortcutKeys({ keys }: { keys: string[] }) {
 }
 
 export function KeyboardShortcutsDialog() {
+  const { t } = usePascalTranslation('editor')
+
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button className="w-full justify-start gap-2" variant="outline">
           <Keyboard className="size-4" />
-          Keyboard Shortcuts
+          {t('settings.keyboardDialog.trigger')}
         </Button>
       </DialogTrigger>
       <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden p-0 sm:max-w-3xl">
         <DialogHeader className="shrink-0 border-b px-6 py-4">
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          <DialogDescription>
-            Shortcuts are context-aware. Guided constraints are enabled by default; hold Shift
-            during an active gesture to build freely.
-          </DialogDescription>
+          <DialogTitle>{t('settings.keyboardDialog.title')}</DialogTitle>
+          <DialogDescription>{t('settings.keyboardDialog.description')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
-          {SHORTCUT_CATEGORIES.map((category) => (
-            <section className="space-y-2" key={category.title}>
-              <h3 className="font-medium text-sm">{category.title}</h3>
-              <div className="overflow-hidden rounded-md border border-border/80">
-                {category.shortcuts.map((shortcut, index) => (
-                  <div
-                    className="grid grid-cols-[minmax(130px,220px)_1fr] gap-3 px-3 py-2"
-                    key={`${category.title}-${shortcut.action}`}
-                  >
-                    <ShortcutKeys keys={shortcut.keys} />
-                    <div>
-                      <p className="text-sm">{shortcut.action}</p>
-                      {shortcut.note ? (
-                        <p className="text-muted-foreground text-xs">{shortcut.note}</p>
-                      ) : null}
-                    </div>
-                    {index < category.shortcuts.length - 1 ? (
-                      <div className="col-span-2 border-border/60 border-b" />
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+          {SHORTCUT_CATEGORIES.map((category) => {
+            const categoryKey = SHORTCUT_CATEGORY_KEYS[category.title]
+            const categoryBase = `settings.keyboardDialog.categories.${categoryKey}`
+            return (
+              <section className="space-y-2" key={category.title}>
+                <h3 className="font-medium text-sm">
+                  {t(`${categoryBase}.title`, { defaultValue: category.title })}
+                </h3>
+                <div className="overflow-hidden rounded-md border border-border/80">
+                  {category.shortcuts.map((shortcut, index) => {
+                    const shortcutBase = `${categoryBase}.shortcuts.${index}`
+                    return (
+                      <div
+                        className="grid grid-cols-[minmax(130px,220px)_1fr] gap-3 px-3 py-2"
+                        key={`${category.title}-${index}-${shortcut.action}`}
+                      >
+                        <ShortcutKeys keys={shortcut.keys} />
+                        <div>
+                          <p className="text-sm">
+                            {t(`${shortcutBase}.action`, { defaultValue: shortcut.action })}
+                          </p>
+                          {shortcut.note ? (
+                            <p className="text-muted-foreground text-xs">
+                              {t(`${shortcutBase}.note`, { defaultValue: shortcut.note })}
+                            </p>
+                          ) : null}
+                        </div>
+                        {index < category.shortcuts.length - 1 ? (
+                          <div className="col-span-2 border-border/60 border-b" />
+                        ) : null}
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            )
+          })}
         </div>
       </DialogContent>
     </Dialog>

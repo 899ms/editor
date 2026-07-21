@@ -100,12 +100,14 @@ export const spawnDefinition: NodeDefinition<typeof SpawnNode> = {
   },
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Left click', label: 'Place spawn point' },
-    { key: 'Esc', label: 'Cancel' },
+    { key: 'Left click', label: 'Place spawn point', labelKey: 'editor:contextual.hints.placeSpawn' },
+    { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 
   presentation: {
     label: 'Spawn Point',
+    labelKey: 'nodes:kinds.spawn',
+    descriptionKey: 'nodes:descriptions.spawn',
     description: 'Player or camera origin within a level. One per level.',
     icon: { kind: 'url', src: '/icons/spawn-point.webp' },
     paletteSection: 'structure',

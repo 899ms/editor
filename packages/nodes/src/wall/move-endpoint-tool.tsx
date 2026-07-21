@@ -32,6 +32,7 @@ import {
   triggerSFX,
   useAlignmentGuides,
   useInteractionScope,
+  useNodeUiText,
   useWallSnapIndicator,
   WALL_CONNECT_SNAP_RADIUS,
   type WallPlanPoint,
@@ -181,6 +182,7 @@ function getLinkedWallUpdates(
 }
 
 export const MoveWallEndpointTool: React.FC<{ target: MovingWallEndpoint }> = ({ target }) => {
+  const uiText = useNodeUiText()
   const previousGridPosRef = useRef<WallPlanPoint | null>(null)
   const altPressedRef = useRef(false)
   const nodeIdRef = useRef(target.wall.id)
@@ -648,7 +650,7 @@ export const MoveWallEndpointTool: React.FC<{ target: MovingWallEndpoint }> = ({
                   : 'border-border bg-background/95 text-muted-foreground'
               }`}
             >
-              {altPressed ? 'Detaching corner' : 'Alt to detach'}
+              {uiText(altPressed ? 'Detaching corner' : 'Alt to detach')}
             </div>
           </div>
         </Html>

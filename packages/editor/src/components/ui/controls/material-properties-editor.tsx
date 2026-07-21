@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText } from '../editor-ui-text'
 import type { MaterialProperties, MaterialSchema } from '@pascal-app/core'
 import { Input } from '../primitives/input'
 import { SliderControl } from './slider-control'
@@ -41,7 +42,7 @@ export function MaterialPropertiesEditor({
     <div className="space-y-3">
       <div className="space-y-2">
         <label className="block font-medium text-muted-foreground text-xs uppercase tracking-[0.12em]">
-          Color
+          <EditorUiText>Color</EditorUiText>
         </label>
         <div className="flex items-center gap-2">
           <input
@@ -89,7 +90,7 @@ export function MaterialPropertiesEditor({
 
       <div className="space-y-2">
         <label className="block font-medium text-muted-foreground text-xs uppercase tracking-[0.12em]">
-          Side
+          <EditorUiText>Side</EditorUiText>
         </label>
         <select
           className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30"
@@ -98,9 +99,9 @@ export function MaterialPropertiesEditor({
           }
           value={currentProps.side}
         >
-          <option value="front">Front</option>
-          <option value="back">Back</option>
-          <option value="double">Double</option>
+          <option value="front"><EditorUiText>Front</EditorUiText></option>
+          <option value="back"><EditorUiText>Back</EditorUiText></option>
+          <option value="double"><EditorUiText>Double</EditorUiText></option>
         </select>
       </div>
     </div>

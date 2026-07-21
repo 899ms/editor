@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
 } from './../../../components/ui/primitives/tooltip'
 import { cn } from './../../../lib/utils'
+import { useEditorUiText } from '../editor-ui-text'
 
 export type PanelId = string
 
@@ -48,12 +49,14 @@ export function IconRail({
   extraPanels,
   className,
 }: IconRailProps) {
+  const ui = useEditorUiText()
   const regularExtraPanels = extraPanels?.filter((panel) => !panel.pluginId && panel.id !== 'plugins')
   const pluginPanels = extraPanels?.filter((panel) => panel.pluginId)
   const pluginsPanel = extraPanels?.find((panel) => panel.id === 'plugins')
 
   const renderExtraPanel = (panel: ExtraPanel) => {
     const isActive = activePanel === panel.id
+    const label = ui(panel.label)
     return (
       <Tooltip key={panel.id}>
         <TooltipTrigger asChild>
@@ -75,7 +78,7 @@ export function IconRail({
             </span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="right">{panel.label}</TooltipContent>
+        <TooltipContent side="right">{label}</TooltipContent>
       </Tooltip>
     )
   }
@@ -96,6 +99,7 @@ export function IconRail({
       {/* Site panel */}
       {[sitePanel].map((panel) => {
         const isActive = activePanel === panel.id
+        const label = ui(panel.label)
         return (
           <Tooltip key={panel.id}>
             <TooltipTrigger asChild>
@@ -108,7 +112,7 @@ export function IconRail({
                 type="button"
               >
                 <img
-                  alt={panel.label}
+                  alt={label}
                   className={cn(
                     'h-6 w-6 object-contain transition-all',
                     !isActive && 'opacity-50 saturate-0',
@@ -117,7 +121,7 @@ export function IconRail({
                 />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">{panel.label}</TooltipContent>
+            <TooltipContent side="right">{label}</TooltipContent>
           </Tooltip>
         )
       })}
@@ -127,6 +131,7 @@ export function IconRail({
       {/* Settings panel */}
       {[settingsPanel].map((panel) => {
         const isActive = activePanel === panel.id
+        const label = ui(panel.label)
         return (
           <Tooltip key={panel.id}>
             <TooltipTrigger asChild>
@@ -139,7 +144,7 @@ export function IconRail({
                 type="button"
               >
                 <img
-                  alt={panel.label}
+                  alt={label}
                   className={cn(
                     'h-6 w-6 object-contain transition-all',
                     !isActive && 'opacity-50 saturate-0',
@@ -148,7 +153,7 @@ export function IconRail({
                 />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">{panel.label}</TooltipContent>
+            <TooltipContent side="right">{label}</TooltipContent>
           </Tooltip>
         )
       })}

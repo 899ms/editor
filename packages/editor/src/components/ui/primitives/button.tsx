@@ -1,4 +1,7 @@
+'use client'
+
 import { Slot } from '@radix-ui/react-slot'
+import { resolveBuiltInEditorUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { cva, type VariantProps } from 'class-variance-authority'
 import type * as React from 'react'
 
@@ -45,13 +48,24 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
   }) {
+  const { t } = usePascalTranslation('editor')
+  const localizedProps = {
+    ...props,
+    'aria-label':
+      typeof props['aria-label'] === 'string'
+        ? resolveBuiltInEditorUiText(props['aria-label'], t)
+        : props['aria-label'],
+    title:
+      typeof props.title === 'string' ? resolveBuiltInEditorUiText(props.title, t) : props.title,
+  }
+
   if (asChild) {
     return (
       <Slot
         className={cn(buttonVariants({ variant, size, className }))}
         data-slot="button"
         ref={ref as never}
-        {...props}
+        {...localizedProps}
       />
     )
   }
@@ -61,7 +75,7 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       data-slot="button"
       ref={ref}
-      {...props}
+      {...localizedProps}
     />
   )
 }

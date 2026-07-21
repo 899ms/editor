@@ -24,6 +24,7 @@
   },
   "peerDependencies": {
     "@pascal-app/core": "^0.9.2",
+    "@pascal-app/i18n": "^0.1.0",
     "@pascal-app/editor": "^0.9.2",
     "@pascal-app/viewer": "^0.9.2",
     "@react-three/drei": "^10",
@@ -35,6 +36,7 @@
   },
   "devDependencies": {
     "@pascal-app/core": "^0.9.2",
+    "@pascal-app/i18n": "^0.1.0",
     "@pascal-app/editor": "^0.9.2",
     "@pascal-app/viewer": "^0.9.2",
     "@pascal/typescript-config": "*",

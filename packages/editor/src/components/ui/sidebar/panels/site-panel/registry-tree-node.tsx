@@ -1,5 +1,10 @@
 import { Icon as IconifyIcon } from '@iconify/react'
 import { type AnyNodeId, nodeRegistry, useScene } from '@pascal-app/core'
+import {
+  resolveBuiltInNodeUiText,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 import { useViewer } from '@pascal-app/viewer'
 import Image from 'next/image'
 import { memo, useCallback, useEffect, useState } from 'react'
@@ -34,6 +39,7 @@ export const RegistryTreeNode = memo(function RegistryTreeNode({
   depth,
   isLast,
 }: RegistryTreeNodeProps) {
+  const { t } = usePascalTranslation('nodes')
   const [isEditing, setIsEditing] = useState(false)
   const [expanded, setExpanded] = useState(true)
   const isVisible = useScene((s) => s.nodes[nodeId]?.visible !== false)
@@ -61,8 +67,15 @@ export const RegistryTreeNode = memo(function RegistryTreeNode({
       />
     )
   const snapTarget = resolveNodeSnapTarget(node)
-  const defaultName =
-    node ? tree?.label?.(node, useScene.getState().nodes) || node.name || presentation?.label || 'Node' : 'Node'
+  const localizedPresentationName = presentation
+    ? resolveLocalizedLabel({ ...presentation, kind: node?.type }, t)
+    : t('ui.node')
+  const defaultName = node
+    ? resolveBuiltInNodeUiText(
+        tree?.label?.(node, useScene.getState().nodes) || node.name || localizedPresentationName,
+        t,
+      )
+    : t('ui.node')
   const hasChildren = children.length > 0
 
   useEffect(() => {

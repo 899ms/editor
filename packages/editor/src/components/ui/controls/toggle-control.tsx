@@ -1,6 +1,7 @@
 'use client'
 
 import { Check } from 'lucide-react'
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { cn } from '../../../lib/utils'
 
 interface ToggleControlProps {
@@ -11,6 +12,8 @@ interface ToggleControlProps {
 }
 
 export function ToggleControl({ label, checked, onChange, className }: ToggleControlProps) {
+  const { t } = usePascalTranslation('nodes')
+  const localizedLabel = resolveBuiltInNodeUiText(label, t)
   return (
     <div
       className={cn(
@@ -20,7 +23,7 @@ export function ToggleControl({ label, checked, onChange, className }: ToggleCon
       onClick={() => onChange(!checked)}
     >
       <div className="select-none text-muted-foreground transition-colors group-hover:text-foreground">
-        {label}
+        {localizedLabel}
       </div>
 
       <div

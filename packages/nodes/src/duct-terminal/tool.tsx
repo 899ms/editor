@@ -17,6 +17,7 @@ import {
   isMagneticSnapActive,
   triggerSFX,
   useEditor,
+  NodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -420,23 +421,23 @@ const DuctTerminalTool = () => {
         <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
           {placement.snapped && (
             <>
-              <span className="font-medium text-primary">Snapped to duct</span>
+              <span className="font-medium text-primary"><NodeUiText>Snapped to duct</NodeUiText></span>
               <span aria-hidden className="text-muted-foreground">
                 ·
               </span>
             </>
           )}
-          <span className="font-medium text-foreground">Mount {mountLabel}</span>
+          <span className="font-medium text-foreground"><NodeUiText>Mount</NodeUiText> {mountLabel}</span>
           <span aria-hidden className="text-muted-foreground">
             ·
           </span>
-          <span className="text-muted-foreground">M surface</span>
+          <span className="text-muted-foreground"><NodeUiText>M surface</NodeUiText></span>
           {effectiveMount !== 'wall' && (
             <>
               <span aria-hidden className="text-muted-foreground">
                 ·
               </span>
-              <span className="text-muted-foreground">R/T rotate</span>
+              <span className="text-muted-foreground"><NodeUiText>R/T rotate</NodeUiText></span>
             </>
           )}
         </div>

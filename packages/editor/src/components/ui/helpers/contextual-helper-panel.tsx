@@ -1,5 +1,10 @@
 import { Icon } from '@iconify/react'
 import type { ToolHint } from '@pascal-app/core'
+import {
+  resolveLocalizedDescription,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 import { Fragment, useSyncExternalStore } from 'react'
 import {
   CONTINUATION_PROFILES,
@@ -17,6 +22,8 @@ import {
 import { cn } from '../../../lib/utils'
 import useEditor, { type GridSnapStep } from '../../../store/use-editor'
 import useFenceCurveDraft from '../../../store/use-fence-curve-draft'
+import { useNodeUiText } from '../controls/node-ui-text'
+import { useEditorUiText } from '../editor-ui-text'
 import { ShortcutToken } from '../primitives/shortcut-token'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../primitives/tooltip'
 
@@ -154,10 +161,10 @@ const SNAPPING_MODE_ICONS = {
 } as const
 
 const SNAPPING_MODE_LABELS = {
-  grid: 'Grid',
-  lines: 'Lines',
-  angles: 'Angles',
-  off: 'Off',
+  grid: { label: 'Grid', labelKey: 'editor:contextual.snapping.modes.grid' },
+  lines: { label: 'Lines', labelKey: 'editor:contextual.snapping.modes.lines' },
+  angles: { label: 'Angles', labelKey: 'editor:contextual.snapping.modes.angles' },
+  off: { label: 'Off', labelKey: 'editor:contextual.snapping.modes.off' },
 } as const
 
 const GRID_SNAP_STEPS: GridSnapStep[] = [0.5, 0.25, 0.1, 0.05]
@@ -170,36 +177,39 @@ function nextGridSnapStep(step: GridSnapStep): GridSnapStep {
 // The active interaction's snapping controls, scoped to its context (wall / item
 // / polygon) so each action shows only the modes that make sense for it.
 function SnappingChips({ context }: { context: SnapContext }) {
+  const { t } = usePascalTranslation('editor')
   const snappingMode = useEditor((s) => s.snappingModeByContext[context])
   const setSnappingMode = useEditor((s) => s.setSnappingMode)
   const gridSnapStep = useEditor((s) => s.gridSnapStep)
   const setGridSnapStep = useEditor((s) => s.setGridSnapStep)
 
   const gridActive = resolveSnapFlags(snappingMode).grid
+  const modeLabel = resolveLocalizedLabel(SNAPPING_MODE_LABELS[snappingMode], t)
+  const gridValue = gridSnapStep.toFixed(2)
 
   return (
     <>
       <ChipRow
-        ariaLabel={`Snapping: ${SNAPPING_MODE_LABELS[snappingMode]}`}
+        ariaLabel={t('contextual.snapping.label', { mode: modeLabel })}
         icon={SNAPPING_MODE_ICONS[snappingMode]}
-        label={`Snapping: ${SNAPPING_MODE_LABELS[snappingMode]}`}
+        label={t('contextual.snapping.label', { mode: modeLabel })}
         onClick={() => {
           setSnappingMode(context, cycleSnappingModeIn(context, snappingMode))
           sfxEmitter.emit('sfx:grid-snap')
         }}
         shortcut="Shift"
-        tooltip="Snapping mode — click or press Shift to cycle"
+        tooltip={t('contextual.snapping.tooltip')}
       />
       {gridActive ? (
         <ChipRow
-          ariaLabel={`Grid step: ${gridSnapStep.toFixed(2)} m`}
-          label={`Grid: ${gridSnapStep.toFixed(2)} m`}
+          ariaLabel={t('contextual.grid.step', { value: gridValue })}
+          label={t('contextual.grid.label', { value: gridValue })}
           onClick={() => {
             setGridSnapStep(nextGridSnapStep(gridSnapStep))
             sfxEmitter.emit('sfx:grid-snap')
           }}
           shortcut="Ctrl"
-          tooltip="Grid step — click or tap Ctrl to cycle"
+          tooltip={t('contextual.grid.tooltip')}
         />
       ) : null}
     </>
@@ -211,9 +221,32 @@ function SnappingChips({ context }: { context: SnapContext }) {
 // current value's label, and clicking the row (or the hint's key, handled by
 // the tool itself) cycles it.
 function ToolHintChipRow({ hint }: { hint: ToolHint & { chip: NonNullable<ToolHint['chip']> } }) {
+  const { t } = usePascalTranslation('editor')
+  const ui = useEditorUiText()
+  const nodeUi = useNodeUiText()
   const { chip } = hint
   const value = useSyncExternalStore(chip.subscribe, chip.value, chip.value)
-  const label = chip.labels[value] ?? hint.label
+  const resolvedLabel = resolveLocalizedLabel(
+    {
+      label: chip.labels[value] ?? hint.label,
+      labelKey: chip.labelKeys?.[value] ?? hint.labelKey,
+    },
+    t,
+  )
+  const editorLabel = ui(resolvedLabel)
+  const label = editorLabel === resolvedLabel ? nodeUi(resolvedLabel) : editorLabel
+  const resolvedTooltip = chip.tooltip
+    ? resolveLocalizedDescription(
+        { description: chip.tooltip, descriptionKey: chip.tooltipKey },
+        t,
+      )
+    : undefined
+  const editorTooltip = resolvedTooltip ? ui(resolvedTooltip) : undefined
+  const tooltip = editorTooltip
+    ? editorTooltip === resolvedTooltip
+      ? nodeUi(resolvedTooltip)
+      : editorTooltip
+    : undefined
   return (
     <ChipRow
       ariaLabel={label}
@@ -221,54 +254,65 @@ function ToolHintChipRow({ hint }: { hint: ToolHint & { chip: NonNullable<ToolHi
       label={label}
       onClick={chip.cycle}
       shortcut={hint.key}
-      tooltip={chip.tooltip}
+      tooltip={tooltip}
     />
   )
 }
 
 function ContinuationChip({ context }: { context: ContinuationContext }) {
+  const { t } = usePascalTranslation('editor')
   const mode = useEditor((s) => s.getContinuation(context))
   const cycleContinuation = useEditor((s) => s.cycleContinuation)
   const profile = CONTINUATION_PROFILES[context]
-  const label = profile.labels[mode] ?? mode
+  const label = resolveLocalizedLabel(
+    {
+      label: profile.labels[mode] ?? mode,
+      labelKey: `editor:contextual.continuation.${context}.${mode}`,
+    },
+    t,
+  )
   const icon = profile.icons[mode] ?? 'lucide:repeat'
 
   return (
     <ChipRow
-      ariaLabel={`Continuation: ${label}`}
+      ariaLabel={t('contextual.continuation.label', { mode: label })}
       icon={icon}
       label={label}
       onClick={() => cycleContinuation(context)}
       shortcut="C"
-      tooltip="Continuation — click or press C to cycle"
+      tooltip={t('contextual.continuation.tooltip')}
     />
   )
 }
 
 function FenceContinuationChips() {
+  const { t } = usePascalTranslation('editor')
   const mode = useEditor((s) => s.getContinuation('fence'))
   const setContinuation = useEditor((s) => s.setContinuation)
   const curveStarted = useFenceCurveDraft((s) => s.pointCount > 0)
 
   const isCurved = mode === 'curved'
   const straightMode = isCurved ? 'continuous' : mode
-  const straightLabel = straightMode === 'single' ? 'Straight: Single' : 'Straight: Continuous'
+  const straightLabel = t(
+    straightMode === 'single' ? 'contextual.fence.single' : 'contextual.fence.continuous',
+  )
   const straightIcon = straightMode === 'single' ? 'lucide:minus' : 'lucide:waypoints'
-  const typeLabel = isCurved ? 'Type: Curved' : 'Type: Straight'
+  const fenceType = t(isCurved ? 'contextual.fence.curved' : 'contextual.fence.straight')
+  const typeLabel = t('contextual.fence.type', { type: fenceType })
   const typeIcon = isCurved ? 'lucide:spline' : 'lucide:minus'
 
   return (
     <>
       <ChipRow
-        ariaLabel={`Fence type: ${isCurved ? 'Curved' : 'Straight'}`}
+        ariaLabel={t('contextual.fence.typeAria', { type: fenceType })}
         icon={typeIcon}
         label={typeLabel}
         onClick={() => setContinuation('fence', isCurved ? 'continuous' : 'curved')}
         shortcut="T"
-        tooltip="Fence type — click or press T to switch between straight and curved"
+        tooltip={t('contextual.fence.typeTooltip')}
       />
       <ChipRow
-        ariaLabel={`Fence continuation: ${straightLabel}`}
+        ariaLabel={t('contextual.fence.continuationAria', { mode: straightLabel })}
         disabled={isCurved}
         icon={straightIcon}
         label={straightLabel}
@@ -280,8 +324,8 @@ function FenceContinuationChips() {
         shortcut="C"
         tooltip={
           isCurved
-            ? 'Straight continuation is unavailable while curved fence type is active'
-            : 'Straight fence continuation — click or press C to toggle'
+            ? t('contextual.fence.continuationUnavailable')
+            : t('contextual.fence.continuationTooltip')
         }
       />
       {/* Curved fences are committed by a closing gesture rather than per-click,
@@ -290,7 +334,7 @@ function FenceContinuationChips() {
       {isCurved && curveStarted ? (
         <ChipRow
           icon="lucide:circle-check"
-          label="Finish curve (or double-click)"
+          label={t('contextual.fence.finishCurve')}
           shortcut="Enter"
         />
       ) : null}
@@ -309,6 +353,8 @@ const PAINT_SCOPE_ICONS: Record<PaintScope, string> = {
 // derived `paintHover` (scopes + labels), so it works for any kind without a
 // per-target table.
 function PaintScopeChip() {
+  const { t } = usePascalTranslation('editor')
+  const nodeUi = useNodeUiText()
   // What the cursor is over (that's what the next click paints). `null` when not
   // over a paintable surface — including an item with no slots.
   const paintHover = useEditor((s) => s.paintHover)
@@ -320,13 +366,17 @@ function PaintScopeChip() {
   // Nothing to paint with yet (no material picked, not erasing) → the first step
   // is choosing a material, so say that before anything about scope or hovering.
   if (!(paintEraser || hasActivePaintMaterial(activePaintMaterial))) {
-    return <ChipRow icon="lucide:palette" label="Select a material to paint" />
+    return <ChipRow icon="lucide:palette" label={t('contextual.paint.selectMaterial')} />
   }
 
   // Not over anything paintable → guide the user to hover, still teaching Shift.
   if (!paintHover) {
     return (
-      <ChipRow icon="lucide:mouse-pointer-click" label="Hover a surface to paint" shortcut="Shift" />
+      <ChipRow
+        icon="lucide:mouse-pointer-click"
+        label={t('contextual.paint.hoverSurface')}
+        shortcut="Shift"
+      />
     )
   }
 
@@ -334,6 +384,7 @@ function PaintScopeChip() {
   // A scope carried over from another node (the mode is global) falls back to
   // the narrowest for both display and — via the apply-time resolver — behaviour.
   const effective: PaintScope = scopes.includes(paintScope) ? paintScope : 'single'
+  const scopeLabel = nodeUi(paintScopeLabel(effective, paintHover))
 
   // Paintable but with no scope choice (roof, a one-slot node, …) → a passive
   // row that still names the surface, so the user always sees what they'll paint.
@@ -341,19 +392,19 @@ function PaintScopeChip() {
     return (
       <ChipRow
         icon={PAINT_SCOPE_ICONS[effective]}
-        label={`Paint: ${paintScopeLabel(effective, paintHover)}`}
+        label={t('contextual.paint.label', { scope: scopeLabel })}
       />
     )
   }
 
   return (
     <ChipRow
-      ariaLabel={`Paint scope: ${paintScopeLabel(effective, paintHover)}`}
+      ariaLabel={t('contextual.paint.scope', { scope: scopeLabel })}
       icon={PAINT_SCOPE_ICONS[effective]}
-      label={`Paint: ${paintScopeLabel(effective, paintHover)}`}
+      label={t('contextual.paint.label', { scope: scopeLabel })}
       onClick={() => cyclePaintScope()}
       shortcut="Shift"
-      tooltip="Paint scope — click or press Shift to cycle"
+      tooltip={t('contextual.paint.tooltip')}
     />
   )
 }
@@ -375,6 +426,10 @@ export function ContextualHelperPanel({
   showPaintScope?: boolean
   continuationContext?: ContinuationContext | null
 }) {
+  const { t } = usePascalTranslation('editor')
+  const ui = useEditorUiText()
+  const nodeUi = useNodeUiText()
+
   if (
     hints.length === 0 &&
     chipHints.length === 0 &&
@@ -400,29 +455,47 @@ export function ContextualHelperPanel({
         ) : null,
       )}
       {showPaintScope ? <PaintScopeChip /> : null}
-      {hints.map((hint) => (
-        <div
-          className={cn(ROW_CLASS, 'items-start')}
-          key={`${hint.keys.join('+')}:${hint.label}`}
-        >
-          <ShortcutSequence active={hint.active} keys={hint.keys} />
-          <div className="min-w-0">
-            <div
-              className={cn(
-                'text-xs leading-5',
-                hint.active ? 'font-medium text-white' : 'text-muted-foreground',
-              )}
-            >
-              {hint.label}
-            </div>
-            {hint.subtitle ? (
-              <div className="text-[10px] text-muted-foreground/70 leading-snug">
-                {hint.subtitle}
+      {hints.map((hint) => {
+        const resolvedLabel = resolveLocalizedLabel(hint, t)
+        const editorLabel = ui(resolvedLabel)
+        const label = editorLabel === resolvedLabel ? nodeUi(resolvedLabel) : editorLabel
+        const resolvedSubtitle = hint.subtitle
+          ? resolveLocalizedDescription(
+              { description: hint.subtitle, descriptionKey: hint.subtitleKey },
+              t,
+            )
+          : null
+        const editorSubtitle = resolvedSubtitle ? ui(resolvedSubtitle) : null
+        const subtitle = editorSubtitle
+          ? editorSubtitle === resolvedSubtitle
+            ? nodeUi(resolvedSubtitle)
+            : editorSubtitle
+          : null
+
+        return (
+          <div
+            className={cn(ROW_CLASS, 'items-start')}
+            key={`${hint.keys.join('+')}:${hint.label}`}
+          >
+            <ShortcutSequence active={hint.active} keys={hint.keys} />
+            <div className="min-w-0">
+              <div
+                className={cn(
+                  'text-xs leading-5',
+                  hint.active ? 'font-medium text-white' : 'text-muted-foreground',
+                )}
+              >
+                {label}
               </div>
-            ) : null}
+              {subtitle ? (
+                <div className="text-[10px] text-muted-foreground/70 leading-snug">
+                  {subtitle}
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

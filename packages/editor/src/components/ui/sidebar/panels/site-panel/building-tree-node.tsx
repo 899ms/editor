@@ -1,3 +1,4 @@
+import { EditorUiText, useEditorUiText } from '../../../editor-ui-text'
 import { type BuildingNode, LevelNode, useScene } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { Building2, Plus } from 'lucide-react'
@@ -22,6 +23,7 @@ export const BuildingTreeNode = memo(function BuildingTreeNode({
   depth,
   isLast,
 }: BuildingTreeNodeProps) {
+  const ui = useEditorUiText()
   const [expanded, setExpanded] = useState(true)
   const createNode = useScene((state) => state.createNode)
   const isVisible = useScene((s) => s.nodes[nodeId]?.visible !== false)
@@ -63,7 +65,7 @@ export const BuildingTreeNode = memo(function BuildingTreeNode({
                 <Plus className="h-3 w-3" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">Add new level</TooltipContent>
+            <TooltipContent side="right"><EditorUiText>Add new level</EditorUiText></TooltipContent>
           </Tooltip>
         </div>
       }
@@ -75,7 +77,7 @@ export const BuildingTreeNode = memo(function BuildingTreeNode({
       isLast={isLast}
       isSelected={isSelected}
       isVisible={isVisible}
-      label={name || 'Building'}
+      label={name || ui('Building')}
       onClick={handleClick}
       onDoubleClick={() => focusTreeNode(nodeId)}
       onToggle={() => setExpanded(!expanded)}

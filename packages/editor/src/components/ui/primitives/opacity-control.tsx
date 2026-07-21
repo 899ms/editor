@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText } from '../editor-ui-text'
 import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../../../components/ui/primitives/button'
@@ -59,7 +60,7 @@ export function OpacityControl({
         >
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm">Opacity</span>
+              <span className="font-medium text-sm"><EditorUiText>Opacity</EditorUiText></span>
               <span className="text-muted-foreground text-xs">{actualOpacity}%</span>
             </div>
             <Slider

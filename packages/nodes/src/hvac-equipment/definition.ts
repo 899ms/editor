@@ -85,13 +85,15 @@ export const hvacEquipmentDefinition: NodeDefinition<typeof HvacEquipmentNode> =
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Click', label: 'Place unit' },
-    { key: 'R / T', label: 'Rotate ±45°' },
-    { key: 'Esc', label: 'Exit' },
+    { key: 'Click', label: 'Place unit', labelKey: 'editor:contextual.hints.placeUnit' },
+    { key: 'R / T', label: 'Rotate ±45°', labelKey: 'editor:contextual.hints.rotate45' },
+    { key: 'Esc', label: 'Exit', labelKey: 'editor:contextual.hints.exit' },
   ],
 
   presentation: {
     label: 'HVAC Unit',
+    labelKey: 'nodes:kinds.hvacEquipment',
+    descriptionKey: 'nodes:descriptions.hvacEquipment',
     description:
       'Furnace, air handler, or condenser — duct runs connect to its supply/return collars.',
     icon: { kind: 'url', src: '/icons/HVAC.webp' },

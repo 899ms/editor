@@ -1,7 +1,13 @@
 'use client'
 
+import { EditorUiText, useEditorUiText } from '../../editor-ui-text'
 import { Icon } from '@iconify/react'
 import { type IconRef, useScene } from '@pascal-app/core'
+import {
+  resolveLocalizedDescription,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 import { ChevronLeft, ChevronRight, ExternalLink, Puzzle } from 'lucide-react'
 import { lazy, type ReactNode, Suspense, useState, useSyncExternalStore } from 'react'
 import { editorHostPanelRegistry } from '../../../../lib/plugin-panels'
@@ -33,6 +39,8 @@ function renderPluginIcon(ref: IconRef): ReactNode {
 }
 
 export function PluginsPanel() {
+  const { t } = usePascalTranslation()
+  const ui = useEditorUiText()
   const [selectedPluginId, setSelectedPluginId] = useState<string | null>(null)
   const panels = useSyncExternalStore(
     editorHostPanelRegistry.subscribe,
@@ -67,7 +75,7 @@ export function PluginsPanel() {
             variant="ghost"
           >
             <ChevronLeft className="h-4 w-4" />
-            All plugins
+            <EditorUiText>All plugins</EditorUiText>
           </Button>
 
           <div className="mt-5 flex items-start gap-4">
@@ -75,25 +83,26 @@ export function PluginsPanel() {
               {renderPluginIcon(panel.icon)}
             </div>
             <div className="min-w-0 pt-1">
-              <h2 className="font-semibold text-lg text-sidebar-foreground">{panel.label}</h2>
+              <h2 className="font-semibold text-lg text-sidebar-foreground">{resolveLocalizedLabel(panel, t)}</h2>
               <p className="text-sidebar-foreground/50 text-sm">
-                {installed ? 'Installed' : 'Not installed'}
+                {ui(installed ? 'Installed' : 'Not installed')}
               </p>
             </div>
           </div>
 
           <p className="mt-5 text-sidebar-foreground/70 text-sm">
-            {panel.description ?? 'Adds a new tool panel to the editor.'}
+            {resolveLocalizedDescription(panel, t) ??
+              ui('Adds a new tool panel to the editor.')}
           </p>
 
           <dl className="mt-6 divide-y divide-border/50 rounded-xl border border-border/60">
             <div className="p-3">
-              <dt className="text-sidebar-foreground/50 text-xs">Plugin ID</dt>
+              <dt className="text-sidebar-foreground/50 text-xs"><EditorUiText>Plugin ID</EditorUiText></dt>
               <dd className="mt-1 break-all text-sidebar-foreground text-sm">{pluginId}</dd>
             </div>
             {panel.creator && (
               <div className="p-3">
-                <dt className="text-sidebar-foreground/50 text-xs">Creator</dt>
+                <dt className="text-sidebar-foreground/50 text-xs"><EditorUiText>Creator</EditorUiText></dt>
                 <dd className="mt-1 text-sm">
                   {panel.creator.url ? (
                     <a
@@ -113,7 +122,7 @@ export function PluginsPanel() {
             )}
             {panel.pluginUrl && (
               <div className="p-3">
-                <dt className="text-sidebar-foreground/50 text-xs">Plugin</dt>
+                <dt className="text-sidebar-foreground/50 text-xs"><EditorUiText>Plugin</EditorUiText></dt>
                 <dd className="mt-1 text-sm">
                   <a
                     className="inline-flex items-center gap-1 text-sidebar-foreground underline-offset-4 hover:underline"
@@ -121,7 +130,7 @@ export function PluginsPanel() {
                     rel="noreferrer"
                     target="_blank"
                   >
-                    View plugin
+                    <EditorUiText>View plugin</EditorUiText>
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </dd>
@@ -140,7 +149,7 @@ export function PluginsPanel() {
             }}
             variant={installed ? 'outline' : 'default'}
           >
-            {installed ? 'Uninstall' : 'Install'}
+            {ui(installed ? 'Uninstall' : 'Install')}
           </Button>
         </div>
 
@@ -151,7 +160,7 @@ export function PluginsPanel() {
             rel="noreferrer"
             target="_blank"
           >
-            Create a Pascal plugin
+            <EditorUiText>Create a Pascal plugin</EditorUiText>
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
@@ -162,9 +171,9 @@ export function PluginsPanel() {
   return (
     <div className="flex h-full flex-col overflow-y-auto p-4">
       <div className="mb-5">
-        <h2 className="font-semibold text-lg text-sidebar-foreground">Plugins</h2>
+        <h2 className="font-semibold text-lg text-sidebar-foreground"><EditorUiText>Plugins</EditorUiText></h2>
         <p className="mt-1 text-sidebar-foreground/60 text-sm">
-          Add focused tools and content to this project.
+          <EditorUiText>Add focused tools and content to this project.</EditorUiText>
         </p>
       </div>
 
@@ -185,15 +194,16 @@ export function PluginsPanel() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h3 className="font-medium text-sidebar-foreground">{panel.label}</h3>
+                      <h3 className="font-medium text-sidebar-foreground">{resolveLocalizedLabel(panel, t)}</h3>
                       <p className="text-sidebar-foreground/50 text-xs">
-                        {installed ? 'Installed' : 'Not installed'}
+                        {ui(installed ? 'Installed' : 'Not installed')}
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 shrink-0 text-sidebar-foreground/50" />
                   </div>
                   <p className="mt-2 text-sidebar-foreground/60 text-sm">
-                    {panel.description ?? 'Adds a new tool panel to the editor.'}
+                    {resolveLocalizedDescription(panel, t) ??
+              ui('Adds a new tool panel to the editor.')}
                   </p>
                 </div>
               </div>
@@ -209,7 +219,7 @@ export function PluginsPanel() {
           rel="noreferrer"
           target="_blank"
         >
-          Create a Pascal plugin
+          <EditorUiText>Create a Pascal plugin</EditorUiText>
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </div>

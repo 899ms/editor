@@ -11,6 +11,7 @@ import {
 } from '@pascal-app/core'
 import {
   cn,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SliderControl,
@@ -190,7 +191,9 @@ export default function DormerPanel() {
                 onClick={() => setSection(option.value)}
                 type="button"
               >
-                <span className="truncate font-medium">{option.label}</span>
+                <span className="truncate font-medium">
+                  <NodeUiText>{option.label}</NodeUiText>
+                </span>
               </button>
             )
           })}
@@ -266,7 +269,9 @@ export default function DormerPanel() {
                     onClick={() => handleUpdate({ roofType: option.value })}
                     type="button"
                   >
-                    <span className="truncate font-medium">{option.label}</span>
+                    <span className="truncate font-medium">
+                      <NodeUiText>{option.label}</NodeUiText>
+                    </span>
                   </button>
                 )
               })}

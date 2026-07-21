@@ -13,6 +13,8 @@ import {
   SegmentedControl,
   SliderControl,
   ToggleControl,
+  NodeUiText,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Plus, Trash } from 'lucide-react'
@@ -159,6 +161,7 @@ export function CabinetRunPanel({
   modules: CabinetModuleNodeType[]
   onClose: () => void
 }) {
+  const uiText = useNodeUiText()
   const setSelection = useViewer((s) => s.setSelection)
   const sortedModules = useMemo(
     () => [...modules].sort((a, b) => a.position[0] - b.position[0]),
@@ -300,10 +303,10 @@ export function CabinetRunPanel({
                 type="button"
               >
                 <div className="truncate text-xs font-medium text-foreground">
-                  {module.name || `Module ${index + 1}`}
+                  {module.name || `${uiText('Module')} ${index + 1}`}
                 </div>
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  {moduleSummary(module)}
+                  {uiText(moduleSummary(module))}
                 </div>
               </button>
               <button
@@ -483,7 +486,7 @@ export function CabinetRunPanel({
         <div className="space-y-2 px-1 pb-2">
           <div>
             <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Style
+              <NodeUiText>Style</NodeUiText>
             </div>
             <SegmentedControl
               onChange={(value) =>
@@ -498,7 +501,7 @@ export function CabinetRunPanel({
           </div>
           <div>
             <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Mounting
+              <NodeUiText>Mounting</NodeUiText>
             </div>
             <SegmentedControl
               onChange={(value) =>
@@ -518,7 +521,7 @@ export function CabinetRunPanel({
         <div className="space-y-2 px-1 pb-2">
           <div>
             <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Style
+              <NodeUiText>Style</NodeUiText>
             </div>
             <SegmentedControl
               onChange={(value) =>
@@ -534,7 +537,7 @@ export function CabinetRunPanel({
           {(node.handleStyle === 'bar' || node.handleStyle === 'knob') && (
             <div>
               <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                Position
+                <NodeUiText>Position</NodeUiText>
               </div>
               <SegmentedControl
                 onChange={(value) =>

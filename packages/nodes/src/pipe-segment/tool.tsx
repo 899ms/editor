@@ -11,6 +11,8 @@ import {
   markToolCancelConsumed,
   triggerSFX,
   useEditor,
+  NodeUiText,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -135,6 +137,7 @@ function projectToAngleLock(
 }
 
 const PipeSegmentTool = () => {
+  const uiText = useNodeUiText()
   const activeLevelId = useViewer((s) => s.selection.levelId)
   const unit = useViewer((s) => s.unit)
   const [system, setSystem] = useState<'waste' | 'vent'>('waste')
@@ -667,12 +670,15 @@ const PipeSegmentTool = () => {
                 <div className="flex flex-col items-center gap-1">
                   <DimensionPill parts={pillParts} primary={pillPrimary} unit={unit} />
                   <div className="whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-3 py-0.5 text-[10px] text-muted-foreground shadow-sm backdrop-blur">
-                    {system === 'waste'
-                      ? sloped
-                        ? 'Waste · ¼″/ft fall'
-                        : 'Waste · level'
-                      : 'Vent · level'}{' '}
-                    · Q system{system === 'waste' ? ' · S slope' : ''}
+                    {uiText(
+                      system === 'waste'
+                        ? sloped
+                          ? 'Waste · ¼″/ft fall'
+                          : 'Waste · level'
+                        : 'Vent · level',
+                    )}{' '}
+                    <NodeUiText>· Q system</NodeUiText>
+                    {system === 'waste' ? uiText('· S slope') : ''}
                   </div>
                 </div>
               </Html>

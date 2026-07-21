@@ -9,6 +9,7 @@ import * as THREE from 'three'
 import { resolveOverlayPolicy } from '../../lib/interaction/overlay-policy'
 import useEditor from '../../store/use-editor'
 import useInteractionScope, { useMovingNode } from '../../store/use-interaction-scope'
+import { useEditorUiText } from '../ui/editor-ui-text'
 import { deleteSelection, duplicateSelectionAndPickUp, startGroupPickUp } from './group-actions'
 import { classifyParticipant, computeGroupBox, expandToComponent } from './group-transform-shared'
 import { NodeActionMenu } from './node-action-menu'
@@ -31,6 +32,7 @@ const MENU_Y_OFFSET = 0.42
  * picks the clones up, Delete removes everything selected.
  */
 export function GroupFloatingActionMenu() {
+  const ui = useEditorUiText()
   const selectedIds = useViewer((s) => s.selection.selectedIds)
   const levelId = useViewer((s) => s.selection.levelId)
   const mode = useEditor((s) => s.mode)
@@ -59,6 +61,7 @@ export function GroupFloatingActionMenu() {
   // positions), not the camera, and the menu hides during drags — so a
   // memo keyed on selection + nodes is enough, no per-frame box traversal.
   const meshEpoch = useMeshSettleEpoch(nodes)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: meshEpoch deliberately remeasures settled meshes
   const anchor = useMemo(() => {
     if (participantIds.length === 0) return null
     const fullIds = expandToComponent(participantIds, nodes, levelId)
@@ -69,7 +72,6 @@ export function GroupFloatingActionMenu() {
       box.max.y + MENU_Y_OFFSET,
       (box.min.z + box.max.z) / 2,
     )
-    // biome-ignore lint/correctness/useExhaustiveDependencies: meshEpoch re-measures settled meshes
   }, [participantIds, nodes, levelId, meshEpoch])
 
   useFrame((state) => {
@@ -96,10 +98,16 @@ export function GroupFloatingActionMenu() {
     event.stopPropagation()
     duplicateSelectionAndPickUp()
   }, [])
-  const handleDelete = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation()
-    deleteSelection()
-  }, [])
+  const handleDelete = useCallback(
+    (event: React.MouseEvent) => {
+      event.stopPropagation()
+      deleteSelection(
+        (count) =>
+          `${ui('Delete')} ${count} ${ui('selected elements? This cannot be undone if the undo history is exhausted.')}`,
+      )
+    },
+    [ui],
+  )
 
   if (!anchor || mode === 'delete' || isFloorplanHovered || movingNode || menuStepBack) {
     return null

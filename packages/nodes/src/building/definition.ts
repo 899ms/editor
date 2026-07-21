@@ -49,6 +49,8 @@ export const buildingDefinition: NodeDefinition<typeof BuildingNode> = {
 
   presentation: {
     label: 'Building',
+    labelKey: 'nodes:kinds.building',
+    descriptionKey: 'nodes:descriptions.building',
     description: 'A building container holding one or more levels.',
     icon: { kind: 'url', src: '/icons/building.webp' },
     paletteSection: 'site',

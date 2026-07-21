@@ -3,6 +3,7 @@
 import { useViewer } from '@pascal-app/viewer'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useEditorUiText } from '../ui/editor-ui-text'
 import { isActive } from '../../lib/interaction/scope'
 import useEditor from '../../store/use-editor'
 import useInteractionScope, { useMovingNode } from '../../store/use-interaction-scope'
@@ -26,6 +27,7 @@ import { NodeActionMenu } from '../editor/node-action-menu'
  * during any active interaction so it never competes with a live drag.
  */
 export function FloorplanGroupActionMenu() {
+  const ui = useEditorUiText()
   const isMultiSelect = useViewer((s) => s.selection.selectedIds.length > 1)
   const movingNode = useMovingNode()
   const isFloorplanHovered = useEditor((s) => s.isFloorplanHovered)
@@ -75,7 +77,14 @@ export function FloorplanGroupActionMenu() {
       }}
     >
       <NodeActionMenu
-        onDelete={() => deleteSelection()}
+        onDelete={() =>
+          deleteSelection(
+            (count) =>
+              `${ui('Delete')} ${count} ${ui(
+                'selected elements? This cannot be undone if the undo history is exhausted.',
+              )}`,
+          )
+        }
         onDuplicate={() => duplicateSelectionAndPickUp()}
         onMove={() => startGroupPickUp()}
         onPointerDown={(event) => event.stopPropagation()}

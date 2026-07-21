@@ -1,3 +1,9 @@
+import { nodeRegistry } from '@pascal-app/core'
+import {
+  resolveBuiltInNodeUiText,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 import { Html } from '@react-three/drei'
 import type { ThreeElements } from '@react-three/fiber'
 import { forwardRef } from 'react'
@@ -37,6 +43,8 @@ export const CursorSphere = forwardRef<Group, CursorSphereProps>(function Cursor
   },
   ref,
 ) {
+  const { t } = usePascalTranslation('editor')
+  const { t: tNodes } = usePascalTranslation('nodes')
   const tool = useEditor((s) => s.tool)
   const mode = useEditor((s) => s.mode)
   const catalogCategory = useEditor((s) => s.catalogCategory)
@@ -57,6 +65,12 @@ export const CursorSphere = forwardRef<Group, CursorSphereProps>(function Cursor
   }
 
   const isVisible = visible && !isFloorplanHovered
+  const activeToolPresentation = tool ? nodeRegistry.get(tool)?.presentation : undefined
+  const activeToolLabel = activeToolPresentation
+    ? resolveLocalizedLabel(activeToolPresentation, t)
+    : activeToolConfig?.label
+      ? resolveBuiltInNodeUiText(activeToolConfig.label, tNodes)
+      : undefined
 
   return (
     <group ref={ref} {...props} visible={isVisible}>
@@ -138,7 +152,7 @@ export const CursorSphere = forwardRef<Group, CursorSphereProps>(function Cursor
           {tooltipContent || (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              alt={activeToolConfig!.label}
+              alt={activeToolLabel ?? resolveBuiltInNodeUiText(activeToolConfig!.label, tNodes)}
               src={activeToolConfig!.iconSrc}
               style={{
                 width: '100%',

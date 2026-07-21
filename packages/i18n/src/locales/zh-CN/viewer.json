@@ -1,0 +1,11 @@
+{
+  "errors": {
+    "renderingFailed": "无法渲染 3D 视图。",
+    "webgpuUnavailable": "当前浏览器不支持 WebGPU。",
+    "viewerUnavailableTitle": "3D 查看器不可用",
+    "viewerUnavailableDescription": "当前浏览器或运行环境没有提供 WebGPU 或 WebGL，因此 Pascal 无法渲染 3D 场景。请尝试启用硬件加速后重新打开编辑器。"
+  },
+  "status": {
+    "loadingScene": "正在加载场景"
+  }
+}

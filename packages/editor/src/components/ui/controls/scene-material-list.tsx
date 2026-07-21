@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText, useEditorUiText } from '../editor-ui-text'
 import {
   generateSceneMaterialId,
   type MaterialSchema,
@@ -108,6 +109,7 @@ function SceneMaterialRow({
   removeSceneMaterial: ReturnType<typeof useScene.getState>['removeSceneMaterial']
   setActivePaintMaterial: ReturnType<typeof useEditor.getState>['setActivePaintMaterial']
 }) {
+  const ui = useEditorUiText()
   // A freshly-created material (via "+ Custom") mounts with its editor open.
   const [isEditingMaterial, setIsEditingMaterial] = useState(autoEdit)
   const [draftName, setDraftName] = useState(sceneMaterial.name)
@@ -131,7 +133,7 @@ function SceneMaterialRow({
   const duplicateMaterial = () => {
     addSceneMaterial({
       id: generateSceneMaterialId(),
-      name: `${sceneMaterial.name} copy`,
+      name: `${sceneMaterial.name} ${ui('copy')}`,
       material: structuredClone(sceneMaterial.material) as MaterialSchema,
     })
   }
@@ -166,7 +168,7 @@ function SceneMaterialRow({
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="text-muted-foreground text-xs">
-          Used by {usageCount} {usageCount === 1 ? 'part' : 'parts'}
+          <EditorUiText>Used by</EditorUiText> {usageCount} {ui(usageCount === 1 ? 'part' : 'parts')}
         </span>
         <div className="flex items-center gap-1">
           <Tooltip>
@@ -186,7 +188,7 @@ function SceneMaterialRow({
                 <Paintbrush />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Paint with</TooltipContent>
+            <TooltipContent><EditorUiText>Paint with</EditorUiText></TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -201,7 +203,7 @@ function SceneMaterialRow({
                 <Pencil />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Edit</TooltipContent>
+            <TooltipContent><EditorUiText>Edit</EditorUiText></TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -215,7 +217,7 @@ function SceneMaterialRow({
                 <Copy />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Duplicate</TooltipContent>
+            <TooltipContent><EditorUiText>Duplicate</EditorUiText></TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -229,7 +231,7 @@ function SceneMaterialRow({
                 <Trash2 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Delete</TooltipContent>
+            <TooltipContent><EditorUiText>Delete</EditorUiText></TooltipContent>
           </Tooltip>
         </div>
       </div>

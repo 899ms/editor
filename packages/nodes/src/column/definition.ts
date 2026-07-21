@@ -370,8 +370,8 @@ export const columnDefinition: NodeDefinition<typeof ColumnNode> = {
   // registry-first path mounts this and skips the legacy `<ColumnTool>`.
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Left click', label: 'Place column' },
-    { key: 'Esc', label: 'Cancel' },
+    { key: 'Left click', label: 'Place column', labelKey: 'editor:contextual.hints.placeColumn' },
+    { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
   floorplan: buildColumnFloorplan,
   // 2D body move routes through this kind-specific target so the column
@@ -392,6 +392,8 @@ export const columnDefinition: NodeDefinition<typeof ColumnNode> = {
 
   presentation: {
     label: 'Column',
+    labelKey: 'nodes:kinds.column',
+    descriptionKey: 'nodes:descriptions.column',
     description: 'A parametric column with configurable cross-section, base, and capital.',
     icon: { kind: 'url', src: '/icons/column.webp' },
     paletteSection: 'structure',

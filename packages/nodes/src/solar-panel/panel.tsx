@@ -14,6 +14,7 @@ import {
 import {
   ActionButton,
   ActionGroup,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
@@ -206,7 +207,9 @@ export default function SolarPanelPanel() {
               >
                 <span className="flex items-center gap-1.5 font-medium">
                   <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{card.label}</span>
+                  <span className="truncate">
+                    <NodeUiText>{card.label}</NodeUiText>
+                  </span>
                 </span>
                 <span className="pl-[20px] text-[10px] tabular-nums opacity-70">
                   {formatDims(dims.panelWidth, dims.panelHeight)}
@@ -217,7 +220,7 @@ export default function SolarPanelPanel() {
         </div>
         {!activePreset && (
           <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-            Custom — dimensions don't match any preset
+            <NodeUiText>Custom — dimensions don't match any preset</NodeUiText>
           </p>
         )}
       </PanelSection>

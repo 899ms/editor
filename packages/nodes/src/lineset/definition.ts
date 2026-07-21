@@ -113,14 +113,16 @@ export const linesetDefinition: NodeDefinition<typeof LinesetNode> = {
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Click', label: 'Start lineset' },
-    { key: 'Click again', label: 'Place it (locked to 45°)' },
-    { key: 'Alt + drag', label: 'Go vertical ↕, click to place' },
-    { key: 'Esc', label: 'Cancel start point' },
+    { key: 'Click', label: 'Start lineset', labelKey: 'editor:contextual.hints.startLineset' },
+    { key: 'Click again', label: 'Place it (locked to 45°)', labelKey: 'editor:contextual.hints.placeLocked45' },
+    { key: 'Alt + drag', label: 'Go vertical ↕, click to place', labelKey: 'editor:contextual.hints.goVertical' },
+    { key: 'Esc', label: 'Cancel start point', labelKey: 'editor:contextual.hints.cancelStartPoint' },
   ],
 
   presentation: {
     label: 'Lineset',
+    labelKey: 'nodes:kinds.lineset',
+    descriptionKey: 'nodes:descriptions.lineset',
     description:
       'Refrigerant lineset — copper suction + liquid pair joining a condenser to the indoor coil.',
     icon: { kind: 'url', src: '/icons/lineset.webp' },

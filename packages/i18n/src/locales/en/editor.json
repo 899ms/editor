@@ -1,0 +1,1560 @@
+{
+  "tabs": {
+    "build": "Build",
+    "items": "Items",
+    "scene": "Scene",
+    "settings": "Settings"
+  },
+  "settings": {
+    "languageDescription": "Choose the language used by the editor interface.",
+    "title": "Settings",
+    "sections": {
+      "visibility": "Visibility",
+      "export": "Export",
+      "thumbnail": "Thumbnail",
+      "saveLoad": "Save & Load",
+      "audio": "Audio",
+      "keyboard": "Keyboard",
+      "sceneGraph": "Scene Graph",
+      "dangerZone": "Danger Zone"
+    },
+    "visibility": {
+      "public": "Public",
+      "onlyYou": "Only you",
+      "anyone": "Anyone",
+      "canView": "{{audience}} can view",
+      "showScans": "Show 3D scans",
+      "showFloorplans": "Show floorplans",
+      "visibleToPublic": "Visible to public viewers",
+      "shadows": "Shadows",
+      "castShadows": "Cast shadows from lights"
+    },
+    "export": {
+      "model3d": "3D model",
+      "glb": "Export GLB",
+      "stl": "Export STL",
+      "obj": "Export OBJ",
+      "floorplan": "Floorplan",
+      "fullFloorplan": "Full floorplan",
+      "structureOnly": "Structure only"
+    },
+    "thumbnail": {
+      "generate": "Generate thumbnail",
+      "generating": "Generating..."
+    },
+    "saveLoad": {
+      "save": "Save build",
+      "load": "Load build",
+      "invalidJson": "File could not be parsed as JSON."
+    },
+    "sceneGraph": {
+      "explore": "Explore scene graph",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "expandAll": "Expand all",
+      "collapseAll": "Collapse all",
+      "expandAllChildren": "Expand all children",
+      "collapseAllChildren": "Collapse all children",
+      "copyPath": "Copy path",
+      "copyJson": "Copy value as JSON"
+    },
+    "dangerZone": {
+      "clear": "Clear & start new"
+    },
+    "loadDialog": {
+      "ready": "Ready to import",
+      "cannotImport": "Cannot import this file",
+      "nodeCount_one": "{{count}} node",
+      "nodeCount_other": "{{count}} nodes",
+      "errorCount_one": "{{count}} error",
+      "errorCount_other": "{{count}} errors",
+      "warningCount_one": "{{count}} warning",
+      "warningCount_other": "{{count}} warnings",
+      "structure": "Structure",
+      "floorArea": "Floor area",
+      "noRecognisedNodes": "The file contains no recognised nodes.",
+      "showMore": "Show {{count}} more",
+      "schemaDetails_one": "Schema details ({{count}} node)",
+      "schemaDetails_other": "Schema details ({{count}} nodes)",
+      "hide": "Hide",
+      "show": "Show",
+      "replaceScene": "Replace current scene",
+      "stats": {
+        "sites": "Sites",
+        "buildings": "Buildings",
+        "levels": "Levels",
+        "walls": "Walls",
+        "doors": "Doors",
+        "windows": "Windows",
+        "items": "Items",
+        "slabs": "Slabs",
+        "ceilings": "Ceilings",
+        "zones": "Zones",
+        "scans": "Scans"
+      }
+    },
+    "audioDialog": {
+      "title": "Audio settings",
+      "description": "Adjust volume levels and mute settings.",
+      "masterVolume": "Master volume",
+      "radioVolume": "Radio volume",
+      "soundEffects": "Sound effects",
+      "unmuteAll": "Unmute all sounds",
+      "muteAll": "Mute all sounds"
+    },
+    "keyboardDialog": {
+      "trigger": "Keyboard shortcuts",
+      "title": "Keyboard shortcuts",
+      "description": "Shortcuts are context-aware. Guided constraints are enabled by default; hold Shift during an active gesture to build freely.",
+      "categories": {
+        "navigation": {
+          "title": "Editor navigation",
+          "shortcuts": {
+            "0": {
+              "action": "Switch to Site phase"
+            },
+            "1": {
+              "action": "Switch to Structure phase"
+            },
+            "2": {
+              "action": "Switch to Furnish phase"
+            },
+            "3": {
+              "action": "Switch to Furnish layer"
+            },
+            "4": {
+              "action": "Switch to Zones layer"
+            },
+            "5": {
+              "action": "Select next level in the active building"
+            },
+            "6": {
+              "action": "Select previous level in the active building"
+            },
+            "7": {
+              "action": "Toggle sidebar"
+            }
+          }
+        },
+        "modes": {
+          "title": "Modes & history",
+          "shortcuts": {
+            "0": {
+              "action": "Switch to Select mode"
+            },
+            "1": {
+              "action": "Switch to Build mode"
+            },
+            "2": {
+              "action": "Activate the last measurement tool"
+            },
+            "3": {
+              "action": "Switch to Delete mode"
+            },
+            "4": {
+              "action": "Cancel the active tool and return to Select mode"
+            },
+            "5": {
+              "action": "Delete selected objects"
+            },
+            "6": {
+              "action": "Undo"
+            },
+            "7": {
+              "action": "Redo"
+            }
+          }
+        },
+        "selection": {
+          "title": "Selection",
+          "shortcuts": {
+            "0": {
+              "action": "Add or remove an object from multi-selection",
+              "note": "Works in Select mode on the 3D canvas, the 2D floor plan, and the scene graph."
+            },
+            "1": {
+              "action": "Add or remove an object from canvas multi-selection",
+              "note": "In the scene graph, Shift-click selects the visible range like a file browser."
+            },
+            "2": {
+              "action": "Move the whole multi-selection",
+              "note": "With 2+ objects selected, in 2D and 3D alike: drag the selection (or its dashed box) to slide it; click it to pick it up and place with the next click."
+            },
+            "3": {
+              "action": "Rotate a multi-selection ±45° around its center",
+              "note": "Also works mid-move while carrying the selection."
+            },
+            "4": {
+              "action": "Clear the selection",
+              "note": "Clicking empty space does the same."
+            }
+          }
+        },
+        "directManipulation": {
+          "title": "Direct manipulation",
+          "shortcuts": {
+            "0": {
+              "action": "Move the selected movable object under the cursor",
+              "note": "Drag in Select mode with a single object selected. Guided snapping and guides are enabled by default."
+            },
+            "1": {
+              "action": "Rotate the selected object under the cursor",
+              "note": "Drag left or right in Select mode with a single object selected. Rotation snaps to 15° increments by default."
+            },
+            "2": {
+              "action": "Rotate freely",
+              "note": "Hold Shift during the drag to bypass the 15° rotation increment."
+            }
+          }
+        },
+        "drawing": {
+          "title": "Drawing tools",
+          "shortcuts": {
+            "0": {
+              "action": "Bypass guided snapping and angle constraints",
+              "note": "Hold during the active gesture. Passive guide or measurement feedback may stay visible."
+            },
+            "1": {
+              "action": "Rotate freely, bypassing the default 15° rotation snap",
+              "note": "Hold while dragging a rotate handle or direct-rotation gesture."
+            }
+          }
+        },
+        "placement": {
+          "title": "Item placement",
+          "shortcuts": {
+            "0": {
+              "action": "Rotate item; with a door selected, R toggles open/closed and T closes"
+            },
+            "1": {
+              "action": "Operate the selected node — doors, windows, and cabinet doors/drawers animate open/closed"
+            },
+            "2": {
+              "action": "Temporarily bypass placement validation constraints",
+              "note": "Hold while placing."
+            }
+          }
+        },
+        "camera": {
+          "title": "Camera",
+          "shortcuts": {
+            "0": {
+              "action": "Pan camera",
+              "note": "Moves in screen space, similar to dragging the camera view."
+            },
+            "1": {
+              "action": "Pan camera",
+              "note": "Drag with the middle mouse button, or hold Space while dragging with the left mouse button."
+            },
+            "2": {
+              "action": "Orbit camera",
+              "note": "Drag with the right mouse button."
+            }
+          }
+        }
+      }
+    }
+  },
+  "localEditor": {
+    "createNew": "Create new",
+    "notice": "Local editor — scenes are not saved.",
+    "openRecentScenes": "Open recent scenes"
+  },
+  "navigation": {
+    "home": "Home",
+    "privacy": "Privacy Policy",
+    "scenes": "Scenes",
+    "terms": "Terms of Service",
+    "allScenes": "All scenes",
+    "backToEditor": "Back to editor",
+    "browseScenes": "Browse scenes"
+  },
+  "view": {
+    "display": "Display",
+    "mode": {
+      "2d": "2D",
+      "3d": "3D",
+      "split": "Split"
+    },
+    "preview": "Preview",
+    "scene": {
+      "exploded": "Exploded",
+      "manual": "Manual",
+      "solo": "Solo",
+      "stack": "Stack"
+    },
+    "walls": {
+      "cutaway": "Cutaway",
+      "fullHeight": "Full height",
+      "low": "Low",
+      "translucent": "Translucent"
+    }
+  },
+  "toolbar": {
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar",
+    "levels": "Levels: {{mode}}",
+    "previewMode": "Preview mode",
+    "walkthrough": "Walkthrough",
+    "walls": "Walls: {{mode}}"
+  },
+  "display": {
+    "camera": "Camera",
+    "cameraMode": {
+      "orthographic": "Orthographic",
+      "perspective": "Perspective"
+    },
+    "edges": "Edges",
+    "edgeMode": {
+      "off": {
+        "detail": "No edge lines",
+        "name": "Off"
+      },
+      "soft": {
+        "detail": "Faint outline of major creases",
+        "name": "Soft"
+      },
+      "strong": {
+        "detail": "Crisp, opaque edge lines",
+        "name": "Strong"
+      }
+    },
+    "grid": "Grid",
+    "magneticSnap": "Magnetic snap",
+    "measurements": "Measurements",
+    "render": "Render",
+    "settings": "Display settings",
+    "shading": {
+      "rendered": {
+        "detail": "Full ambient occlusion",
+        "name": "Rendered"
+      },
+      "solid": {
+        "detail": "Flat and fast — no ambient occlusion",
+        "name": "Solid"
+      }
+    },
+    "shadows": "Shadows",
+    "theme": "Theme",
+    "themes": {
+      "blueprint": "Blueprint",
+      "mediterranean": "Mediterranean",
+      "night": "Night",
+      "overcast": "Overcast",
+      "paper": "Paper",
+      "studio": "Studio",
+      "sunset": "Sunset",
+      "twilight": "Twilight",
+      "verdant": "Verdant"
+    },
+    "units": "Units",
+    "unitSystem": {
+      "imperial": "Imperial",
+      "metric": "Metric"
+    }
+  },
+  "build": {
+    "actions": {
+      "addFitting": "Add fitting",
+      "addTrap": "Add trap",
+      "followLineset": "Follow lineset"
+    },
+    "categories": {
+      "architecture": "Architecture",
+      "mep": "MEP",
+      "structure": "Structure"
+    },
+    "features": "Features",
+    "help": {
+      "followOff": "Trace a line alongside an existing lineset (F).",
+      "followOn": "Click a lineset to lay the line beside it."
+    },
+    "kinds": {
+      "ceiling": "Ceiling",
+      "column": "Column",
+      "door": "Door",
+      "duct": "Duct",
+      "dwvPipe": "DWV Pipe",
+      "elevator": "Elevator",
+      "fence": "Fence",
+      "hvacEquipment": "HVAC Unit",
+      "lineset": "Lineset",
+      "liquidLine": "Liquid Line",
+      "mep": "MEP",
+      "painting": "Painting",
+      "register": "Register",
+      "roof": "Roof",
+      "shelf": "Shelf",
+      "slab": "Slab",
+      "spawn": "Spawn Point",
+      "stair": "Stairs",
+      "wall": "Wall",
+      "window": "Window"
+    }
+  },
+  "tools": {
+    "delete": "Delete",
+    "measure": "Measure",
+    "select": "Select",
+    "zone": "Zone"
+  },
+  "scenes": {
+    "create": "Create scene",
+    "defaultName": "Untitled scene",
+    "empty": "You haven't saved any scenes yet.",
+    "emptyHint": "No scenes yet. Create one to get started.",
+    "heading": "Your scenes",
+    "noThumbnail": "No thumbnail",
+    "nodeCount_one": "{{count}} node",
+    "nodeCount_other": "{{count}} nodes",
+    "count_one": "{{count}} scene.",
+    "count_other": "{{count}} scenes.",
+    "notFound": "Scene not found",
+    "notFoundDescription": "We couldn't find a scene with id {{id}}."
+  },
+  "save": {
+    "createFailed": "Could not create the scene.",
+    "creating": "Creating…",
+    "saveFailed": "Could not save the scene.",
+    "saved": "Saved",
+    "saving": "Saving…",
+    "save": "Save",
+    "saveAs": "Save as…",
+    "noScene": "No scene to save",
+    "conflict": "Conflict — reload to continue",
+    "failedWithStatus": "Save failed ({{status}})",
+    "saveAsFailed": "Save as failed",
+    "saveAsFailedWithStatus": "Save as failed ({{status}})",
+    "newNamePrompt": "New scene name",
+    "conflictTitle": "Another session saved first — refresh?",
+    "conflictDescription": "Your changes haven't been saved. Reload to pick up the latest version.",
+    "reload": "Reload",
+    "dismiss": "Dismiss",
+    "connectionClosed": "Live scene connection closed"
+  },
+  "levels": {
+    "ground": "Ground Floor",
+    "floor": "Floor {{number}}",
+    "basement": "Basement {{number}}",
+    "reorder": "Reorder {{name}}",
+    "dragToReorder": "Drag to reorder",
+    "duplicate": "Duplicate level",
+    "duplicateWithOptions": "Duplicate with options...",
+    "pasteSelection": "Paste copied selection",
+    "delete": "Delete level",
+    "groundCannotDelete": "The ground level cannot be deleted",
+    "addAbove": "Add level above",
+    "addBelow": "Add level below",
+    "insertHere": "Insert level here",
+    "add": "Add level",
+    "empty": "No levels yet",
+    "deleteConfirmation": "Are you sure you want to delete {{name}}? All walls, floors, and objects on this level will be permanently removed.",
+    "duplicateDialog": {
+      "title": "Duplicate Level",
+      "description": "Choose what to copy from {{name}}.",
+      "thisLevel": "this level",
+      "confirm": "Duplicate",
+      "presets": {
+        "everything": {
+          "label": "Everything",
+          "description": "Structure, materials, furniture, and references."
+        },
+        "structure": {
+          "label": "Structure only",
+          "description": "Walls, slabs, roofs, stairs, windows, and doors without finishes."
+        },
+        "structureMaterials": {
+          "label": "Structure + materials",
+          "description": "Structure with the current material and finish assignments."
+        },
+        "structureFurniture": {
+          "label": "Structure + furniture",
+          "description": "Structure, finishes, and placed items, without guide references."
+        }
+      }
+    }
+  },
+  "walkthrough": {
+    "exit": "Exit Street View",
+    "spawnHint": "Place a Spawn Point from the Build tab to control where walkthrough starts.",
+    "move": "Move",
+    "jump": "Jump",
+    "sprint": "Sprint",
+    "interact": "Interact",
+    "close": "Close",
+    "lookAround": "Click to look around"
+  },
+  "sitePanel": {
+    "propertyLine": "Property Line",
+    "area": "Area:",
+    "perimeter": "Perimeter:",
+    "addPoint": "Add point",
+    "scan": "Scan",
+    "guide": "Guide",
+    "scanDefault": "3D Scan",
+    "guideDefault": "Guide Image",
+    "level": "Level",
+    "layers": {
+      "structure": "Structure",
+      "furnish": "Furnish",
+      "zones": "Zones"
+    },
+    "selectedObjects_one": "{{count}} object selected",
+    "selectedObjects_other": "{{count}} objects selected",
+    "clearSelection": "Clear selection",
+    "selectLevel": "Select a level to view content",
+    "noZones": "No zones on this level.",
+    "addZone": "Add one",
+    "noElements": "No elements on this level",
+    "building": "Building",
+    "site": "Site",
+    "noBuildings": "No buildings yet",
+    "zoneDefault": "Zone ({{area}})",
+    "upload": {
+      "action": "Upload scan/floorplan",
+      "uploading": "Uploading {{type}}... {{progress}}%",
+      "invalidType": "Invalid file type. Please upload a .glb/.gltf scan or an image.",
+      "tooLarge": "File is too large ({{size}} MB). Maximum size is 200 MB.",
+      "guideFailed": "Could not add that guide image.",
+      "noProject": "No active project. Please open a project first."
+    },
+    "camera": {
+      "snapshot": "Camera snapshot",
+      "view": "View snapshot",
+      "update": "Update snapshot",
+      "take": "Take snapshot",
+      "clear": "Clear snapshot"
+    }
+  },
+  "camera": {
+    "orbitLeft": "Orbit left",
+    "orbitRight": "Orbit right",
+    "topView": "Top view",
+    "controls": {
+      "actions": {
+        "pan": "Pan",
+        "rotate": "Rotate",
+        "zoom": "Zoom"
+      },
+      "keys": {
+        "leftClick": "Left click",
+        "middleClick": "Middle click",
+        "rightClick": "Right click",
+        "scrollWheel": "Scroll wheel",
+        "space": "Space"
+      },
+      "hintLabel": "Camera controls hint",
+      "dismissHintLabel": "Dismiss camera controls hint",
+      "dismiss": "Dismiss"
+    }
+  },
+  "measurement": {
+    "angle": "Angle",
+    "area": "Area",
+    "distance": "Distance",
+    "measureType": "Measure: {{type}}",
+    "options": "Measurement options",
+    "perimeter": "Perimeter",
+    "show": "Show measurements",
+    "smart": "Smart",
+    "type": "Measurement type",
+    "volume": "Volume"
+  },
+  "floorplan": {
+    "alignNorth": "Align view to north"
+  },
+  "references": {
+    "empty": "Upload GLB meshes as scan references or blueprint images as guide references.",
+    "upload": "Upload scan or guide image",
+    "uploadInvalid": "Upload a .glb/.gltf scan or an image.",
+    "label": "References",
+    "visibility": "{{name}}: {{state}}",
+    "visible": "Visible",
+    "hidden": "Hidden",
+    "settings": "Reference settings",
+    "scans": "Scans",
+    "guideImages": "Guide images",
+    "scan": "scan",
+    "guideImage": "guide image",
+    "hide": "Hide {{name}}",
+    "show": "Show {{name}}",
+    "delete": "Delete {{name}}",
+    "opacity": "Opacity",
+    "guideSettings": "Guide image settings",
+    "scanSettings": "Scan settings",
+    "deleteGuide": "Delete guide image",
+    "deleteScan": "Delete scan",
+    "fileTooLarge": "File is too large. Maximum size is 200 MB.",
+    "guideFailed": "Could not add that guide image.",
+    "scanUnavailable": "Scan upload is unavailable.",
+    "openProject": "Open a project before uploading a scan.",
+    "guideDefault": "Guide image {{number}}",
+    "scanDefault": "Scan {{number}}",
+    "guideCount_one": "{{count}} guide image on this level",
+    "guideCount_other": "{{count}} guide images on this level",
+    "scanCount_one": "{{count}} scan on this level",
+    "scanCount_other": "{{count}} scans on this level"
+  },
+  "referenceFloor": {
+    "label": "Reference floor",
+    "withLevel": "Reference floor: {{name}}",
+    "settings": "Reference floor settings",
+    "hide": "Hide reference floor",
+    "show": "Show reference floor",
+    "opacity": "Opacity",
+    "below": "{{count}} below",
+    "noLowerLevel": "No lower floor available."
+  },
+  "riser": {
+    "diagram": "Riser diagram"
+  },
+  "contextual": {
+    "snapping": {
+      "label": "Snapping: {{mode}}",
+      "tooltip": "Snapping mode — click or press Shift to cycle",
+      "modes": {
+        "grid": "Grid",
+        "lines": "Lines",
+        "angles": "Angles",
+        "off": "Off"
+      }
+    },
+    "grid": {
+      "step": "Grid step: {{value}} m",
+      "label": "Grid: {{value}} m",
+      "tooltip": "Grid step — click or press Ctrl to cycle"
+    },
+    "continuation": {
+      "label": "Continuation: {{mode}}",
+      "tooltip": "Continuation — click or press C to cycle",
+      "wall": {
+        "room": "Room (auto-close)",
+        "single": "Single wall"
+      },
+      "fence": {
+        "continuous": "Continuous",
+        "single": "Single fence",
+        "curved": "Curved fence"
+      },
+      "point": {
+        "once": "Place once",
+        "repeat": "Place multiple"
+      }
+    },
+    "fence": {
+      "type": "Type: {{type}}",
+      "typeAria": "Fence type: {{type}}",
+      "continuationAria": "Fence continuation: {{mode}}",
+      "straight": "Straight",
+      "curved": "Curved",
+      "single": "Straight: Single",
+      "continuous": "Straight: Continuous",
+      "typeTooltip": "Fence type — click or press T to switch between straight and curved",
+      "continuationTooltip": "Straight fence continuation — click or press C to toggle",
+      "continuationUnavailable": "Straight continuation is unavailable while curved fence type is active",
+      "finishCurve": "Finish curve (or double-click)"
+    },
+    "paint": {
+      "selectMaterial": "Select a material to paint",
+      "hoverSurface": "Hover a surface to paint",
+      "label": "Paint: {{scope}}",
+      "scope": "Paint scope: {{scope}}",
+      "tooltip": "Paint scope — click or press Shift to cycle"
+    },
+    "shortcuts": {
+      "leftClick": "Left click",
+      "middleClick": "Middle click",
+      "rightClick": "Right click",
+      "command": "Command",
+      "control": "Control",
+      "shift": "Shift"
+    },
+    "hints": {
+      "setWallEndpoints": "Set wall start / end",
+      "setFenceEndpoints": "Set fence start / end",
+      "cancel": "Cancel",
+      "guidedBypass": "Guided constraints bypassed",
+      "addRemoveSelection": "Add or remove objects from the selection",
+      "moveSelectionTogether": "Click or drag the selection to move it as one",
+      "rotateSelection45": "Rotate the selection ±45°",
+      "clearSelection": "Clear the selection (or click outside)",
+      "showRunHandles": "Click a handle dot to show move arrows",
+      "detachJoint": "Detach the joint while dragging an arrow",
+      "showFittingHandles": "Click the handle dot to show move + rotate handles",
+      "rotate45": "Rotate ±45°",
+      "switchRotationAxis": "Switch the rotation axis (Y → X → Z)",
+      "dragSelected": "Drag selected movable object",
+      "dragRotateSelected": "Drag left or right to rotate selected object",
+      "rotateFreelyActive": "Rotating freely (no angle step)",
+      "rotateFreelyHold": "Hold to rotate freely",
+      "curve": "Curve",
+      "moveControlPoint": "Move control point",
+      "moveTangent": "Move tangent",
+      "moveEndpoint": "Move endpoint",
+      "moveCorner": "Move corner",
+      "place": "Place",
+      "rotate": "Rotate",
+      "forcePlace": "Force place",
+      "rotateSelection": "Rotate the selection ±45°",
+      "inspectSurfaceDimensions": "Inspect surface dimensions",
+      "pinMeasurementLens": "Pin measurement lens",
+      "exitSmartMeasure": "Exit smart measure",
+      "placeColumn": "Place column",
+      "placeChimneyOnRoof": "Place chimney on roof",
+      "placeMeasurementPoint": "Place measurement point",
+      "finishMeasurement": "Finish measurement",
+      "removeLastPoint": "Remove last point",
+      "finishAndContinue": "Finish and continue",
+      "traceCeilingOutline": "Trace ceiling outline",
+      "finishCeiling": "Finish ceiling",
+      "placeWindowOnWall": "Place window on wall",
+      "flipSide": "Flip side",
+      "placeSkylightOnRoof": "Place skylight on roof",
+      "placeItem": "Place item",
+      "cycleSnappingMode": "Cycle snapping mode",
+      "placeTurbineVent": "Place turbine vent on roof",
+      "placeBoxVent": "Place box vent on roof",
+      "startLiquidLine": "Start liquid line",
+      "placeLocked45": "Place it (locked to 45°)",
+      "goVertical": "Go vertical ↕, click to place",
+      "followLineset": "Follow: trace a lineset",
+      "placeUnit": "Place unit",
+      "exit": "Exit",
+      "startRun": "Start run",
+      "placeWasteSlope": "Place it (waste falls ¼″/ft)",
+      "wasteVent": "Waste / vent",
+      "pipeSize": "Pipe size down / up",
+      "verticalStack": "Vertical stack ↕, click to place",
+      "cancelStartPoint": "Cancel start point",
+      "placeRidgeVent": "Place ridge vent on roof",
+      "startLineset": "Start lineset",
+      "placeShelf": "Place shelf",
+      "placeFitting": "Place fitting",
+      "snapOntoRun": "Snap onto the run",
+      "placeGutter": "Place gutter on roof eave",
+      "placeCabinet": "Place cabinet",
+      "placementType": "Placement type",
+      "cancelRunExit": "Cancel run / exit",
+      "startSegment": "Start segment",
+      "placeAndContinue": "Place and continue",
+      "ductDiameter": "Duct diameter down / up",
+      "roundRectTrunk": "Round / rect trunk",
+      "ceilingFloorHeight": "Ceiling / floor height",
+      "placeSolarPanel": "Place solar panel array on roof",
+      "traceSlabOutline": "Trace slab outline",
+      "finishSlab": "Finish slab",
+      "placeEyebrowVent": "Place eyebrow vent on roof",
+      "placeDormer": "Place dormer on roof",
+      "rotateGhost15": "Rotate ghost ±15°",
+      "placeRegister": "Place register",
+      "mountTerminal": "Mount: floor / ceiling / wall",
+      "rotateTerminal45": "Rotate ±45° (floor / ceiling)",
+      "placeTrap": "Place trap",
+      "placeSpawn": "Place spawn point",
+      "placeElevator": "Place elevator",
+      "placeDoor": "Place door on wall",
+      "highlightOutlet": "Highlight outlet",
+      "dropDownspout": "Drop downspout from outlet",
+      "placeStairs": "Place stairs",
+      "placeCupola": "Place cupola on roof",
+      "plantTree": "Plant tree",
+      "plantFlower": "Plant flower",
+      "plantGrass": "Plant grass",
+      "stop": "Stop"
+    }
+  },
+  "errors": {
+    "backHome": "Back to home",
+    "reloadEditor": "Reload editor",
+    "sceneDescription": "You can retry the scene or return home without reloading the whole app shell.",
+    "sceneTitle": "The editor scene failed to render"
+  },
+  "itemCatalog": {
+    "categories": {
+      "furniture": "Furniture",
+      "appliance": "Appliance",
+      "kitchen": "Kitchen",
+      "bathroom": "Bathroom",
+      "outdoor": "Outdoor"
+    },
+    "search": "Search...",
+    "noResults": "No results for “{{query}}”",
+    "all": "All",
+    "sources": {
+      "library": "Library",
+      "community": "Community",
+      "mine": "Mine"
+    },
+    "tags": {
+      "floor": "Floor",
+      "wall": "Wall",
+      "ceiling": "Ceiling",
+      "countertop": "Countertop"
+    },
+    "assetNames": {
+      "cactus": "Cactus",
+      "tv-stand": "TV Stand",
+      "dining-table-mo9ms5yh": "Dining table",
+      "single-bed": "Single Bed",
+      "livingroom-chair": "Livingroom Chair",
+      "small-indoor-plant": "Small Plant",
+      "column": "Column",
+      "barbell": "Barbell",
+      "toy": "Toy",
+      "barbell-stand": "Barbell Stand",
+      "books": "Books",
+      "stool": "Stool",
+      "pool-table": "Pool table",
+      "bookshelf": "Bookshelf",
+      "coat-rack": "Coat Rack",
+      "car-toy": "Car Toy",
+      "bedside-table": "Bedside Table",
+      "cabinet": "Modular Cabinet",
+      "sofa": "Sofa",
+      "bunkbed": "Bunkbed",
+      "my-leather-couch-modp80ha": "My leather couch",
+      "office-table": "Office Table",
+      "dining-table": "Dining Table",
+      "guitar": "Guitar",
+      "trash-bin": "Trash Bin",
+      "recessed-light": "Recessed Light",
+      "shelf": "Shelf",
+      "table-lamp": "Table Lamp",
+      "ceiling-lamp": "Ceiling Lamp",
+      "closet": "Closet",
+      "coffee-table": "Coffee Table",
+      "dining-chair": "Dining Chair",
+      "dresser": "Dresser",
+      "ikea-kallax-1x4-moa2y49n": "Ikea Kallax 2x4",
+      "indoor-plant": "Indoor Plant",
+      "ironing-board": "Ironing Board",
+      "double-bed": "Double Bed",
+      "floor-lamp": "Floor Lamp",
+      "herman-miller-aeron-mo8x36k9": "Herman Miller Aeron",
+      "easel": "Easel",
+      "lounge-chair": "Lounge Chair",
+      "office-chair": "Office Chair",
+      "piano": "Piano",
+      "picture": "Picture",
+      "rectangular-carpet": "Rectangular Carpet",
+      "round-mirror": "Rounded Mirror",
+      "round-carpet": "Round Carpet",
+      "threadmill": "Threadmill",
+      "standing-desk-mo8wgz95": "Standing Desk",
+      "sprinkler": "Sprinkler",
+      "exit-sign": "Exit Sign",
+      "sewing-machine": "Sewing Machine",
+      "television": "Television",
+      "power-outlet-moa09g0o": "Power Outlet",
+      "ac-block": "AC block",
+      "stereo-speaker": "Stereo Speaker",
+      "thermostat": "Thermostat",
+      "toaster": "Toaster",
+      "kettle": "Kettle",
+      "hydrant": "Hydrant",
+      "fire-detector": "Fire Detector",
+      "smoke-detector": "Smoke Detector",
+      "coffee-machine": "Coffee Machine",
+      "ceiling-fan": "Ceiling fan",
+      "iron": "Iron",
+      "air-conditioning": "Air Conditioning",
+      "computer": "Computer",
+      "alarm-keypad": "Alarm Keypad",
+      "ev-wall-charger": "Ev-wall-charger",
+      "electric-panel": "Electric Panel",
+      "bathroom-sink": "Bathroom Sink",
+      "shower-angle": "Angle Shower",
+      "toilet-paper": "Toilet Paper",
+      "washing-machine": "Washing Machine",
+      "shower-rug": "Shower Rug",
+      "bathtub": "Bathtub",
+      "laundry-bag": "Laundry Bag",
+      "shower-square": "Squared Shower",
+      "drying-rack": "Drying Rack",
+      "toilet": "Toilet",
+      "microwave": "Microwave",
+      "cutting-board": "Cutting Board",
+      "kitchen-utensils": "Kitchen Utensils",
+      "kitchen-counter": "Kitchen Counter",
+      "hood": "Hood",
+      "wooden-kitchen-bar-moa2hhh4": "Kitchen Bar",
+      "kitchen-cabinet": "Kitchen Cabinet",
+      "kitchen": "Kitchen",
+      "frying-pan": "Frying Pan",
+      "fruits": "Fruits",
+      "fridge": "Fridge",
+      "kitchen-shelf": "Kitchen Shelf",
+      "wine-bottle": "Wine Bottle",
+      "stove": "Stove",
+      "ball": "Ball",
+      "bush": "Bush",
+      "basket-hoop": "Basket Hoop",
+      "parking-spot": "Parking Spot",
+      "palm": "Palm",
+      "sunbed": "Sunbed",
+      "fir-tree": "Fir",
+      "tree": "Tree",
+      "skate": "Skate",
+      "1967-chevrolet-camaro-moa24wsf": "1967 Chevrolet Camaro",
+      "outdoor-playhouse": "Outdoor Playhouse",
+      "patio-umbrella": "Patio Umbrella",
+      "pillar": "Pillar",
+      "scooter": "Scooter",
+      "tesla": "Tesla Model Y",
+      "dishwasher-movn72ls": "Dishwasher",
+      "fireplace-movn1fnn": "Fireplace"
+    }
+  },
+  "nature": {
+    "title": "Nature",
+    "planted": "{{count}} planted",
+    "modes": {
+      "trees": "Trees",
+      "flowers": "Flowers",
+      "grass": "Grass"
+    },
+    "instructions": {
+      "arming": "Click the ground to plant. Press Esc to stop.",
+      "trees": "Pick a tree, then click the ground.",
+      "flowers": "Pick a flower, then click the ground.",
+      "grass": "Pick grass, then click the ground."
+    },
+    "controls": {
+      "height": "Height",
+      "foliage": "Foliage",
+      "trunk": "Trunk",
+      "bare": "Bare (leafless)",
+      "small": "S",
+      "medium": "M",
+      "large": "L"
+    },
+    "presets": {
+      "oak": "Oak",
+      "pine": "Pine",
+      "aspen": "Aspen",
+      "ash": "Ash",
+      "bush": "Bush",
+      "trellis": "Trellis",
+      "daisy": "Daisy",
+      "tulip": "Tulip",
+      "lavender": "Lavender",
+      "meadow": "Meadow",
+      "fescue": "Fescue",
+      "reed": "Reed"
+    },
+    "footer": {
+      "beforeTool": "Trees generated with",
+      "by": "by",
+      "license": "(MIT)."
+    },
+    "description": "Procedural trees, flowers, and grasses for outdoor scenes.",
+    "kinds": {
+      "tree": "Tree",
+      "flower": "Flower",
+      "grass": "Grass"
+    },
+    "kindDescriptions": {
+      "tree": "A procedural tree. Oak, pine, aspen, ash, bush, or trellis.",
+      "flower": "A procedural flower. Daisy, tulip, or lavender.",
+      "grass": "A procedural grass tuft. Meadow, fescue, or reed."
+    },
+    "groups": {
+      "tree": "Tree",
+      "flower": "Flower",
+      "grass": "Grass",
+      "foliage": "Foliage",
+      "position": "Position"
+    },
+    "actions": {
+      "randomize": "Randomize",
+      "resetHeight": "Reset height"
+    },
+    "cabinet": {
+      "typeCabinet": "Type: Cabinet",
+      "typeIsland": "Type: Island",
+      "tooltip": "Placement type — click or press I to toggle"
+    },
+    "hints": {
+      "plantTree": "Plant tree",
+      "plantFlower": "Plant flower",
+      "plantGrass": "Plant grass",
+      "stop": "Stop"
+    }
+  },
+  "legacyUiText": {
+    "Add focused tools and content to this project.": "Add focused tools and content to this project.",
+    "Adds a new tool panel to the editor.": "Adds a new tool panel to the editor.",
+    "Install": "Install",
+    "Installed": "Installed",
+    "Not installed": "Not installed",
+    "Uninstall": "Uninstall",
+    "Add material": "Add material",
+    "Add new level": "Add new level",
+    "Add one": "Add one",
+    "All plugins": "All plugins",
+    "Axis": "Axis",
+    "back": "back",
+    "Back": "Back",
+    "Cancel": "Cancel",
+    "Camera snapshot": "Camera snapshot",
+    "Clear snapshot": "Clear snapshot",
+    "close": "close",
+    "Close": "Close",
+    "Close capture mode": "Close capture mode",
+    "Collections": "Collections",
+    "Collection name…": "Collection name…",
+    "Color": "Color",
+    "Command Palette": "Command Palette",
+    "Create a Pascal plugin": "Create a Pascal plugin",
+    "Create": "Create",
+    "Creator": "Creator",
+    "Crop": "Crop",
+    "ctrl": "ctrl",
+    "Curve": "Curve",
+    "Cutaway": "Cutaway",
+    "Cut Out": "Cut Out",
+    "Delete": "Delete",
+    "Delete \"": "Delete \"",
+    "Displays the mobile sidebar.": "Displays the mobile sidebar.",
+    "Double": "Double",
+    "Drag the area you want to capture": "Drag the area you want to capture",
+    "Drawn line": "Drawn line",
+    "DWV plumbing isometric": "DWV plumbing isometric",
+    "DWV riser diagram": "DWV riser diagram",
+    "Duplicate": "Duplicate",
+    "Edit": "Edit",
+    "Edit properties": "Edit properties",
+    "Enter the real-world length of the line you just drew. The image will resize to match it.": "Enter the real-world length of the line you just drew. The image will resize to match it.",
+    "Erase": "Erase",
+    "Extrusion height": "Extrusion height",
+    "Feet": "Feet",
+    "Find in catalog": "Find in catalog",
+    "Format": "Format",
+    "Front": "Front",
+    "Full Height": "Full Height",
+    "Guides": "Guides",
+    "Inches": "Inches",
+    "Levels": "Levels",
+    "Loading": "Loading",
+    "Loading…": "Loading…",
+    "Low": "Low",
+    "Meters": "Meters",
+    "Centimeters": "Centimeters",
+    "Move": "Move",
+    "navigate": "navigate",
+    "New": "New",
+    "No collections yet. Create one to group items together.": "No collections yet. Create one to group items together.",
+    "No commands found.": "No commands found.",
+    "No custom materials yet — add one with +.": "No custom materials yet — add one with +.",
+    "No drain, waste, or vent pipes yet. Draw plumbing to see the riser diagram.": "No drain, waste, or vent pipes yet. Draw plumbing to see the riser diagram.",
+    "No zones on this level.": "No zones on this level.",
+    "Opacity": "Opacity",
+    "Orbit Left": "Orbit Left",
+    "Orbit Right": "Orbit Right",
+    "Overlay image unavailable. Replace the image to restore it.": "Overlay image unavailable. Replace the image to restore it.",
+    "Paint with": "Paint with",
+    "panel": "panel",
+    "Plugin": "Plugin",
+    "Plugins": "Plugins",
+    "Plugin ID": "Plugin ID",
+    "pos": "pos",
+    "R/T rotate": "R/T rotate",
+    "Rename": "Rename",
+    "Rename to": "Rename to",
+    "Real length": "Real length",
+    "resize": "resize",
+    "Reset all": "Reset all",
+    "Riser Diagram": "Riser Diagram",
+    "rot": "rot",
+    "rotate": "rotate",
+    "Save Scale": "Save Scale",
+    "scale": "scale",
+    "Scans": "Scans",
+    "Scene materials": "Scene materials",
+    "select": "select",
+    "Select a level to view and create zones": "Select a level to view and create zones",
+    "set scale": "set scale",
+    "Set overlay scale": "Set overlay scale",
+    "Side": "Side",
+    "Sidebar": "Sidebar",
+    "Site": "Site",
+    "snapshot": "snapshot",
+    "Something went wrong": "Something went wrong",
+    "Switch to a building level to view and edit the floorplan.": "Switch to a building level to view and edit the floorplan.",
+    "Temperature": "Temperature",
+    "Toggle Sidebar": "Toggle Sidebar",
+    "Top View": "Top View",
+    "Translucent": "Translucent",
+    "Try again": "Try again",
+    "Type a new name above…": "Type a new name above…",
+    "Used by": "Used by",
+    "Vent": "Vent",
+    "View plugin": "View plugin",
+    "View snapshot": "View snapshot",
+    "Walkthrough": "Walkthrough",
+    "Waste": "Waste",
+    "freezes this exact camera angle as a reusable reference for renders & videos.": "freezes this exact camera angle as a reusable reference for renders & videos.",
+    "⚠ no equipment": "⚠ no equipment",
+    "⌥ axis": "⌥ axis",
+    "A snapshot freezes this exact camera angle as a reusable reference for renders & videos.": "A snapshot freezes this exact camera angle as a reusable reference for renders & videos.",
+    "Capture": "Capture",
+    "Take snapshot": "Take snapshot",
+    "plugin crashed": "plugin crashed",
+    "This panel hit an error and was unloaded for this session. The rest of the editor is unaffected — reload to try again.": "This panel hit an error and was unloaded for this session. The rest of the editor is unaffected — reload to try again.",
+    "copy": "copy",
+    "part": "part",
+    "parts": "parts",
+    "Solid": "Solid",
+    "Rendered": "Rendered",
+    "Flat and fast — no ambient occlusion": "Flat and fast — no ambient occlusion",
+    "Full ambient occlusion": "Full ambient occlusion",
+    "Colored": "Colored",
+    "Monochrome": "Monochrome",
+    "Show materials, textures & colors": "Show materials, textures & colors",
+    "Flat clay surfaces by role": "Flat clay surfaces by role",
+    "Off": "Off",
+    "Soft": "Soft",
+    "Strong": "Strong",
+    "No edge lines": "No edge lines",
+    "Faint outline of major creases": "Faint outline of major creases",
+    "Crisp, opaque edge lines": "Crisp, opaque edge lines",
+    "Studio": "Studio",
+    "Paper": "Paper",
+    "Sunset": "Sunset",
+    "Overcast": "Overcast",
+    "Blueprint": "Blueprint",
+    "Mediterranean": "Mediterranean",
+    "Twilight": "Twilight",
+    "Night": "Night",
+    "Verdant": "Verdant",
+    "Stacked": "Stacked",
+    "Exploded": "Exploded",
+    "Solo": "Solo",
+    "Stack": "Stack",
+    "Manual": "Manual",
+    "Visible": "Visible",
+    "Hidden": "Hidden",
+    "Perspective": "Perspective",
+    "Orthographic": "Orthographic",
+    "Scans: Visible": "Scans: Visible",
+    "Scans: Hidden": "Scans: Hidden",
+    "Guides: Visible": "Guides: Visible",
+    "Guides: Hidden": "Guides: Hidden",
+    "Camera: Perspective": "Camera: Perspective",
+    "Camera: Orthographic": "Camera: Orthographic",
+    "Levels: Manual": "Levels: Manual",
+    "Levels: Stacked": "Levels: Stacked",
+    "Levels: Exploded": "Levels: Exploded",
+    "Levels: Solo": "Levels: Solo",
+    "Walls: Full Height": "Walls: Full Height",
+    "Walls: Cutaway": "Walls: Cutaway",
+    "Walls: Low": "Walls: Low",
+    "Walls: Translucent": "Walls: Translucent",
+    "Render: Solid": "Render: Solid",
+    "Render: Rendered": "Render: Rendered",
+    "Theme: Studio": "Theme: Studio",
+    "Theme: Paper": "Theme: Paper",
+    "Theme: Sunset": "Theme: Sunset",
+    "Theme: Overcast": "Theme: Overcast",
+    "Theme: Blueprint": "Theme: Blueprint",
+    "Theme: Mediterranean": "Theme: Mediterranean",
+    "Theme: Twilight": "Theme: Twilight",
+    "Theme: Night": "Theme: Night",
+    "Theme: Verdant": "Theme: Verdant",
+    "Edges: Off": "Edges: Off",
+    "Edges: Soft": "Edges: Soft",
+    "Edges: Strong": "Edges: Strong",
+    "XYZ": "XYZ",
+    "(Editing)": "(Editing)",
+    "3D Scan": "3D Scan",
+    "ALIGN": "ALIGN",
+    "Add Level": "Add Level",
+    "Align": "Align",
+    "Alt to detach": "Alt to detach",
+    "Any decimal works. Use the known real length, not the drawn value.": "Any decimal works. Use the known real length, not the drawn value.",
+    "Area": "Area",
+    "Bottom": "Bottom",
+    "Building": "Building",
+    "Camera": "Camera",
+    "Capturing…": "Capturing…",
+    "Ceiling Tool": "Ceiling Tool",
+    "Click another surface to replace": "Click another surface to replace",
+    "Click both ends of a known distance on the plan, then type its real length.": "Click both ends of a known distance on the plan, then type its real length.",
+    "Click one end of a distance you know — e.g. a dimension printed on the plan": "Click one end of a distance you know — e.g. a dimension printed on the plan",
+    "Click surface to pin": "Click surface to pin",
+    "Click the other end of that distance": "Click the other end of that distance",
+    "Copy Share Link": "Copy Share Link",
+    "Delete Level": "Delete Level",
+    "Delete Selection": "Delete Selection",
+    "Direct Manipulation": "Direct Manipulation",
+    "Door Tool": "Door Tool",
+    "Draw a line over a known dimension on the plan, then type its real length to scale the image exactly.": "Draw a line over a known dimension on the plan, then type its real length to scale the image exactly.",
+    "Drawing Tools": "Drawing Tools",
+    "e.g. 3.5, 180cm or 5'11\"": "e.g. 3.5, 180cm or 5'11\"",
+    "Editor Navigation": "Editor Navigation",
+    "Enter a length greater than 0.": "Enter a length greater than 0.",
+    "Enter Preview": "Enter Preview",
+    "Esc to cancel": "Esc to cancel",
+    "Exit Preview": "Exit Preview",
+    "Exit smart measure": "Exit smart measure",
+    "Export & Share": "Export & Share",
+    "Export 3D Model (GLB)": "Export 3D Model (GLB)",
+    "Export Scene (JSON)": "Export Scene (JSON)",
+    "Filter options…": "Filter options…",
+    "Go to Level": "Go to Level",
+    "Image will scale": "Image will scale",
+    "Inspect surface dimensions": "Inspect surface dimensions",
+    "Item Placement": "Item Placement",
+    "Item Tool": "Item Tool",
+    "Level Mode": "Level Mode",
+    "Live lens": "Live lens",
+    "Material Paint": "Material Paint",
+    "measurements": "measurements",
+    "Modes & History": "Modes & History",
+    "Pin measurement lens": "Pin measurement lens",
+    "Pinned": "Pinned",
+    "Preset · square": "Preset · square",
+    "Redo": "Redo",
+    "Ref": "Ref",
+    "Register": "Register",
+    "Rename Level": "Rename Level",
+    "Rotate the selection ±45°": "Rotate the selection ±45°",
+    "Saved": "Saved",
+    "Search actions…": "Search actions…",
+    "Selection": "Selection",
+    "Settings": "Settings",
+    "Slab Tool": "Slab Tool",
+    "Standard": "Standard",
+    "Stair Tool": "Stair Tool",
+    "Staircase": "Staircase",
+    "Switch to Rendered": "Switch to Rendered",
+    "Switch to Solid": "Switch to Solid",
+    "System": "System",
+    "Take Screenshot": "Take Screenshot",
+    "Take Snapshot": "Take Snapshot",
+    "Toggle Fullscreen": "Toggle Fullscreen",
+    "Type a new name…": "Type a new name…",
+    "Undo": "Undo",
+    "Untitled": "Untitled",
+    "Update snapshot": "Update snapshot",
+    "View": "View",
+    "Viewer Controls": "Viewer Controls",
+    "Viewport": "Viewport",
+    "Wall Mode": "Wall Mode",
+    "Wall Tool": "Wall Tool",
+    "Window Tool": "Window Tool",
+    "Zone Tool": "Zone Tool",
+    "register": "register",
+    "registers": "registers",
+    "run": "run",
+    "runs": "runs",
+    "selected elements? This cannot be undone if the undo history is exhausted.": "selected elements? This cannot be undone if the undo history is exhausted.",
+    "x from the first point.": "x from the first point.",
+    "Edges": "Edges",
+    "Hide": "Hide",
+    "History": "History",
+    "Render": "Render",
+    "Scaled": "Scaled",
+    "Scaled (hidden)": "Scaled (hidden)",
+    "Scene": "Scene",
+    "Show": "Show",
+    "Theme": "Theme",
+    "Uncalibrated": "Uncalibrated",
+    "Walls": "Walls",
+    "Custom": "Custom",
+    "All matching": "All matching",
+    "Room": "Room",
+    "This surface": "This surface",
+    "Whole": "Whole",
+    "Angles": "Angles",
+    "Grid": "Grid",
+    "Lines": "Lines",
+    "Enter the real length of the line.": "Enter the real length of the line.",
+    "Enter a length like 3.5, 180cm or 5'11\".": "Enter a length like 3.5, 180cm or 5'11\".",
+    "Length must be greater than 0.": "Length must be greater than 0."
+  },
+  "legal": {
+    "common": {
+      "home": "Home",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "effectiveDate": "Effective Date: February 20, 2026",
+      "supportEmail": "support@pascal.app"
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "metadataDescription": "Privacy Policy for Pascal Editor and the Pascal platform.",
+      "sections": [
+        {
+          "title": "1. Introduction",
+          "blocks": [
+            {
+              "paragraphs": [
+                "Pascal Group Inc. (\"we,\" \"us,\" or \"our\") operates the Pascal Editor and Platform at pascal.app. This Privacy Policy explains how we collect, use, and protect your information when you use our services."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "2. Information We Collect",
+          "blocks": [
+            {
+              "heading": "Account Information",
+              "paragraphs": ["When you create an account, we collect:"],
+              "items": [
+                "Email address",
+                "Name",
+                "Profile picture/avatar",
+                "OAuth provider data (from Google when you sign in with Google)"
+              ]
+            },
+            {
+              "heading": "Project Data",
+              "paragraphs": [
+                "When you use the Platform, we store your projects, including 3D building designs, floor plans, and associated metadata."
+              ]
+            },
+            {
+              "heading": "Usage Analytics",
+              "paragraphs": [
+                "We use Vercel Analytics and Speed Insights to collect anonymized usage data, including page views, performance metrics, and general usage patterns. This helps us improve the Platform."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "3. How We Use Your Information",
+          "blocks": [
+            {
+              "paragraphs": ["We use your information to:"],
+              "items": [
+                "Provide and maintain your account",
+                "Store and sync your projects across devices",
+                "Improve our services based on usage patterns",
+                "Send optional email notifications about new features and updates (you can opt out in settings)",
+                "Respond to support requests",
+                "Ensure platform security and prevent abuse"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "4. Data Storage",
+          "blocks": [
+            {
+              "paragraphs": [
+                "Your data is stored using Supabase (PostgreSQL database) on secure cloud infrastructure. We implement appropriate technical and organizational measures to protect your data."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "5. Third-Party Services",
+          "blocks": [
+            {
+              "paragraphs": ["We use the following third-party services to operate the Platform:"],
+              "items": [
+                "Google - OAuth authentication for sign-in",
+                "Vercel - Application hosting, analytics, and performance monitoring",
+                "Supabase - Database hosting and authentication infrastructure"
+              ]
+            },
+            {
+              "paragraphs": [
+                "Each of these services has their own privacy policies governing their handling of your data."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "6. Cookies",
+          "blocks": [
+            {
+              "paragraphs": ["We use minimal cookies necessary for the Platform to function:"],
+              "items": [
+                "Session cookies - Essential for authentication and keeping you signed in",
+                "Analytics cookies - Used by Vercel Analytics to collect anonymized usage data"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "7. Your Rights",
+          "blocks": [
+            {
+              "paragraphs": ["You have the right to:"],
+              "items": [
+                "Access the personal data we hold about you",
+                "Request correction of inaccurate data",
+                "Request deletion of your data",
+                "Export your project data",
+                "Opt out of marketing communications"
+              ],
+              "contactPrefix": "To exercise any of these rights, please contact us at"
+            }
+          ]
+        },
+        {
+          "title": "8. Data Retention",
+          "blocks": [
+            {
+              "paragraphs": [
+                "We retain your data for as long as your account is active. If you delete your account, we will delete your personal data and project data within 30 days, except where we are required by law to retain certain information."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "9. Children's Privacy",
+          "blocks": [
+            {
+              "paragraphs": [
+                "The Platform is not intended for children under 13. We do not knowingly collect personal information from children under 13. If you believe we have collected such information, please contact us immediately."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "10. Changes to This Policy",
+          "blocks": [
+            {
+              "paragraphs": [
+                "We may update this Privacy Policy from time to time. We will notify you of material changes by posting the updated policy on the Platform. Your continued use of the Platform after changes are posted constitutes your acceptance of the revised policy."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "11. Contact Us",
+          "blocks": [
+            {
+              "contactPrefix": "If you have questions about this Privacy Policy or how we handle your data, please contact us at"
+            }
+          ]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "metadataDescription": "Terms of Service for Pascal Editor and the Pascal platform.",
+      "sections": [
+        {
+          "title": "1. Introduction",
+          "blocks": [
+            {
+              "paragraphs": [
+                "Welcome to Pascal Editor (\"Editor\") and the Pascal platform at pascal.app (\"Platform\"), operated by Pascal Group Inc. (\"we,\" \"us,\" or \"our\"). By accessing or using our services, you agree to these Terms of Service."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "2. The Editor and Platform",
+          "blocks": [
+            {
+              "paragraphs": [
+                "The Pascal Editor is open-source software released under the MIT License. You may use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Editor software in accordance with the MIT License terms.",
+                "The Pascal platform (pascal.app) and its associated services, including user accounts, cloud storage, and project hosting, are proprietary services owned and operated by Pascal Group Inc. These Terms govern your use of the Platform."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "3. Accounts and Authentication",
+          "blocks": [
+            {
+              "paragraphs": [
+                "To use certain features of the Platform, you must create an account. We use Google OAuth and magic link email authentication through Supabase. You are responsible for maintaining the security of your account credentials and for all activities that occur under your account."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "4. Acceptable Use",
+          "blocks": [
+            {
+              "paragraphs": ["You agree not to:"],
+              "items": [
+                "Use the Platform for any unlawful purpose or in violation of any applicable laws",
+                "Upload, share, or distribute content that infringes intellectual property rights",
+                "Attempt to gain unauthorized access to the Platform or its systems",
+                "Interfere with or disrupt the Platform's infrastructure",
+                "Upload malicious code, viruses, or harmful content",
+                "Harass, abuse, or harm other users",
+                "Use the Platform to send spam or unsolicited communications"
+              ]
+            }
+          ]
+        },
+        {
+          "title": "5. Your Content and Intellectual Property",
+          "blocks": [
+            {
+              "paragraphs": [
+                "You retain full ownership of all content, projects, and data you create or upload to the Platform (\"Your Content\"). By using the Platform, you grant us a limited license to store, display, and transmit Your Content solely to provide our services to you.",
+                "We do not claim any ownership rights over Your Content. You may export or delete Your Content at any time."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "6. Platform Ownership",
+          "blocks": [
+            {
+              "paragraphs": [
+                "The Platform, including its design, features, and proprietary code, is owned by Pascal Group Inc. and protected by intellectual property laws. While the Editor source code is open-source under the MIT License, the Platform services, branding, and infrastructure remain our proprietary property."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "7. Account Termination",
+          "blocks": [
+            {
+              "contactPrefix": "We reserve the right to suspend or terminate your account if you violate these Terms or engage in conduct that we determine is harmful to the Platform or other users. You may also delete your account at any time by contacting us at"
+            }
+          ]
+        },
+        {
+          "title": "8. Disclaimer of Warranties",
+          "blocks": [
+            {
+              "paragraphs": [
+                "THE PLATFORM IS PROVIDED \"AS IS\" AND \"AS AVAILABLE\" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.",
+                "We do not warrant that the Platform will be uninterrupted, error-free, or free of harmful components."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "9. Limitation of Liability",
+          "blocks": [
+            {
+              "paragraphs": [
+                "TO THE MAXIMUM EXTENT PERMITTED BY LAW, PASCAL GROUP INC. SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF DATA, PROFITS, OR GOODWILL, ARISING FROM YOUR USE OF THE PLATFORM."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "10. Changes to Terms",
+          "blocks": [
+            {
+              "paragraphs": [
+                "We may update these Terms from time to time. We will notify you of material changes by posting the updated Terms on the Platform. Your continued use of the Platform after changes are posted constitutes your acceptance of the revised Terms."
+              ]
+            }
+          ]
+        },
+        {
+          "title": "11. Contact Us",
+          "blocks": [
+            {
+              "contactPrefix": "If you have questions about these Terms, please contact us at"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

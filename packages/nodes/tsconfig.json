@@ -12,5 +12,9 @@
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"],
-  "references": [{ "path": "../core" }, { "path": "../viewer" }]
+  "references": [
+    { "path": "../core" },
+    { "path": "../i18n" },
+    { "path": "../viewer" }
+  ]
 }

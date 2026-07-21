@@ -1,6 +1,7 @@
 import type { AnyNode, AssetInput } from '@pascal-app/core'
 import type { ReactNode } from 'react'
 import { cn } from '../../lib/utils'
+import { useNodeUiText } from './controls/node-ui-text'
 
 export type SnapTarget = 'wall' | 'ceiling' | 'roof'
 export type SnapTargetBadgeSize = 'tile' | 'tree'
@@ -51,6 +52,7 @@ export function SnapTargetBadge({
   size?: SnapTargetBadgeSize
   target: SnapTarget
 }) {
+  const uiText = useNodeUiText()
   return (
     <span
       className={cn(
@@ -60,7 +62,7 @@ export function SnapTargetBadge({
       )}
     >
       <img
-        alt={SNAP_TARGET_LABELS[target]}
+        alt={uiText(SNAP_TARGET_LABELS[target])}
         className={cn('object-contain', SNAP_TARGET_ICON_SIZE_CLASSES[size])}
         src={SNAP_TARGET_ICONS[target]}
       />

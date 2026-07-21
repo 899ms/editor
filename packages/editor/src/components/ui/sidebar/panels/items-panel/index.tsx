@@ -1,6 +1,7 @@
 'use client'
 
 import type { AssetInput } from '@pascal-app/core'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import NextImage from 'next/image'
 import { useEffect, useState } from 'react'
 import { triggerSFX } from '../../../../../lib/sfx-bus'
@@ -98,6 +99,7 @@ function LegacyItemsPanel({
   showSourceFilter?: boolean
   showTagFilters?: boolean
 }) {
+  const { t } = usePascalTranslation('editor')
   const mode = useEditor((s) => s.mode)
   const catalogCategory = useEditor((s) => s.catalogCategory)
   const setMode = useEditor((s) => s.setMode)
@@ -167,10 +169,12 @@ function LegacyItemsPanel({
   // filter even before they own any items. Selecting "Mine" with no
   // matching items falls through to the empty/no-results state.
   const sourceChips: Array<{ id: AssetInput['source']; label: string }> = [
-    { id: 'library', label: 'Library' },
-    { id: 'community', label: 'Community' },
-    { id: 'mine', label: 'Mine' },
+    { id: 'library', label: t('itemCatalog.sources.library') },
+    { id: 'community', label: t('itemCatalog.sources.community') },
+    { id: 'mine', label: t('itemCatalog.sources.mine') },
   ]
+  const tagLabels = t('itemCatalog.tags', { returnObjects: true }) as Record<string, string>
+  const displayTag = (tag: string) => tagLabels[tag] ?? tag
   const allTags = Array.from(new Set(categoryItems.flatMap((item) => item.tags ?? [])))
   const placementTags = allTags.filter((t) => PLACEMENT_TAGS.has(t))
   const functionalTags = allTags.filter((t) => !PLACEMENT_TAGS.has(t))
@@ -215,13 +219,13 @@ function LegacyItemsPanel({
               type="button"
             >
               <NextImage
-                alt={cat.label}
+                alt={t(cat.labelKey as never)}
                 className={cn('size-7 object-contain', !isActive && 'opacity-60 grayscale')}
                 height={28}
                 src={cat.iconSrc}
                 width={28}
               />
-              <span className="font-medium text-[10px] leading-none">{cat.label}</span>
+              <span className="font-medium text-[10px] leading-none">{t(cat.labelKey as never)}</span>
             </button>
           )
         })}
@@ -242,7 +246,7 @@ function LegacyItemsPanel({
               setSearch(e.target.value)
               onSearchChange?.(e.target.value)
             }}
-            placeholder="Search..."
+            placeholder={t('itemCatalog.search')}
             type="text"
             value={search}
           />
@@ -284,7 +288,7 @@ function LegacyItemsPanel({
                   onClick={() => setActivePlacementTag(null)}
                   type="button"
                 >
-                  All
+                  {t('itemCatalog.all')}
                 </button>
                 {placementTags.map((tag) => {
                   const count = placementCount(tag)
@@ -305,7 +309,7 @@ function LegacyItemsPanel({
                       onClick={() => setActivePlacementTag(isActive ? null : tag)}
                       type="button"
                     >
-                      {tag}
+                      {displayTag(tag)}
                       <span
                         className={cn(
                           'text-[10px]',
@@ -345,7 +349,7 @@ function LegacyItemsPanel({
                       onClick={() => setActiveFunctionalTag(isActive ? null : tag)}
                       type="button"
                     >
-                      {tag}
+                      {displayTag(tag)}
                       <span
                         className={cn(
                           'text-[10px]',
@@ -376,7 +380,7 @@ function LegacyItemsPanel({
         ) : isServerSearch && search && searchResults?.length === 0 ? (
           (emptyState ?? (
             <div className="flex h-full items-center justify-center text-muted-foreground text-xs">
-              No results for &ldquo;{search}&rdquo;
+              {t('itemCatalog.noResults', { query: search })}
             </div>
           ))
         ) : (

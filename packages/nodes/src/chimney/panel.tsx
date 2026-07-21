@@ -14,6 +14,7 @@ import {
 import {
   ActionButton,
   ActionGroup,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
@@ -546,7 +547,9 @@ export default function ChimneyPanel() {
                 onClick={() => setChimneyType(option.value)}
                 type="button"
               >
-                <span className="truncate font-medium">{option.label}</span>
+                <span className="truncate font-medium">
+                  <NodeUiText>{option.label}</NodeUiText>
+                </span>
               </button>
             )
           })}

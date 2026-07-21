@@ -3,6 +3,7 @@
 import { ChevronDown } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { cn } from '../../../lib/utils'
 
 interface PanelSectionProps {
@@ -19,6 +20,8 @@ export function PanelSection({
   className,
 }: PanelSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+  const { t } = usePascalTranslation('nodes')
+  const localizedTitle = resolveBuiltInNodeUiText(title, t)
 
   return (
     <motion.div
@@ -37,7 +40,7 @@ export function PanelSection({
         onClick={() => setIsExpanded(!isExpanded)}
         type="button"
       >
-        <span className="truncate font-medium text-sm">{title}</span>
+        <span className="truncate font-medium text-sm">{localizedTitle}</span>
         <ChevronDown
           className={cn(
             'h-4 w-4 transition-transform duration-200',

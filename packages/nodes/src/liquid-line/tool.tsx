@@ -18,6 +18,7 @@ import {
   markToolCancelConsumed,
   triggerSFX,
   useEditor,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -257,6 +258,7 @@ function tracePath(target: FollowTarget): Vec3[] | null {
 }
 
 const LiquidLineTool = () => {
+  const uiText = useNodeUiText()
   const activeLevelId = useViewer((s) => s.selection.levelId)
   const unit = useViewer((s) => s.unit)
   const follow = useLiquidLineToolOptions((s) => s.follow)
@@ -561,9 +563,11 @@ const LiquidLineTool = () => {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {followTargetRef.current
-                    ? 'Click to trace this lineset run'
-                    : 'Follow: hover a lineset'}
+                  {uiText(
+                    followTargetRef.current
+                      ? 'Click to trace this lineset run'
+                      : 'Follow: hover a lineset',
+                  )}
                 </div>
               </Html>
             </group>

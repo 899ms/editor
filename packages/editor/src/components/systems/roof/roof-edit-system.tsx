@@ -940,7 +940,7 @@ function getTrimValueFromLocalPoint(
   }
 }
 
-function getTrimLabel(side: RoofTrimSide): string {
+function getTrimHandleId(side: RoofTrimSide): string {
   switch (side) {
     case 'left':
       return 'trim left'
@@ -1314,7 +1314,7 @@ function RoofTrimHandles() {
     setDraggingSide(side)
     useInteractionScope
       .getState()
-      .begin({ kind: 'handle-drag', nodeId: segmentId, handle: getTrimLabel(side) })
+      .begin({ kind: 'handle-drag', nodeId: segmentId, handle: getTrimHandleId(side) })
     useViewer.getState().setInputDragging(true)
     useScene.temporal.getState().pause()
 

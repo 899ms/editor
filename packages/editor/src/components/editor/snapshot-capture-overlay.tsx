@@ -1,5 +1,6 @@
 'use client'
 
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import { emitter } from '@pascal-app/core'
 import { Check, Crop, Loader2, Maximize2, Monitor, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -99,6 +100,7 @@ const CROP_LABELS: Record<CropMode, string> = {
 }
 
 export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
+  const ui = useEditorUiText()
   const isCaptureMode = useEditor((s) => s.isCaptureMode)
   const captureMode = useEditor((s) => s.captureMode)
   const setCaptureMode = useEditor((s) => s.setCaptureMode)
@@ -442,7 +444,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
           {!selectionStyle && !isPreset && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <span className="rounded-full border border-white/10 bg-neutral-950/80 px-4 py-2 text-sm text-white backdrop-blur-md">
-                Drag the area you want to capture
+                <EditorUiText>Drag the area you want to capture</EditorUiText>
               </span>
             </div>
           )}
@@ -503,15 +505,15 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
         <div className="pointer-events-none absolute top-4 left-1/2 flex -translate-x-1/2 gap-2">
           <div className={HUD_CHIP_CLASS}>
             <span className="font-mono text-[8.5px] text-white/50 uppercase tracking-[0.14em]">
-              Crop
+              <EditorUiText>Crop</EditorUiText>
             </span>
             <span className="font-semibold text-white text-xs">
-              {isPreset ? 'Preset · square' : CROP_LABELS[mode]}
+              {ui(isPreset ? 'Preset · square' : CROP_LABELS[mode])}
             </span>
           </div>
           <div className={HUD_CHIP_CLASS}>
             <span className="font-mono text-[8.5px] text-white/50 uppercase tracking-[0.14em]">
-              Format
+              <EditorUiText>Format</EditorUiText>
             </span>
             <span className="font-semibold text-white text-xs tabular-nums">
               {resolution ? `${resolution.w} × ${resolution.h}` : '—'}
@@ -523,13 +525,13 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
       {/* Top-right dismiss button (icon-only on mobile) */}
       <div className="pointer-events-auto absolute top-4 right-4">
         <button
-          aria-label="Close capture mode"
+          aria-label={ui('Close capture mode')}
           className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-neutral-950/85 px-3 py-1.5 text-white/80 text-xs backdrop-blur-md transition-colors hover:bg-neutral-950 hover:text-white"
           onClick={dismiss}
           type="button"
         >
           <X className="h-3 w-3" />
-          {!isMobile && 'Esc to cancel'}
+          {!isMobile && ui('Esc to cancel')}
         </button>
       </div>
 
@@ -545,7 +547,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
               active={mode === 'standard'}
               badge={standardAspect}
               icon={<Monitor className="h-3.5 w-3.5" />}
-              label={isMobile ? undefined : 'Standard'}
+              label={isMobile ? undefined : ui('Standard')}
               onClick={() => {
                 if (mode === 'standard') setAspectMenuOpen((v) => !v)
                 else setAspectMenuOpen(false)
@@ -577,7 +579,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
             <ModeButton
               active={mode === 'viewport'}
               icon={<Maximize2 className="h-3.5 w-3.5" />}
-              label={isMobile ? undefined : 'Viewport'}
+              label={isMobile ? undefined : ui('Viewport')}
               onClick={() => {
                 setMode('viewport')
                 setDrag(null)
@@ -587,7 +589,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
             <ModeButton
               active={mode === 'area'}
               icon={<Crop className="h-3.5 w-3.5" />}
-              label={isMobile ? undefined : 'Area'}
+              label={isMobile ? undefined : ui('Area')}
               onClick={() => {
                 setMode('area')
                 setAspectMenuOpen(false)
@@ -605,13 +607,12 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
             snapshot pitch only applies to the studio/reference flow. */}
         {!isMobile && !isPreset && (
           <span className="pointer-events-none max-w-90 rounded-lg border border-white/10 bg-neutral-950/85 px-3.5 py-1.5 text-center text-[11.5px] text-white/85 leading-relaxed backdrop-blur-md">
-            A <b className="font-semibold text-white">snapshot</b>
-            {' freezes this exact camera angle as a reusable reference for renders & videos.'}
+            <EditorUiText>A snapshot freezes this exact camera angle as a reusable reference for renders & videos.</EditorUiText>
           </span>
         )}
 
         <button
-          aria-label={isPreset ? 'Capture' : 'Take snapshot'}
+          aria-label={ui(isPreset ? 'Capture' : 'Take snapshot')}
           className="group pointer-events-auto relative grid h-14 w-14 place-items-center rounded-full disabled:opacity-50"
           disabled={captureDisabled}
           onClick={handleCapture}
@@ -633,13 +634,15 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
           )}
         </button>
         <span className="pointer-events-none font-mono text-[10.5px] text-white uppercase tracking-[0.12em] drop-shadow">
-          {captureState === 'capturing'
-            ? 'Capturing…'
-            : captureState === 'saved'
-              ? 'Saved'
-              : isPreset
-                ? 'Capture'
-                : 'Take snapshot'}
+          {ui(
+            captureState === 'capturing'
+              ? 'Capturing…'
+              : captureState === 'saved'
+                ? 'Saved'
+                : isPreset
+                  ? 'Capture'
+                  : 'Take snapshot',
+          )}
         </span>
       </div>
     </div>

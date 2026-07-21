@@ -10,6 +10,7 @@ import {
   spatialGridManager,
   useScene,
 } from '@pascal-app/core'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import {
   type HoverStyles,
   InteractiveSystem,
@@ -189,26 +190,26 @@ export interface EditorProps {
 }
 
 function EditorSceneCrashFallback() {
+  const { t } = usePascalTranslation('editor')
+
   return (
     <div className="fixed inset-0 z-80 flex items-center justify-center bg-background/95 p-4 text-foreground">
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background p-6 shadow-xl">
-        <h2 className="font-semibold text-lg">The editor scene failed to render</h2>
-        <p className="mt-2 text-muted-foreground text-sm">
-          You can retry the scene or return home without reloading the whole app shell.
-        </p>
+        <h2 className="font-semibold text-lg">{t('errors.sceneTitle')}</h2>
+        <p className="mt-2 text-muted-foreground text-sm">{t('errors.sceneDescription')}</p>
         <div className="mt-4 flex items-center gap-2">
           <button
             className="rounded-md border border-border bg-accent px-3 py-2 font-medium text-sm hover:bg-accent/80"
             onClick={() => window.location.reload()}
             type="button"
           >
-            Reload editor
+            {t('errors.reloadEditor')}
           </button>
           <a
             className="rounded-md border border-border bg-background px-3 py-2 font-medium text-sm hover:bg-accent/40"
             href="/"
           >
-            Back to home
+            {t('errors.backHome')}
           </a>
         </div>
       </div>
@@ -219,6 +220,7 @@ function EditorSceneCrashFallback() {
 // ── Sidebar slot: in-flow, resizable, collapses to a grab strip ──────────────
 
 function SidebarSlot({ children }: { children: ReactNode }) {
+  const { t } = usePascalTranslation('editor')
   const width = useSidebarStore((s) => s.width)
   const isCollapsed = useSidebarStore((s) => s.isCollapsed)
   const setIsCollapsed = useSidebarStore((s) => s.setIsCollapsed)
@@ -290,7 +292,7 @@ function SidebarSlot({ children }: { children: ReactNode }) {
           <div
             className="absolute inset-0 z-10 cursor-col-resize transition-colors hover:bg-primary/20"
             onPointerDown={handleGrabDown}
-            title="Expand sidebar"
+            title={t('toolbar.expandSidebar')}
           />
         ) : (
           children
@@ -353,47 +355,54 @@ type ShortcutKey = {
 }
 
 type CameraControlHint = {
-  action: string
+  actionKey: 'pan' | 'rotate' | 'zoom'
   keys: ShortcutKey[]
   alternativeKeys?: ShortcutKey[]
 }
 
 const EDITOR_CAMERA_CONTROL_HINTS: CameraControlHint[] = [
   {
-    action: 'Pan',
+    actionKey: 'pan',
     keys: [{ value: 'Space' }, { value: 'Left click' }],
     alternativeKeys: [{ value: 'Middle click' }],
   },
-  { action: 'Rotate', keys: [{ value: 'Right click' }] },
-  { action: 'Zoom', keys: [{ value: 'Scroll' }] },
+  { actionKey: 'rotate', keys: [{ value: 'Right click' }] },
+  { actionKey: 'zoom', keys: [{ value: 'Scroll' }] },
 ]
 
 const PREVIEW_CAMERA_CONTROL_HINTS: CameraControlHint[] = [
-  { action: 'Pan', keys: [{ value: 'Left click' }] },
-  { action: 'Rotate', keys: [{ value: 'Right click' }] },
-  { action: 'Zoom', keys: [{ value: 'Scroll' }] },
+  { actionKey: 'pan', keys: [{ value: 'Left click' }] },
+  { actionKey: 'rotate', keys: [{ value: 'Right click' }] },
+  { actionKey: 'zoom', keys: [{ value: 'Scroll' }] },
 ]
 
-const CAMERA_SHORTCUT_KEY_META: Record<string, { icon?: string; label: string; text?: string }> = {
+const CAMERA_SHORTCUT_KEY_META: Record<
+  string,
+  {
+    icon?: string
+    labelKey: 'leftClick' | 'middleClick' | 'rightClick' | 'scrollWheel' | 'space'
+    text?: string
+  }
+> = {
   'Left click': {
     icon: 'ph:mouse-left-click-fill',
-    label: 'Left click',
+    labelKey: 'leftClick',
   },
   'Middle click': {
     icon: 'qlementine-icons:mouse-middle-button-16',
-    label: 'Middle click',
+    labelKey: 'middleClick',
   },
   'Right click': {
     icon: 'ph:mouse-right-click-fill',
-    label: 'Right click',
+    labelKey: 'rightClick',
   },
   Scroll: {
     icon: 'qlementine-icons:mouse-middle-button-16',
-    label: 'Scroll wheel',
+    labelKey: 'scrollWheel',
   },
   Space: {
     icon: 'lucide:space',
-    label: 'Space',
+    labelKey: 'space',
   },
 }
 
@@ -425,18 +434,21 @@ function writeCameraControlsHintDismissed(dismissed: boolean) {
 }
 
 function InlineShortcutKey({ shortcutKey }: { shortcutKey: ShortcutKey }) {
+  const { t } = usePascalTranslation('editor')
   const meta = CAMERA_SHORTCUT_KEY_META[shortcutKey.value]
 
   if (meta?.icon) {
+    const label = t(`camera.controls.keys.${meta.labelKey}`)
+
     return (
       <span
-        aria-label={meta.label}
+        aria-label={label}
         className="inline-flex items-center text-foreground/90"
         role="img"
-        title={meta.label}
+        title={label}
       >
         <Icon aria-hidden="true" color="currentColor" height={16} icon={meta.icon} width={16} />
-        <span className="sr-only">{meta.label}</span>
+        <span className="sr-only">{label}</span>
       </span>
     )
   }
@@ -462,10 +474,12 @@ function ShortcutSequence({ keys }: { keys: ShortcutKey[] }) {
 }
 
 function CameraControlHintItem({ hint }: { hint: CameraControlHint }) {
+  const { t } = usePascalTranslation('editor')
+
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5 px-4 text-center first:pl-0 last:pr-0">
       <span className="font-medium text-[10px] text-muted-foreground/60 tracking-[0.03em]">
-        {hint.action}
+        {t(`camera.controls.actions.${hint.actionKey}`)}
       </span>
       <div className="flex flex-wrap items-center justify-center gap-1.5">
         <ShortcutSequence keys={hint.keys} />
@@ -487,23 +501,24 @@ function ViewerCanvasControlsHint({
   isPreviewMode: boolean
   onDismiss: () => void
 }) {
+  const { t } = usePascalTranslation('editor')
   const hints = isPreviewMode ? PREVIEW_CAMERA_CONTROL_HINTS : EDITOR_CAMERA_CONTROL_HINTS
 
   return (
     <div className="pointer-events-none absolute top-14 left-1/2 z-40 max-w-[calc(100%-2rem)] -translate-x-1/2">
       <section
-        aria-label="Camera controls hint"
+        aria-label={t('camera.controls.hintLabel')}
         className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-border/35 bg-background/90 px-3.5 py-2.5 shadow-elevation-4 backdrop-blur-xl"
       >
         <div className="grid min-w-0 flex-1 grid-cols-3 items-start divide-x divide-border/18">
           {hints.map((hint) => (
-            <CameraControlHintItem hint={hint} key={hint.action} />
+            <CameraControlHintItem hint={hint} key={hint.actionKey} />
           ))}
         </div>
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              aria-label="Dismiss camera controls hint"
+              aria-label={t('camera.controls.dismissHintLabel')}
               className="flex h-5 shrink-0 items-center justify-center self-center border-border/18 border-l pl-3 text-muted-foreground/70 transition-colors hover:text-foreground"
               onClick={onDismiss}
               type="button"
@@ -518,7 +533,7 @@ function ViewerCanvasControlsHint({
             </button>
           </TooltipTrigger>
           <TooltipContent side="bottom" sideOffset={8}>
-            Dismiss
+            {t('camera.controls.dismiss')}
           </TooltipContent>
         </Tooltip>
       </section>
@@ -1407,6 +1422,7 @@ export default function Editor({
                   )}
                   {isFirstPersonMode && (
                     <FirstPersonOverlay
+                      belowTopToolbar
                       onExit={() => useEditor.getState().setFirstPersonMode(false)}
                     />
                   )}

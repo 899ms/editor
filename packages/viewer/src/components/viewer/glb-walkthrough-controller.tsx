@@ -324,7 +324,13 @@ export function GlbWalkthroughController({ url }: { url: string }) {
       )
     }
     const onClick = () => {
-      if (document.pointerLockElement !== canvas) canvas.requestPointerLock?.()
+      if (document.pointerLockElement === canvas) return
+      try {
+        const request = canvas.requestPointerLock?.() as Promise<void> | undefined
+        request?.catch(() => {})
+      } catch {
+        // Pointer lock is optional; the walkthrough can stay open without it.
+      }
     }
     const onKeyDown = (event: KeyboardEvent) => {
       // When locked, the browser intercepts Esc to release the pointer and the

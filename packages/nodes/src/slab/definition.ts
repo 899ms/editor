@@ -229,13 +229,15 @@ export const slabDefinition: NodeDefinition<typeof SlabNode> = {
   },
 
   toolHints: [
-    { key: 'Left click', label: 'Trace slab outline' },
-    { key: 'Enter', label: 'Finish slab', minDraftVertices: 3 },
-    { key: 'Esc', label: 'Cancel' },
+    { key: 'Left click', label: 'Trace slab outline', labelKey: 'editor:contextual.hints.traceSlabOutline' },
+    { key: 'Enter', label: 'Finish slab', labelKey: 'editor:contextual.hints.finishSlab', minDraftVertices: 3 },
+    { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 
   presentation: {
     label: 'Slab',
+    labelKey: 'nodes:kinds.slab',
+    descriptionKey: 'nodes:descriptions.slab',
     description: 'A polygon-bounded floor surface that hosts items on top.',
     icon: { kind: 'url', src: '/icons/floor.webp' },
     paletteSection: 'structure',

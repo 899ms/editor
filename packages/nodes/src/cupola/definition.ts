@@ -146,12 +146,14 @@ export const cupolaDefinition: NodeDefinition<typeof CupolaNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place cupola on roof' },
-    { key: 'Esc', label: 'Cancel' },
+    { key: 'Left click', label: 'Place cupola on roof', labelKey: 'editor:contextual.hints.placeCupola' },
+    { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 
   presentation: {
     label: 'Cupola',
+    labelKey: 'nodes:kinds.cupola',
+    descriptionKey: 'nodes:descriptions.cupola',
     description: 'Louvered roof lantern with a dome or pyramid cap and optional finial.',
     icon: { kind: 'url', src: '/icons/roof.webp' },
     paletteSection: 'structure',

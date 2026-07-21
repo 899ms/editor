@@ -25,10 +25,10 @@ export function ItemHelper({
     <ContextualHelperPanel
       continuationContext={continuationContext}
       hints={[
-        { keys: ['Left click'], label: 'Place' },
-        { keys: ['R', 'T'], label: 'Rotate' },
-        ...(showForce ? [{ keys: ['Alt'], label: 'Force place' }] : []),
-        { keys: [showEsc ? 'Esc' : 'Right click'], label: 'Cancel' },
+        { keys: ['Left click'], label: 'Place', labelKey: 'editor:contextual.hints.place' },
+        { keys: ['R', 'T'], label: 'Rotate', labelKey: 'editor:contextual.hints.rotate' },
+        ...(showForce ? [{ keys: ['Alt'], label: 'Force place', labelKey: 'editor:contextual.hints.forcePlace' }] : []),
+        { keys: [showEsc ? 'Esc' : 'Right click'], label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
       ]}
       snapContext={snapContext}
     />

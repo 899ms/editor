@@ -1,7 +1,9 @@
 'use client'
 
+import { EditorUiText } from '../editor-ui-text'
 import { Icon } from '@iconify/react'
 import { type IconRef, useScene } from '@pascal-app/core'
+import { resolveLocalizedLabel, usePascalTranslation } from '@pascal-app/i18n'
 import { Plus } from 'lucide-react'
 import {
   type ComponentType,
@@ -48,13 +50,15 @@ function renderIconRef(ref: IconRef): ReactNode {
   )
 }
 
-function PluginPanelCrashed({ label }: { label: string }) {
+function PluginPanelCrashed({ panel }: { panel: EditorHostPanel }) {
+  const { t } = usePascalTranslation()
+  const label = resolveLocalizedLabel(panel, t)
+
   return (
     <div className="flex flex-col gap-2 p-4 text-sm">
-      <p className="font-medium text-sidebar-foreground">"{label}" plugin crashed</p>
+      <p className="font-medium text-sidebar-foreground">"{label}" <EditorUiText>plugin crashed</EditorUiText></p>
       <p className="text-sidebar-foreground/50 text-xs">
-        This panel hit an error and was unloaded for this session. The rest of the editor is
-        unaffected — reload to try again.
+        <EditorUiText>This panel hit an error and was unloaded for this session. The rest of the editor is unaffected — reload to try again.</EditorUiText>
       </p>
     </div>
   )
@@ -70,8 +74,8 @@ function resolvePanelComponent(panel: EditorHostPanel): ComponentType {
   if (cached) return cached
   const Lazy = lazy(panel.component)
   const Wrapped: ComponentType = () => (
-    <ErrorBoundary fallback={<PluginPanelCrashed label={panel.label} />}>
-      <Suspense fallback={<div className="p-4 text-sidebar-foreground/50 text-sm">Loading…</div>}>
+    <ErrorBoundary fallback={<PluginPanelCrashed panel={panel} />}>
+      <Suspense fallback={<div className="p-4 text-sidebar-foreground/50 text-sm"><EditorUiText>Loading…</EditorUiText></div>}>
         <Lazy />
       </Suspense>
     </ErrorBoundary>
@@ -93,6 +97,7 @@ function resolvePanelComponent(panel: EditorHostPanel): ComponentType {
  * authoring panel like Nature doesn't ride into the studio rail.
  */
 export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
+  const { t } = usePascalTranslation()
   const registered = useSyncExternalStore(
     editorHostPanelRegistry.subscribe,
     editorHostPanelRegistry.getSnapshot,
@@ -120,13 +125,15 @@ export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
     .map(
       (p): ExtraPanel => ({
         id: p.id,
-        label: p.label,
+        label: resolveLocalizedLabel(p, t),
         icon: renderIconRef(p.icon),
         component: resolvePanelComponent(p),
         pluginId: p.pluginId,
       }),
     )
-  const manager =
-    workspaceMode === 'edit' && !hostIds.has(pluginsManagerPanel.id) ? [pluginsManagerPanel] : []
+  const manager: ExtraPanel[] =
+    workspaceMode === 'edit' && !hostIds.has(pluginsManagerPanel.id)
+      ? [pluginsManagerPanel]
+      : []
   return [...(hostPanels ?? []), ...fromRegistry, ...manager]
 }

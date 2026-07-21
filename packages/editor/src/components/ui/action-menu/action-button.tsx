@@ -1,4 +1,7 @@
+'use client'
+
 import * as React from 'react'
+import { useEditorUiText } from '../editor-ui-text'
 import { Button } from './../../../components/ui/primitives/button'
 import {
   Tooltip,
@@ -32,6 +35,9 @@ export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProp
     },
     ref,
   ) => {
+    const ui = useEditorUiText()
+    const localizedLabel = ui(label)
+
     return (
       <Tooltip>
         <TooltipTrigger asChild>
@@ -68,7 +74,7 @@ export const ActionButton = React.forwardRef<HTMLButtonElement, ActionButtonProp
         <TooltipContent side={tooltipSide}>
           {tooltipContent || (
             <p>
-              {label} {shortcut && `(${shortcut})`}
+              {localizedLabel} {shortcut && `(${shortcut})`}
             </p>
           )}
         </TooltipContent>

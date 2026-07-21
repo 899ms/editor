@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - core
+          - i18n
           - viewer
           - editor
           - nodes
@@ -76,7 +77,7 @@ jobs:
           # peerDeps sync below must use shell vars, not env indirection.
           declare -A NEW_VERSIONS
 
-          for pkg in core viewer editor nodes mcp ifc-converter; do
+          for pkg in core i18n viewer editor nodes mcp ifc-converter; do
             if [ "$TARGET" = "$pkg" ] || [ "$TARGET" = "all" ]; then
               CUR=$(jq -r '.version' packages/$pkg/package.json)
               NEW=$(bump_version "$CUR")
@@ -91,9 +92,9 @@ jobs:
 
           # Sync inter-package references in peerDependencies and devDependencies.
           # Anything that references a bumped @pascal-app/* package is updated to ^NEW.
-          for pkg in core viewer editor nodes mcp ifc-converter; do
+          for pkg in core i18n viewer editor nodes mcp ifc-converter; do
             FILE=packages/$pkg/package.json
-            for dep in core viewer editor nodes mcp ifc-converter; do
+            for dep in core i18n viewer editor nodes mcp ifc-converter; do
               VAL="${NEW_VERSIONS[$dep]}"
               [ -z "$VAL" ] && continue
               jq --arg name "@pascal-app/$dep" --arg v "^$VAL" '
@@ -104,7 +105,7 @@ jobs:
           done
 
           echo "=== @pascal-app/* refs after sync ==="
-          for pkg in core viewer editor nodes mcp ifc-converter; do
+          for pkg in core i18n viewer editor nodes mcp ifc-converter; do
             echo "--- packages/$pkg/package.json ---"
             jq '{ peerDependencies: (.peerDependencies // {} | with_entries(select(.key | startswith("@pascal-app/")))), devDependencies: (.devDependencies // {} | with_entries(select(.key | startswith("@pascal-app/")))) }' packages/$pkg/package.json
           done
@@ -122,6 +123,22 @@ jobs:
           else
             npm publish --access public
             echo "📦 Published @pascal-app/core@$CORE_VERSION"
+          fi
+
+      - name: Build & publish i18n
+        if: inputs.package == 'i18n' || inputs.package == 'all'
+        working-directory: packages/i18n
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          bun run build
+          bun test
+          if [ "${{ inputs.dry-run }}" = "true" ]; then
+            echo "Dry run - would publish @pascal-app/i18n@$I18N_VERSION"
+            npm publish --dry-run --access public
+          else
+            npm publish --access public
+            echo "Published @pascal-app/i18n@$I18N_VERSION"
           fi
 
       - name: Build & publish viewer
@@ -210,6 +227,10 @@ jobs:
           if [ -n "$CORE_VERSION" ]; then
             PKGS="$PKGS @pascal-app/core@$CORE_VERSION"
             TAGS="$TAGS @pascal-app/core@$CORE_VERSION"
+          fi
+          if [ -n "$I18N_VERSION" ]; then
+            PKGS="$PKGS @pascal-app/i18n@$I18N_VERSION"
+            TAGS="$TAGS @pascal-app/i18n@$I18N_VERSION"
           fi
           if [ -n "$VIEWER_VERSION" ]; then
             PKGS="$PKGS @pascal-app/viewer@$VIEWER_VERSION"

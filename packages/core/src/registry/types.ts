@@ -300,6 +300,8 @@ export type ToolHint = {
   key: string
   /** Description of what the input does. Sentence case. */
   label: string
+  /** Optional i18n key; hosts without the resource keep the English label. */
+  labelKey?: string
   /**
    * Only show this hint once the in-progress draft has at least this many
    * vertices (reads `useEditor.draftVertexCount`). Lets a polygon tool's
@@ -327,10 +329,14 @@ export type ToolHintChip = {
   cycle: () => void
   /** value → chip row label, e.g. `{ cabinet: 'Type: Cabinet', island: 'Type: Island' }`. */
   labels: Record<string, string>
+  /** Optional value → i18n key map. */
+  labelKeys?: Record<string, string>
   /** value → iconify icon name. */
   icons?: Record<string, string>
   /** Hover tooltip, e.g. 'Placement type — click or press I to cycle'. */
   tooltip?: string
+  /** Optional i18n key for the tooltip. */
+  tooltipKey?: string
 }
 
 export type FloorplanGeometry =
@@ -1309,10 +1315,14 @@ export type KeyboardAction = {
  * correctly the moment the palette consumes the registry.
  */
 export type Presentation = {
-  /** Sentence-case label shown in palette buttons, breadcrumbs, etc. */
+  /** Sentence-case English fallback shown in palette buttons, breadcrumbs, etc. */
   label: string
-  /** Optional longer tooltip / help text. */
+  /** Optional i18next key resolved at the render boundary. */
+  labelKey?: string
+  /** Optional longer English tooltip / help fallback. */
   description?: string
+  /** Optional i18next key for the longer tooltip / help text. */
+  descriptionKey?: string
   /** Icon for palette buttons and tree views. */
   icon: IconRef
   /** Tool palette section. Defaults to `category` when omitted. */

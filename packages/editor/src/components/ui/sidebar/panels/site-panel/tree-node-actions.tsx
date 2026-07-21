@@ -1,3 +1,4 @@
+import { EditorUiText, useEditorUiText } from '../../../editor-ui-text'
 import { type AnyNodeId, emitter, useScene } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { Camera, Eye, EyeOff, Trash2 } from 'lucide-react'
@@ -13,6 +14,7 @@ interface TreeNodeActionsProps {
 }
 
 export const TreeNodeActions = memo(function TreeNodeActions({ nodeId }: TreeNodeActionsProps) {
+  const ui = useEditorUiText()
   const [open, setOpen] = useState(false)
   const updateNode = useScene((state) => state.updateNode)
   const updateNodes = useScene((state) => state.updateNodes)
@@ -57,7 +59,7 @@ export const TreeNodeActions = memo(function TreeNodeActions({ nodeId }: TreeNod
       <button
         className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
         onClick={toggleVisibility}
-        title={isVisible ? 'Hide' : 'Show'}
+        title={ui(isVisible ? 'Hide' : 'Show')}
       >
         {isVisible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3 opacity-50" />}
       </button>
@@ -67,7 +69,7 @@ export const TreeNodeActions = memo(function TreeNodeActions({ nodeId }: TreeNod
           <button
             className="relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
             onClick={(e) => e.stopPropagation()}
-            title="Camera snapshot"
+            title={ui('Camera snapshot')}
           >
             <Camera className="h-3 w-3" />
             {hasCamera && (
@@ -88,7 +90,7 @@ export const TreeNodeActions = memo(function TreeNodeActions({ nodeId }: TreeNod
                 onClick={handleViewCamera}
               >
                 <Camera className="h-3.5 w-3.5" />
-                View snapshot
+                <EditorUiText>View snapshot</EditorUiText>
               </button>
             )}
             <button
@@ -96,7 +98,7 @@ export const TreeNodeActions = memo(function TreeNodeActions({ nodeId }: TreeNod
               onClick={handleCaptureCamera}
             >
               <Camera className="h-3.5 w-3.5" />
-              {hasCamera ? 'Update snapshot' : 'Take snapshot'}
+              {ui(hasCamera ? 'Update snapshot' : 'Take snapshot')}
             </button>
             {hasCamera && (
               <button
@@ -104,7 +106,7 @@ export const TreeNodeActions = memo(function TreeNodeActions({ nodeId }: TreeNod
                 onClick={handleClearCamera}
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Clear snapshot
+                <EditorUiText>Clear snapshot</EditorUiText>
               </button>
             )}
           </div>

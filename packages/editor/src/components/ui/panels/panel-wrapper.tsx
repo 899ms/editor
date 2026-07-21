@@ -1,5 +1,6 @@
 'use client'
 
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { ChevronDown, ChevronLeft, GripHorizontal, RotateCcw, X } from 'lucide-react'
 import Image from 'next/image'
 import {
@@ -86,6 +87,8 @@ export function PanelWrapper({
   className,
   width = 320, // default width
 }: PanelWrapperProps) {
+  const { t } = usePascalTranslation('nodes')
+  const localizedTitle = resolveBuiltInNodeUiText(title, t)
   const isMobile = useIsMobile()
   const contextFooter = useContext(InspectorFooterContext)
   const resolvedFooter = footer ?? contextFooter
@@ -261,7 +264,7 @@ export function PanelWrapper({
                 <span className="flex shrink-0 items-center justify-center">{icon}</span>
               ))}
             <h2 className="truncate font-semibold text-foreground text-sm tracking-tight">
-              {title}
+              {localizedTitle}
             </h2>
           </div>
 
@@ -280,7 +283,9 @@ export function PanelWrapper({
             )}
             <button
               aria-expanded={!collapsed}
-              aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
+              aria-label={
+                resolveBuiltInNodeUiText(collapsed ? 'Expand panel' : 'Collapse panel', t)
+              }
               className="flex h-7 w-7 items-center justify-center rounded-md bg-[#2C2C2E] text-muted-foreground transition-colors hover:bg-[#3e3e3e] hover:text-foreground"
               onClick={() => setCollapsed((c) => !c)}
               type="button"

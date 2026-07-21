@@ -175,17 +175,19 @@ export const ductSegmentDefinition: NodeDefinition<typeof DuctSegmentNode> = {
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Click', label: 'Start segment' },
-    { key: 'Click again', label: 'Place and continue' },
-    { key: 'Alt + drag', label: 'Go vertical ↕, click to place' },
-    { key: '[ / ]', label: 'Duct diameter down / up' },
-    { key: 'Q', label: 'Round / rect trunk' },
-    { key: 'C', label: 'Ceiling / floor height' },
-    { key: 'Esc', label: 'Cancel start point' },
+    { key: 'Click', label: 'Start segment', labelKey: 'editor:contextual.hints.startSegment' },
+    { key: 'Click again', label: 'Place and continue', labelKey: 'editor:contextual.hints.placeAndContinue' },
+    { key: 'Alt + drag', label: 'Go vertical ↕, click to place', labelKey: 'editor:contextual.hints.goVertical' },
+    { key: '[ / ]', label: 'Duct diameter down / up', labelKey: 'editor:contextual.hints.ductDiameter' },
+    { key: 'Q', label: 'Round / rect trunk', labelKey: 'editor:contextual.hints.roundRectTrunk' },
+    { key: 'C', label: 'Ceiling / floor height', labelKey: 'editor:contextual.hints.ceilingFloorHeight' },
+    { key: 'Esc', label: 'Cancel start point', labelKey: 'editor:contextual.hints.cancelStartPoint' },
   ],
 
   presentation: {
     label: 'Duct',
+    labelKey: 'nodes:kinds.ductSegment',
+    descriptionKey: 'nodes:descriptions.ductSegment',
     description: 'HVAC duct run — polyline of round, rect, or flat-oval sections.',
     icon: { kind: 'url', src: '/icons/duct.webp' },
     paletteSection: 'structure',

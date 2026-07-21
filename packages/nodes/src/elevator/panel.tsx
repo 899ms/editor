@@ -16,6 +16,7 @@ import {
   ActionButton,
   ActionGroup,
   MetricControl,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   resolveElevatorNodeSupportY,
@@ -23,6 +24,7 @@ import {
   SliderControl,
   triggerSFX,
   useEditor,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Copy, Move, Send, Trash2 } from 'lucide-react'
@@ -158,6 +160,7 @@ function degreesToRadians(degrees: number) {
 }
 
 export default function ElevatorPanel() {
+  const uiText = useNodeUiText()
   const selectedId = useViewer((s) => s.selection.selectedIds[0])
   const selectedCount = useViewer((s) => s.selection.selectedIds.length)
   const setSelection = useViewer((s) => s.setSelection)
@@ -593,7 +596,7 @@ export default function ElevatorPanel() {
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
             <div className="px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              From
+              <NodeUiText>From</NodeUiText>
             </div>
             <select
               className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-2 text-sm text-foreground"
@@ -602,7 +605,7 @@ export default function ElevatorPanel() {
             >
               {levels.map((level) => (
                 <option key={level.id} value={level.id}>
-                  {level.name || `Level ${level.level}`}
+                  {level.name || `${uiText('Level')} ${level.level}`}
                 </option>
               ))}
             </select>
@@ -610,7 +613,7 @@ export default function ElevatorPanel() {
 
           <div className="space-y-1.5">
             <div className="px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              To
+              <NodeUiText>To</NodeUiText>
             </div>
             <select
               className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-2 text-sm text-foreground"
@@ -619,7 +622,7 @@ export default function ElevatorPanel() {
             >
               {levels.map((level) => (
                 <option key={level.id} value={level.id}>
-                  {level.name || `Level ${level.level}`}
+                  {level.name || `${uiText('Level')} ${level.level}`}
                 </option>
               ))}
             </select>
@@ -628,7 +631,7 @@ export default function ElevatorPanel() {
 
         <div className="space-y-1.5">
           <div className="px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            Default Floor
+            <NodeUiText>Default Floor</NodeUiText>
           </div>
           <select
             className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-3 text-sm text-foreground"
@@ -637,7 +640,7 @@ export default function ElevatorPanel() {
           >
             {defaultLevelOptions.map((level) => (
               <option key={level.id} value={level.id}>
-                {level.name || `Level ${level.level}`}
+                {level.name || `${uiText('Level')} ${level.level}`}
               </option>
             ))}
           </select>
@@ -686,7 +689,7 @@ export default function ElevatorPanel() {
       <PanelSection title="Shaft">
         <div className="space-y-1.5">
           <div className="px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            Shaft Style
+            <NodeUiText>Shaft Style</NodeUiText>
           </div>
           <select
             className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-3 text-sm text-foreground"
@@ -697,7 +700,7 @@ export default function ElevatorPanel() {
           >
             {SHAFT_STYLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                <NodeUiText>{option.label}</NodeUiText>
               </option>
             ))}
           </select>
@@ -743,7 +746,7 @@ export default function ElevatorPanel() {
       <PanelSection title="Doors">
         <div className="space-y-1.5">
           <div className="px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            Opening Style
+            <NodeUiText>Opening Style</NodeUiText>
           </div>
           <select
             className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-3 text-sm text-foreground"
@@ -754,14 +757,14 @@ export default function ElevatorPanel() {
           >
             {DOOR_STYLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                <NodeUiText>{option.label}</NodeUiText>
               </option>
             ))}
           </select>
         </div>
         <div className="space-y-1.5">
           <div className="px-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            Door Type
+            <NodeUiText>Door Type</NodeUiText>
           </div>
           <select
             className="h-9 w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-3 text-sm text-foreground"
@@ -774,7 +777,7 @@ export default function ElevatorPanel() {
           >
             {DOOR_PANEL_STYLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                <NodeUiText>{option.label}</NodeUiText>
               </option>
             ))}
           </select>
@@ -817,7 +820,7 @@ export default function ElevatorPanel() {
                 key={level.id}
               >
                 <span className="min-w-0 truncate text-sm">
-                  {level.name || `Level ${level.level}`}
+                  {level.name || `${uiText('Level')} ${level.level}`}
                 </span>
                 <div className="flex shrink-0 gap-1.5">
                   <button
@@ -830,7 +833,7 @@ export default function ElevatorPanel() {
                     onClick={() => toggleLevelAccess('serviceOnlyLevelIds', level.id)}
                     type="button"
                   >
-                    Service
+                    <NodeUiText>Service</NodeUiText>
                   </button>
                   <button
                     className={`rounded-md border px-2 py-1 text-[11px] transition-colors ${
@@ -841,7 +844,7 @@ export default function ElevatorPanel() {
                     onClick={() => toggleLevelAccess('disabledLevelIds', level.id)}
                     type="button"
                   >
-                    Disabled
+                    <NodeUiText>Disabled</NodeUiText>
                   </button>
                 </div>
               </div>
@@ -872,19 +875,21 @@ export default function ElevatorPanel() {
                 type="button"
               >
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-xs">{level.name || `Level ${level.level}`}</span>
+                  <span className="truncate text-xs">
+                    {level.name || `${uiText('Level')} ${level.level}`}
+                  </span>
                   {isDisabled ? (
                     <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-current/65">
-                      Disabled
+                      <NodeUiText>Disabled</NodeUiText>
                     </span>
                   ) : isServiceOnly ? (
                     <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-current/65">
-                      Service
+                      <NodeUiText>Service</NodeUiText>
                     </span>
                   ) : (
                     stopOrder && (
                       <span className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-current/65">
-                        Stop {stopOrder}
+                        <NodeUiText>Stop</NodeUiText> {stopOrder}
                       </span>
                     )
                   )}

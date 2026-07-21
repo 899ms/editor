@@ -1,6 +1,7 @@
 'use client'
 
 import * as DialogPrimitive from '@radix-ui/react-dialog'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { XIcon } from 'lucide-react'
 import type * as React from 'react'
 
@@ -46,6 +47,8 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const { t } = usePascalTranslation('common')
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />
@@ -64,7 +67,7 @@ function DialogContent({
             data-slot="dialog-close"
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t('actions.close')}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

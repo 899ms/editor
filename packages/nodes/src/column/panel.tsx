@@ -11,6 +11,7 @@ import {
   ActionButton,
   ActionGroup,
   cn,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SliderControl,
@@ -327,10 +328,12 @@ export default function ColumnPanel() {
           }}
           value=""
         >
-          <option value="">Apply preset...</option>
+          <option value="">
+            <NodeUiText>Apply preset...</NodeUiText>
+          </option>
           {COLUMN_PRESET_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label}
+              <NodeUiText>{option.label}</NodeUiText>
             </option>
           ))}
         </select>
@@ -372,7 +375,9 @@ export default function ColumnPanel() {
                 }}
                 type="button"
               >
-                <span className="truncate font-medium">{option.label}</span>
+                <span className="truncate font-medium">
+                  <NodeUiText>{option.label}</NodeUiText>
+                </span>
               </button>
             )
           })}
@@ -494,7 +499,7 @@ export default function ColumnPanel() {
                       {option.icon}
                     </span>
                     <span className="font-medium text-[11px] leading-none tracking-wide">
-                      {option.label}
+                      <NodeUiText>{option.label}</NodeUiText>
                     </span>
                   </button>
                 )
@@ -536,10 +541,12 @@ export default function ColumnPanel() {
             }}
             value=""
           >
-            <option value="">Apply proportion...</option>
+            <option value="">
+              <NodeUiText>Apply proportion...</NodeUiText>
+            </option>
             {COLUMN_PROPORTION_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                <NodeUiText>{option.label}</NodeUiText>
               </option>
             ))}
           </select>
@@ -666,10 +673,18 @@ export default function ColumnPanel() {
             }
             value={shaftProfile}
           >
-            <option value="straight">Straight</option>
-            <option value="tapered">Tapered</option>
-            <option value="bulged">Bulged</option>
-            <option value="hourglass">Hourglass</option>
+            <option value="straight">
+              <NodeUiText>Straight</NodeUiText>
+            </option>
+            <option value="tapered">
+              <NodeUiText>Tapered</NodeUiText>
+            </option>
+            <option value="bulged">
+              <NodeUiText>Bulged</NodeUiText>
+            </option>
+            <option value="hourglass">
+              <NodeUiText>Hourglass</NodeUiText>
+            </option>
           </select>
           {shaftProfile === 'straight' && (
             <SliderControl
@@ -860,10 +875,18 @@ export default function ColumnPanel() {
             }}
             value={node.capitalStyle === 'simple-slab' ? 'simple' : (node.capitalStyle ?? 'simple')}
           >
-            <option value="none">No Top</option>
-            <option value="simple">Simple Top</option>
-            <option value="stepped">Stepped Top</option>
-            <option value="rounded">Rounded Top</option>
+            <option value="none">
+              <NodeUiText>No Top</NodeUiText>
+            </option>
+            <option value="simple">
+              <NodeUiText>Simple Top</NodeUiText>
+            </option>
+            <option value="stepped">
+              <NodeUiText>Stepped Top</NodeUiText>
+            </option>
+            <option value="rounded">
+              <NodeUiText>Rounded Top</NodeUiText>
+            </option>
           </select>
           {node.capitalStyle !== 'none' && (
             <SliderControl
@@ -969,11 +992,21 @@ export default function ColumnPanel() {
             }}
             value={node.baseStyle ?? 'square-plinth'}
           >
-            <option value="none">No Bottom</option>
-            <option value="simple-square">Simple Block Bottom</option>
-            <option value="square-plinth">Square Plinth Bottom</option>
-            <option value="stepped-square">Stepped Bottom</option>
-            <option value="round-rings">Rounded Bottom</option>
+            <option value="none">
+              <NodeUiText>No Bottom</NodeUiText>
+            </option>
+            <option value="simple-square">
+              <NodeUiText>Simple Block Bottom</NodeUiText>
+            </option>
+            <option value="square-plinth">
+              <NodeUiText>Square Plinth Bottom</NodeUiText>
+            </option>
+            <option value="stepped-square">
+              <NodeUiText>Stepped Bottom</NodeUiText>
+            </option>
+            <option value="round-rings">
+              <NodeUiText>Rounded Bottom</NodeUiText>
+            </option>
           </select>
           {node.baseStyle !== 'none' && (
             <SliderControl

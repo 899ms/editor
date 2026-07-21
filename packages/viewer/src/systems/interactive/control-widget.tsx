@@ -1,6 +1,7 @@
 'use client'
 
 import type { Control, ControlValue } from '@pascal-app/core'
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 
 /** One interactive control (toggle / slider / temperature) rendered inside the
  *  item controls overlay. Shared by the parametric `InteractiveSystem` and the
@@ -14,6 +15,8 @@ export const ControlWidget = ({
   value: ControlValue
   onChange: (v: ControlValue) => void
 }) => {
+  const { t } = usePascalTranslation('nodes')
+  const label = control.label ? resolveBuiltInNodeUiText(control.label, t) : undefined
   const labelStyle: React.CSSProperties = {
     color: 'white',
     fontSize: 11,
@@ -39,7 +42,7 @@ export const ControlWidget = ({
           transition: 'background 0.2s',
         }}
       >
-        {control.label ?? (value ? 'On' : 'Off')}
+        {label ?? resolveBuiltInNodeUiText(value ? 'On' : 'Off', t)}
       </button>
     )
   }
@@ -48,7 +51,7 @@ export const ControlWidget = ({
     return (
       <label style={labelStyle}>
         <span>
-          {control.label}: {value}
+          {label}: {value}
           {control.unit ? ` ${control.unit}` : ''}
         </span>
         <input
@@ -68,7 +71,7 @@ export const ControlWidget = ({
     return (
       <label style={labelStyle}>
         <span>
-          {control.label}: {value}°{control.unit}
+          {label}: {value}°{control.unit}
         </span>
         <input
           max={control.max}

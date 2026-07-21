@@ -198,12 +198,14 @@ export const ridgeVentDefinition: NodeDefinition<typeof RidgeVentNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place ridge vent on roof' },
-    { key: 'Esc', label: 'Cancel' },
+    { key: 'Left click', label: 'Place ridge vent on roof', labelKey: 'editor:contextual.hints.placeRidgeVent' },
+    { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 
   presentation: {
     label: 'Ridge Vent',
+    labelKey: 'nodes:kinds.ridgeVent',
+    descriptionKey: 'nodes:descriptions.ridgeVent',
     description: 'Ventilation strip running along the ridge of a roof segment.',
     icon: { kind: 'url', src: '/icons/roof.webp' },
     paletteSection: 'structure',

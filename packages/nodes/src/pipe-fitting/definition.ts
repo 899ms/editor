@@ -84,15 +84,17 @@ export const pipeFittingDefinition: NodeDefinition<typeof PipeFittingNode> = {
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Click', label: 'Place fitting' },
-    { key: 'Hover a pipe end', label: 'Snap onto the run' },
-    { key: 'R / T', label: 'Rotate ±45°' },
-    { key: 'Alt', label: 'Switch rotation axis (Y → X → Z)' },
-    { key: 'Esc', label: 'Exit' },
+    { key: 'Click', label: 'Place fitting', labelKey: 'editor:contextual.hints.placeFitting' },
+    { key: 'Hover a pipe end', label: 'Snap onto the run', labelKey: 'editor:contextual.hints.snapOntoRun' },
+    { key: 'R / T', label: 'Rotate ±45°', labelKey: 'editor:contextual.hints.rotate45' },
+    { key: 'Alt', label: 'Switch rotation axis (Y → X → Z)', labelKey: 'editor:contextual.hints.switchRotationAxis' },
+    { key: 'Esc', label: 'Exit', labelKey: 'editor:contextual.hints.exit' },
   ],
 
   presentation: {
     label: 'Pipe Fitting',
+    labelKey: 'nodes:kinds.pipeFitting',
+    descriptionKey: 'nodes:descriptions.pipeFitting',
     description: 'DWV joint — elbow bend, 45° wye, or sanitary tee.',
     // Reuses the duct-fitting artwork — DWV fittings read the same in the UI.
     icon: { kind: 'url', src: '/icons/duct-fitting.webp' },

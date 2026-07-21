@@ -53,3 +53,6 @@ og-test
 .claude/launch.json
 .claude/settings.local.json
 .vscode/launch.json
+
+# Local Pascal scene database
+.data/

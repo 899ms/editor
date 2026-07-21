@@ -43,6 +43,19 @@ Read the relevant page in `wiki/architecture/` **before** writing code. The page
 
 Invoke the `review-architecture` skill (`.agents/skills/review-architecture/SKILL.md`). It loads the required architecture pages, fetches the diff, classifies each new file by layer, and reports findings grouped by severity.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues via the `gh` CLI.
+See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+This is a multi-context monorepo. Read `CONTEXT-MAP.md`, the relevant
+app/package `CONTEXT.md` files, applicable ADRs, and canonical architecture
+rules. See `docs/agents/domain.md`.
+
 ## Operating rules
 
 - Read the full file before editing. Plan all changes, then make one complete edit.

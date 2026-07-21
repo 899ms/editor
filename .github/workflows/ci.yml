@@ -24,5 +24,8 @@ jobs:
       - name: Lint & format check
         run: bun run check
 
+      - name: i18n checks
+        run: bun run check:i18n
+
       - name: Type check
         run: bun run check-types

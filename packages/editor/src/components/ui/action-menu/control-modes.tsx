@@ -1,6 +1,7 @@
 'use client'
 
 import { Icon } from '@iconify/react'
+import { resolveLocalizedLabel, usePascalTranslation } from '@pascal-app/i18n'
 import { type LucideIcon, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { Fragment } from 'react'
@@ -17,6 +18,7 @@ type ControlConfig = {
   iconifyIcon?: string
   imageSrc?: string
   label: string
+  labelKey: string
   shortcut?: string
   color: string
   activeColor: string
@@ -28,6 +30,7 @@ const controls: ControlConfig[] = [
     id: 'select',
     imageSrc: '/icons/select.webp',
     label: 'Select',
+    labelKey: 'editor:tools.select',
     shortcut: 'V',
     color: 'hover:bg-blue-500/20 hover:text-blue-400',
     activeColor: 'bg-blue-500/20 text-blue-400',
@@ -36,6 +39,7 @@ const controls: ControlConfig[] = [
     id: 'zone',
     imageSrc: '/icons/zone.webp',
     label: 'Zone',
+    labelKey: 'editor:tools.zone',
     shortcut: 'Z',
     color: 'hover:bg-green-500/20 hover:text-green-400',
     activeColor: 'bg-green-500/20 text-green-400',
@@ -44,6 +48,7 @@ const controls: ControlConfig[] = [
     id: 'delete',
     icon: Trash2,
     label: 'Delete',
+    labelKey: 'editor:tools.delete',
     shortcut: 'X',
     color: 'hover:bg-red-500/20 hover:text-red-400',
     activeColor: 'bg-red-500/20 text-red-400',
@@ -51,6 +56,7 @@ const controls: ControlConfig[] = [
 ]
 
 export function ControlModes() {
+  const { t } = usePascalTranslation('editor')
   const mode = useEditor((state) => state.mode)
   const phase = useEditor((state) => state.phase)
   const selectionTool = useEditor((state) => state.floorplanSelectionTool)
@@ -103,6 +109,7 @@ export function ControlModes() {
         const ModeIcon = c.icon
         const isImageMode = Boolean(c.imageSrc)
         const isActive = getIsActive(c.id)
+        const label = resolveLocalizedLabel(c, t)
 
         return (
           <Fragment key={c.id}>
@@ -115,7 +122,7 @@ export function ControlModes() {
                 isImageMode && isActive && 'bg-white/10 hover:bg-white/10',
                 isImageMode && !isActive && 'hover:bg-white/5',
               )}
-              label={c.label}
+              label={label}
               onClick={() => handleClick(c.id)}
               shortcut={c.shortcut}
               size="icon"
@@ -123,7 +130,7 @@ export function ControlModes() {
             >
               {c.imageSrc ? (
                 <Image
-                  alt={c.label}
+                  alt={label}
                   className={cn(
                     'h-[28px] w-[28px] object-contain transition-[opacity,filter] duration-200',
                     isActive

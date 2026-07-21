@@ -44,6 +44,8 @@ export const scanDefinition: NodeDefinition<typeof ScanNode> = {
 
   presentation: {
     label: 'Scan',
+    labelKey: 'nodes:kinds.scan',
+    descriptionKey: 'nodes:descriptions.scan',
     description: 'A captured mesh (LiDAR / photogrammetry) imported as a scene reference.',
     icon: { kind: 'url', src: '/icons/mesh.webp' },
     paletteSection: 'site',

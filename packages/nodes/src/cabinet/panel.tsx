@@ -8,10 +8,12 @@ import type {
 import { createSceneApi, useScene } from '@pascal-app/core'
 import {
   ActionButton,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
   SliderControl,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Pause, Play, Plus } from 'lucide-react'
@@ -90,6 +92,7 @@ const PRESET_BUTTON_CLASS =
   'flex h-9 items-center justify-center rounded-md border border-border/40 bg-[#252527] px-3 py-2 text-center text-xs font-medium text-foreground transition-colors hover:border-border/70 hover:bg-[#303033]'
 
 export default function CabinetPanel() {
+  const uiText = useNodeUiText()
   const selectedId = useViewer((s) => s.selection.selectedIds[0])
   const setSelection = useViewer((s) => s.setSelection)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -418,7 +421,7 @@ export default function CabinetPanel() {
                 onClick={() => applyPreset(preset.id)}
                 type="button"
               >
-                <span className="truncate">{preset.label}</span>
+                <span className="truncate">{uiText(preset.label)}</span>
               </button>
             ))}
           </div>
@@ -518,13 +521,13 @@ export default function CabinetPanel() {
               />
             </div>
             <button
-              aria-label={
+              aria-label={uiText(
                 isAnimating
                   ? 'Stop animation'
                   : (node.operationState ?? 0) >= 0.99
                     ? 'Close cabinet'
-                    : 'Open cabinet'
-              }
+                    : 'Open cabinet',
+              )}
               className="flex h-7 shrink-0 items-center gap-1.5 rounded-lg border border-border/40 bg-[#2C2C2E] px-2.5 text-[11px] font-medium text-foreground transition-colors hover:bg-[#3e3e3e]"
               onClick={() => {
                 if (isAnimating) {
@@ -533,18 +536,20 @@ export default function CabinetPanel() {
                 }
                 animateOperationState((node.operationState ?? 0) >= 0.99 ? 0 : 1)
               }}
-              title={
+              title={uiText(
                 isAnimating
                   ? 'Stop animation'
                   : (node.operationState ?? 0) >= 0.99
                     ? 'Close cabinet'
-                    : 'Play animation'
-              }
+                    : 'Play animation',
+              )}
               type="button"
             >
               {isAnimating ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               <span>
-                {isAnimating ? 'Stop' : (node.operationState ?? 0) >= 0.99 ? 'Close' : 'Play'}
+                {uiText(
+                  isAnimating ? 'Stop' : (node.operationState ?? 0) >= 0.99 ? 'Close' : 'Play',
+                )}
               </span>
             </button>
           </div>
@@ -589,7 +594,7 @@ export default function CabinetPanel() {
             <div className="space-y-2 px-1 pb-2">
               <div>
                 <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Style
+                  <NodeUiText>Style</NodeUiText>
                 </div>
                 <SegmentedControl
                   onChange={(value) =>
@@ -604,7 +609,7 @@ export default function CabinetPanel() {
               </div>
               <div>
                 <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Mounting
+                  <NodeUiText>Mounting</NodeUiText>
                 </div>
                 <SegmentedControl
                   onChange={(value) =>
@@ -624,7 +629,7 @@ export default function CabinetPanel() {
             <div className="space-y-2 px-1 pb-2">
               <div>
                 <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Style
+                  <NodeUiText>Style</NodeUiText>
                 </div>
                 <SegmentedControl
                   onChange={(value) =>
@@ -640,7 +645,7 @@ export default function CabinetPanel() {
               {(node.handleStyle === 'bar' || node.handleStyle === 'knob') && (
                 <div>
                   <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                    Position
+                    <NodeUiText>Position</NodeUiText>
                   </div>
                   <SegmentedControl
                     onChange={(value) =>

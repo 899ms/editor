@@ -12,6 +12,8 @@ import {
   useEditingHole,
   useEditor,
   useInteractionScope,
+  NodeUiText,
+  useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Edit, Move, Plus, Trash2 } from 'lucide-react'
@@ -26,6 +28,7 @@ import { useCallback, useEffect, useRef } from 'react'
  * panel can collapse into auto-derived groups.
  */
 export function CeilingPanel() {
+  const uiText = useNodeUiText()
   const selectedId = useViewer((s) => s.selection.selectedIds[0])
   const setSelection = useViewer((s) => s.setSelection)
   const editingHole = useEditingHole()
@@ -185,7 +188,7 @@ export function CeilingPanel() {
 
       <PanelSection title="Info">
         <div className="flex items-center justify-between px-2 py-1 text-muted-foreground text-sm">
-          <span>Area</span>
+          <span><NodeUiText>Area</NodeUiText></span>
           <span className="font-mono text-white">{area.toFixed(2)} m²</span>
         </div>
       </PanelSection>
@@ -213,11 +216,11 @@ export function CeilingPanel() {
                     <p
                       className={`font-medium text-xs ${isEditing ? 'text-primary' : 'text-white'}`}
                     >
-                      Hole {index + 1} {isEditing && '(Editing)'}
+                      <NodeUiText>Hole</NodeUiText> {index + 1} {isEditing && uiText('(Editing)')}
                     </p>
                     <p className="text-[10px] text-muted-foreground">
-                      {holeArea.toFixed(2)} m² · {hole.length} pts ·{' '}
-                      {isAutoHole ? autoLabel : 'Manual'}
+                      {holeArea.toFixed(2)} m² · {hole.length} <NodeUiText>pts ·</NodeUiText>{' '}
+                      {uiText(isAutoHole ? autoLabel : 'Manual')}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -235,7 +238,7 @@ export function CeilingPanel() {
                       />
                     ) : isAutoHole ? (
                       <div className="rounded-md bg-[#2C2C2E] px-2 py-1 text-[10px] text-muted-foreground">
-                        Auto
+                        <NodeUiText>Auto</NodeUiText>
                       </div>
                     ) : (
                       <>
@@ -261,7 +264,7 @@ export function CeilingPanel() {
             })}
           </div>
         ) : (
-          <div className="px-2 py-3 text-center text-muted-foreground text-xs">No holes</div>
+          <div className="px-2 py-3 text-center text-muted-foreground text-xs"><NodeUiText>No holes</NodeUiText></div>
         )}
 
         <div className="px-1 pt-1 pb-1">

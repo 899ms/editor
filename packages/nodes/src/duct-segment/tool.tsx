@@ -21,6 +21,7 @@ import {
   markToolCancelConsumed,
   triggerSFX,
   useEditor,
+  NodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -1028,7 +1029,7 @@ const DuctSegmentTool = () => {
                 <div className="flex flex-col items-center gap-2">
                   {ceilingMode && !last && (
                     <div className="whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-3 py-0.5 text-[10px] text-muted-foreground shadow-sm backdrop-blur">
-                      Ceiling · C to toggle
+                      <NodeUiText>Ceiling · C to toggle</NodeUiText>
                     </div>
                   )}
                   <DimensionPill parts={pillParts} primary={pillPrimary} unit={unit} />

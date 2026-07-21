@@ -1,6 +1,7 @@
 'use client'
 
 import type { AssetInput } from '@pascal-app/core'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { Root as TooltipRoot } from '@radix-ui/react-tooltip'
 import NextImage from 'next/image'
 import { useMemo, useState } from 'react'
@@ -21,10 +22,10 @@ export type FunctionTreeNode = {
   children: FunctionTreeNode[]
 }
 
-const SOURCE_CHIPS: Array<{ id: NonNullable<AssetInput['source']>; label: string }> = [
-  { id: 'library', label: 'Library' },
-  { id: 'community', label: 'Community' },
-  { id: 'mine', label: 'Mine' },
+const SOURCE_CHIP_IDS: Array<NonNullable<AssetInput['source']>> = [
+  'library',
+  'community',
+  'mine',
 ]
 
 /** Every slug at or below `node`, so a non-leaf selection matches descendants. */
@@ -64,6 +65,7 @@ export function FunctionTreePanel({
   leadingTile?: React.ReactNode
   emptyState?: React.ReactNode
 }) {
+  const { t } = usePascalTranslation('editor')
   const [activeRootSlug, setActiveRootSlug] = useState<string | null>(
     functionTree[0]?.slug ?? null,
   )
@@ -173,13 +175,13 @@ export function FunctionTreePanel({
               setSearch(e.target.value)
               onSearchChange?.(e.target.value)
             }}
-            placeholder="Search..."
+            placeholder={t('itemCatalog.search')}
             type="text"
             value={search}
           />
           <div className="flex w-1/2 min-w-0 shrink-0 rounded-lg bg-muted p-0.5">
-            {SOURCE_CHIPS.map((chip) => {
-              const isActive = activeSource === chip.id
+            {SOURCE_CHIP_IDS.map((sourceId) => {
+              const isActive = activeSource === sourceId
               return (
                 <button
                   className={cn(
@@ -188,11 +190,11 @@ export function FunctionTreePanel({
                       ? 'bg-background text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground',
                   )}
-                  key={chip.id}
-                  onClick={() => setActiveSource(isActive ? null : chip.id)}
+                  key={sourceId}
+                  onClick={() => setActiveSource(isActive ? null : sourceId)}
                   type="button"
                 >
-                  {chip.label}
+                  {t(('itemCatalog.sources.' + sourceId) as never)}
                 </button>
               )
             })}
@@ -212,7 +214,7 @@ export function FunctionTreePanel({
               onClick={() => setActiveChildSlug(null)}
               type="button"
             >
-              All
+              {t('itemCatalog.all')}
             </button>
             {activeRoot.children.map((child) => {
               const isActive = activeChildSlug === child.slug
@@ -245,7 +247,7 @@ export function FunctionTreePanel({
         ) : isServerSearch && search && searchResults?.length === 0 ? (
           (emptyState ?? (
             <div className="flex h-full items-center justify-center text-muted-foreground text-xs">
-              No results for &ldquo;{search}&rdquo;
+              {t('itemCatalog.noResults', { query: search })}
             </div>
           ))
         ) : (

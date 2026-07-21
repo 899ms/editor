@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { memo, useCallback, useEffect, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import useEditor from '../../../../../store/use-editor'
+import { useNodeUiText } from '../../../controls/node-ui-text'
 import { InlineRenameInput } from './inline-rename-input'
 import { focusTreeNode, handleTreeSelection, TreeNodeWrapper } from './tree-node'
 import { TreeNodeActions } from './tree-node-actions'
@@ -21,6 +22,7 @@ export const StairTreeNode = memo(function StairTreeNode({
   depth,
   isLast,
 }: StairTreeNodeProps) {
+  const uiText = useNodeUiText()
   const [isEditing, setIsEditing] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const isVisible = useScene((s) => s.nodes[nodeId]?.visible !== false)
@@ -83,7 +85,7 @@ export const StairTreeNode = memo(function StairTreeNode({
   }, [isDropTarget, expanded])
 
   const segmentCount = segments.length
-  const defaultName = `Staircase (${segmentCount} segment${segmentCount !== 1 ? 's' : ''})`
+  const defaultName = `${uiText('Staircase')} (${segmentCount} ${uiText(segmentCount === 1 ? 'segment' : 'segments')})`
 
   // Hide the dragged segment from every stair while dragging
   const visibleSegments = drag ? segments.filter((seg) => seg.id !== drag.nodeId) : segments
@@ -162,6 +164,7 @@ function StairSegmentTreeNode({
   depth: number
   isLast?: boolean
 }) {
+  const uiText = useNodeUiText()
   const [isEditing, setIsEditing] = useState(false)
   const isSelected = useViewer((state) => state.selection.selectedIds.includes(node.id))
   const isHovered = useViewer((state) => state.hoveredId === node.id)
@@ -181,17 +184,17 @@ function StairSegmentTreeNode({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       if (e.button !== 0) return
-      const typeLabel = node.segmentType === 'stair' ? 'Flight' : 'Landing'
+      const typeLabel = uiText(node.segmentType === 'stair' ? 'Flight' : 'Landing')
       const label = `${typeLabel} (${node.width.toFixed(1)}×${node.length.toFixed(1)}m)`
       startDrag(node.id, node.type, node.parentId as string, label, e.clientX, e.clientY)
     },
-    [node.id, node.type, node.parentId, node.segmentType, node.width, node.length, startDrag],
+    [node.id, node.type, node.parentId, node.segmentType, node.width, node.length, startDrag, uiText],
   )
 
   const handleStartEditing = useCallback(() => setIsEditing(true), [])
   const handleStopEditing = useCallback(() => setIsEditing(false), [])
 
-  const typeLabel = node.segmentType === 'stair' ? 'Flight' : 'Landing'
+  const typeLabel = uiText(node.segmentType === 'stair' ? 'Flight' : 'Landing')
   const defaultName = `${typeLabel} (${node.width.toFixed(1)}×${node.length.toFixed(1)}m)`
 
   return (

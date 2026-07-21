@@ -1,4 +1,5 @@
 import { type AnyNodeId, useScene } from '@pascal-app/core'
+import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n'
 import { Pencil } from 'lucide-react'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from './../../../../../lib/utils'
@@ -20,11 +21,14 @@ export const InlineRenameInput = memo(function InlineRenameInput({
   className,
   onStartEditing,
 }: InlineRenameInputProps) {
+  const { t } = usePascalTranslation('nodes')
   const updateNode = useScene((s) => s.updateNode)
   const name = useScene((s) => s.nodes[nodeId]?.name)
   const [value, setValue] = useState(name || '')
   const inputRef = useRef<HTMLInputElement>(null)
-  const inputSize = Math.max((value || defaultName).length, 1)
+  const localizedDefaultName = resolveBuiltInNodeUiText(defaultName, t)
+  const localizedDisplayName = name ? resolveBuiltInNodeUiText(name, t) : localizedDefaultName
+  const inputSize = Math.max((value || localizedDefaultName).length, 1)
 
   useEffect(() => {
     if (isEditing) {
@@ -61,7 +65,7 @@ export const InlineRenameInput = memo(function InlineRenameInput({
     return (
       <div className="group/rename flex h-5 min-w-0 items-center gap-1">
         <span className={cn('truncate border-transparent border-b', className)}>
-          {name || defaultName}
+          {localizedDisplayName}
         </span>
         {onStartEditing && (
           <button
@@ -89,7 +93,7 @@ export const InlineRenameInput = memo(function InlineRenameInput({
       onClick={(e) => e.stopPropagation()}
       onDoubleClick={(e) => e.stopPropagation()}
       onKeyDown={handleKeyDown}
-      placeholder={defaultName}
+      placeholder={localizedDefaultName}
       ref={inputRef}
       size={inputSize}
       type="text"

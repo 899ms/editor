@@ -16,6 +16,7 @@ import {
 import {
   ActionButton,
   ActionGroup,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
@@ -281,7 +282,7 @@ export default function SkylightPanel() {
                 type="button"
               >
                 <span className="min-w-0 truncate font-medium">
-                  {SKYLIGHT_TYPE_PRESETS[skylightType].label}
+                  <NodeUiText>{SKYLIGHT_TYPE_PRESETS[skylightType].label}</NodeUiText>
                 </span>
               </button>
             )

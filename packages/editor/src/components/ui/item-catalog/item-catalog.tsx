@@ -1,6 +1,7 @@
 'use client'
 
 import type { AssetInput } from '@pascal-app/core'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { resolveCdnUrl, useViewer } from '@pascal-app/viewer'
 import { useEffect } from 'react'
 import { triggerSFX } from './../../../lib/sfx-bus'
@@ -31,6 +32,12 @@ export function ItemCatalog({
   /** Rendered when there are no items to show. Replaces the empty grid. */
   emptyState?: React.ReactNode
 }) {
+  const { t } = usePascalTranslation('editor')
+  const translatedNames = t('itemCatalog.assetNames', { returnObjects: true }) as Record<
+    string,
+    string
+  >
+  const displayName = (item: CatalogItem) => translatedNames[item.id] ?? item.name
   const selectedItem = useEditor((state) => state.selectedItem)
   const setSelectedItem = useEditor((state) => state.setSelectedItem)
   const setMode = useEditor((state) => state.setMode)
@@ -48,7 +55,12 @@ export function ItemCatalog({
         const tags = item.tags ?? []
         if (activePlacementTag && !tags.includes(activePlacementTag)) return false
         if (activeFunctionalTag && !tags.includes(activeFunctionalTag)) return false
-        if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false
+        if (search) {
+          const normalizedSearch = search.toLocaleLowerCase()
+          const matchesOriginal = item.name.toLocaleLowerCase().includes(normalizedSearch)
+          const matchesTranslated = displayName(item).toLocaleLowerCase().includes(normalizedSearch)
+          if (!(matchesOriginal || matchesTranslated)) return false
+        }
         return true
       })
     })()
@@ -66,13 +78,14 @@ export function ItemCatalog({
       {filteredItems.map((item, index) => {
         const isSelected = selectedItem?.src === item?.src
         const snapTarget = resolveAssetSnapTarget(item?.attachTo)
+        const itemDisplayName = displayName(item)
         return (
           <button
             className={cn(
               'group relative flex flex-col gap-1.5 rounded-xl p-1.5 transition-colors hover:cursor-pointer hover:bg-sidebar-accent',
               isSelected && 'bg-sidebar-accent ring-2 ring-primary-foreground',
             )}
-            key={index}
+            key={item.id ?? item.src ?? String(index)}
             onClick={() => {
               triggerSFX('sfx:menu-click')
               // Drop the current selection before arming placement — keeping
@@ -88,7 +101,7 @@ export function ItemCatalog({
           >
             <div className="relative aspect-square w-full overflow-hidden rounded-lg">
               <img
-                alt={item.name}
+                alt={itemDisplayName}
                 className="h-full w-full object-cover"
                 loading="eager"
                 src={resolveCdnUrl(item.thumbnail) || ''}
@@ -98,7 +111,7 @@ export function ItemCatalog({
               )}
             </div>
             <span className="truncate px-0.5 text-left font-medium text-[11px] text-muted-foreground group-hover:text-foreground">
-              {item.name}
+              {itemDisplayName}
             </span>
           </button>
         )

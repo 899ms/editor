@@ -2,6 +2,7 @@ import { Agentation } from 'agentation'
 import { GeistPixelSquare } from 'geist/font/pixel'
 import { Barlow } from 'next/font/google'
 import localFont from 'next/font/local'
+import { getRequestLocale } from '@/lib/server-locale'
 import { ClientBootstrap } from './client-bootstrap'
 import './globals.css'
 
@@ -21,21 +22,24 @@ const barlow = Barlow({
   display: 'swap',
 })
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const initialLocale = await getRequestLocale()
   const enableDevDiagnostics =
     process.env.NODE_ENV === 'development' && process.env.PASCAL_DEV_DIAGNOSTICS === '1'
 
   return (
     <html
       className={`${geistSans.variable} ${geistMono.variable} ${GeistPixelSquare.variable} ${barlow.variable}`}
-      lang="en"
+      lang={initialLocale}
     >
       <body className="font-sans">
-        <ClientBootstrap enableDevDiagnostics={enableDevDiagnostics}>{children}</ClientBootstrap>
+        <ClientBootstrap enableDevDiagnostics={enableDevDiagnostics} initialLocale={initialLocale}>
+          {children}
+        </ClientBootstrap>
         {enableDevDiagnostics && <Agentation />}
       </body>
     </html>

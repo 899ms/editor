@@ -1,9 +1,10 @@
 'use client'
 
 import type { LevelNode } from '@pascal-app/core'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { useEffect, useState } from 'react'
 import type { LevelDuplicatePreset } from '../../lib/level-duplication'
-import { getLevelDisplayName } from '@pascal-app/core'
+import { getLocalizedLevelDisplayName } from '../../lib/localized-level-name'
 import { cn } from '../../lib/utils'
 import {
   Dialog,
@@ -14,37 +15,32 @@ import {
   DialogTitle,
 } from './primitives/dialog'
 
-const DUPLICATE_PRESETS: Array<{
-  id: LevelDuplicatePreset
-  label: string
-  description: string
-}> = [
+const DUPLICATE_PRESETS = [
   {
     id: 'everything',
-    label: 'Everything',
-    description: 'Structure, materials, furniture, and references.',
+    labelKey: 'levels.duplicateDialog.presets.everything.label',
+    descriptionKey: 'levels.duplicateDialog.presets.everything.description',
   },
   {
     id: 'structure',
-    label: 'Structure only',
-    description: 'Walls, slabs, roofs, stairs, windows, and doors without finishes.',
+    labelKey: 'levels.duplicateDialog.presets.structure.label',
+    descriptionKey: 'levels.duplicateDialog.presets.structure.description',
   },
   {
     id: 'structure-materials',
-    label: 'Structure + materials',
-    description: 'Structure with the current material and finish assignments.',
+    labelKey: 'levels.duplicateDialog.presets.structureMaterials.label',
+    descriptionKey: 'levels.duplicateDialog.presets.structureMaterials.description',
   },
   {
     id: 'structure-furniture',
-    label: 'Structure + furniture',
-    description: 'Structure, finishes, and placed items, without guide references.',
+    labelKey: 'levels.duplicateDialog.presets.structureFurniture.label',
+    descriptionKey: 'levels.duplicateDialog.presets.structureFurniture.description',
   },
-]
-
-function getLevelLabel(level: LevelNode | null) {
-  if (!level) return 'this level'
-  return getLevelDisplayName(level)
-}
+] as const satisfies ReadonlyArray<{
+  id: LevelDuplicatePreset
+  labelKey: string
+  descriptionKey: string
+}>
 
 export function LevelDuplicateDialog({
   open,
@@ -57,6 +53,8 @@ export function LevelDuplicateDialog({
   onConfirm: (preset: LevelDuplicatePreset) => void
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = usePascalTranslation('editor')
+  const { t: tCommon } = usePascalTranslation('common')
   const [preset, setPreset] = useState<LevelDuplicatePreset>('everything')
 
   useEffect(() => {
@@ -69,8 +67,14 @@ export function LevelDuplicateDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Duplicate Level</DialogTitle>
-          <DialogDescription>Choose what to copy from {getLevelLabel(level)}.</DialogDescription>
+          <DialogTitle>{t('levels.duplicateDialog.title')}</DialogTitle>
+          <DialogDescription>
+            {t('levels.duplicateDialog.description', {
+              name: level
+                ? getLocalizedLevelDisplayName(level, t)
+                : t('levels.duplicateDialog.thisLevel'),
+            })}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2">
@@ -86,8 +90,8 @@ export function LevelDuplicateDialog({
               onClick={() => setPreset(option.id)}
               type="button"
             >
-              <div className="font-medium text-sm">{option.label}</div>
-              <div className="mt-1 text-muted-foreground text-xs">{option.description}</div>
+              <div className="font-medium text-sm">{t(option.labelKey)}</div>
+              <div className="mt-1 text-muted-foreground text-xs">{t(option.descriptionKey)}</div>
             </button>
           ))}
         </div>
@@ -98,14 +102,14 @@ export function LevelDuplicateDialog({
             onClick={() => onOpenChange(false)}
             type="button"
           >
-            Cancel
+            {tCommon('actions.cancel')}
           </button>
           <button
             className="cursor-pointer rounded-md bg-primary px-4 py-2 text-primary-foreground text-sm transition-opacity hover:opacity-90"
             onClick={() => onConfirm(preset)}
             type="button"
           >
-            Duplicate
+            {t('levels.duplicateDialog.confirm')}
           </button>
         </DialogFooter>
       </DialogContent>

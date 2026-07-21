@@ -1,6 +1,12 @@
 'use client'
 
-import { SegmentedControl, SliderControl, ToggleControl } from '@pascal-app/editor'
+import {
+  NodeUiText,
+  SegmentedControl,
+  SliderControl,
+  ToggleControl,
+  useNodeUiText,
+} from '@pascal-app/editor'
 import { ArrowDown, ArrowUp, Minus, Plus, Trash } from 'lucide-react'
 import {
   type CabinetCompartment,
@@ -115,7 +121,9 @@ function Stepper({
 }) {
   return (
     <div className="flex items-center justify-between rounded-lg border border-border/30 bg-black/10 px-2 py-1.5">
-      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
+      <span className="text-[11px] font-medium text-muted-foreground">
+        <NodeUiText>{label}</NodeUiText>
+      </span>
       <div className="flex items-center gap-1.5">
         <button
           className={STEPPER_BUTTON_CLASS}
@@ -171,7 +179,7 @@ function CompartmentTypeControl({
             onClick={() => onChange(option.value)}
             type="button"
           >
-            {option.label}
+            <NodeUiText>{option.label}</NodeUiText>
           </button>
         )
       })}
@@ -208,6 +216,7 @@ export function CompartmentCard({
   allowHood?: boolean
   wallCabinet?: boolean
 }) {
+  const uiText = useNodeUiText()
   const type = compartment.type as CabinetCompartmentType
   const isFridge = isFridgeCompartmentType(type)
   const isHood = isHoodCompartmentType(type)
@@ -217,9 +226,9 @@ export function CompartmentCard({
       <div className="flex items-center justify-between pb-1.5">
         <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
           {displayIndex === 0
-            ? 'Top'
+            ? uiText('Top')
             : displayIndex === total - 1
-              ? 'Bottom'
+              ? uiText('Bottom')
               : `#${total - displayIndex}`}
         </span>
         <div className="flex items-center gap-1">
@@ -252,7 +261,7 @@ export function CompartmentCard({
 
       <div className="pb-2">
         <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-          Type
+          <NodeUiText>Type</NodeUiText>
         </div>
         <CompartmentTypeControl
           includeHood={allowHood || isHood}
@@ -314,7 +323,7 @@ export function CompartmentCard({
         <div className="space-y-2">
           <div>
             <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Style
+              <NodeUiText>Style</NodeUiText>
             </div>
             <SegmentedControl
               onChange={(value) => onReplace(patchCompartment(compartment, { doorType: value }))}
@@ -338,7 +347,7 @@ export function CompartmentCard({
       {isFridge && (
         <div>
           <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-            Style
+            <NodeUiText>Style</NodeUiText>
           </div>
           <SegmentedControl
             onChange={(value) =>
@@ -360,14 +369,14 @@ export function CompartmentCard({
 
       {isHood && (
         <div className="rounded-lg border border-border/30 bg-black/10 px-2 py-1.5 text-[11px] font-medium text-muted-foreground">
-          Chimney
+          <NodeUiText>Chimney</NodeUiText>
         </div>
       )}
 
       {isCooktop && (
         <div className="space-y-2">
           <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-            Surface
+            <NodeUiText>Surface</NodeUiText>
           </div>
           <SegmentedControl
             onChange={(value) =>
@@ -392,7 +401,7 @@ export function CompartmentCard({
           />
           <div>
             <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Layout
+              <NodeUiText>Layout</NodeUiText>
             </div>
             <SegmentedControl
               onChange={(value) =>
@@ -442,7 +451,7 @@ export function CompartmentCard({
       {type === 'sink' && (
         <div>
           <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-            Bowls
+            <NodeUiText>Bowls</NodeUiText>
           </div>
           <SegmentedControl
             onChange={(value) => onReplace(patchCompartment(compartment, { sinkLayout: value }))}
@@ -466,7 +475,7 @@ export function CompartmentCard({
           />
           <div>
             <div className="px-1 pb-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-              Rack
+              <NodeUiText>Rack</NodeUiText>
             </div>
             <SegmentedControl
               onChange={(value) =>

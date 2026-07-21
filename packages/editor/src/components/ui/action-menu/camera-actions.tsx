@@ -1,11 +1,13 @@
 'use client'
 
 import { emitter } from '@pascal-app/core'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import Image from 'next/image'
 import useEditor from '../../../store/use-editor'
 import { ActionButton } from './action-button'
 
 export function CameraActions({ hideOrbit = false }: { hideOrbit?: boolean }) {
+  const { t } = usePascalTranslation('editor')
   // Orbit stays useful in 2D-only (it spins the synced floorplan view), but
   // top view only tilts the hidden 3D camera — pointless without the canvas.
   const is2dOnly = useEditor((s) => s.viewMode === '2d')
@@ -26,16 +28,15 @@ export function CameraActions({ hideOrbit = false }: { hideOrbit?: boolean }) {
     <div className="flex items-center gap-1">
       {!hideOrbit && (
         <>
-          {/* Orbit CCW */}
           <ActionButton
             className="group hover:bg-white/5"
-            label="Orbit Left"
+            label={t('camera.orbitLeft')}
             onClick={orbitCCW}
             size="icon"
             variant="ghost"
           >
             <Image
-              alt="Orbit Left"
+              alt={t('camera.orbitLeft')}
               className="h-[28px] w-[28px] -scale-x-100 object-contain opacity-70 transition-opacity group-hover:opacity-100"
               height={28}
               src="/icons/rotate.webp"
@@ -43,16 +44,15 @@ export function CameraActions({ hideOrbit = false }: { hideOrbit?: boolean }) {
             />
           </ActionButton>
 
-          {/* Orbit CW */}
           <ActionButton
             className="group hover:bg-white/5"
-            label="Orbit Right"
+            label={t('camera.orbitRight')}
             onClick={orbitCW}
             size="icon"
             variant="ghost"
           >
             <Image
-              alt="Orbit Right"
+              alt={t('camera.orbitRight')}
               className="h-[28px] w-[28px] object-contain opacity-70 transition-opacity group-hover:opacity-100"
               height={28}
               src="/icons/rotate.webp"
@@ -62,17 +62,16 @@ export function CameraActions({ hideOrbit = false }: { hideOrbit?: boolean }) {
         </>
       )}
 
-      {/* Top View */}
       {!is2dOnly && (
         <ActionButton
           className="group hover:bg-white/5"
-          label="Top View"
+          label={t('camera.topView')}
           onClick={goToTopView}
           size="icon"
           variant="ghost"
         >
           <Image
-            alt="Top View"
+            alt={t('camera.topView')}
             className="h-[28px] w-[28px] object-contain opacity-70 transition-opacity group-hover:opacity-100"
             height={28}
             src="/icons/topview.webp"

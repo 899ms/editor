@@ -25,6 +25,7 @@ import {
   useInteractive,
   useScene,
 } from '@pascal-app/core'
+import { usePascalTranslation } from '@pascal-app/i18n'
 import { useViewer } from '@pascal-app/viewer'
 import { KeyboardControls } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -982,7 +983,12 @@ export const FirstPersonControls = () => {
       if (!(target instanceof HTMLElement)) return
       if (!canvas.contains(target)) return
       if (document.pointerLockElement !== canvas) {
-        canvas.requestPointerLock?.()
+        try {
+          const request = canvas.requestPointerLock?.() as Promise<void> | undefined
+          request?.catch(() => {})
+        } catch {
+          // Pointer lock is optional; mouse controls remain available if Chromium rejects it.
+        }
       }
     }
 
@@ -1407,7 +1413,16 @@ export const FirstPersonControls = () => {
  * Overlay UI for first-person mode: crosshair, controls hint, exit button.
  * Rendered as a regular DOM overlay (not inside the Canvas).
  */
-export const FirstPersonOverlay = ({ onExit }: { onExit: () => void }) => {
+type FirstPersonOverlayProps = {
+  onExit: () => void
+  belowTopToolbar?: boolean
+}
+
+export const FirstPersonOverlay = ({
+  onExit,
+  belowTopToolbar = false,
+}: FirstPersonOverlayProps) => {
+  const { t } = usePascalTranslation('editor')
   const [isLocked, setIsLocked] = useState(false)
   const hasPlacedSpawn = useScene((state) =>
     Object.values(state.nodes).some((node) => node.type === 'spawn'),
@@ -1443,7 +1458,7 @@ export const FirstPersonOverlay = ({ onExit }: { onExit: () => void }) => {
         </div>
       )}
 
-      <div className="absolute top-4 right-4 z-50">
+      <div className={`absolute right-4 z-50 ${belowTopToolbar ? 'top-20' : 'top-4'}`}>
         <button
           className="pointer-events-auto flex items-center gap-2 rounded-xl border border-border/40 bg-background/90 px-4 py-2 font-medium text-foreground text-sm shadow-lg backdrop-blur-xl transition-colors hover:bg-background"
           onClick={handleExit}
@@ -1452,14 +1467,14 @@ export const FirstPersonOverlay = ({ onExit }: { onExit: () => void }) => {
           <kbd className="rounded border border-border/50 bg-accent/50 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             ESC
           </kbd>
-          Exit Street View
+          {t('walkthrough.exit')}
         </button>
       </div>
 
       {!hasPlacedSpawn && (
         <div className="absolute top-4 left-1/2 z-50 -translate-x-1/2">
           <div className="rounded-2xl border border-sky-300/35 bg-slate-950/88 px-4 py-2 text-center text-slate-100 text-sm shadow-lg backdrop-blur-xl">
-            Place a Spawn Point from the Build tab to control where walkthrough starts.
+            {t('walkthrough.spawnHint')}
           </div>
         </div>
       )}
@@ -1467,15 +1482,15 @@ export const FirstPersonOverlay = ({ onExit }: { onExit: () => void }) => {
       {isLocked && (
         <div className="pointer-events-none absolute top-1/2 right-6 z-40 -translate-y-1/2">
           <div className="flex min-w-[148px] flex-col gap-3 rounded-2xl border border-border/35 bg-background/80 px-4 py-4 shadow-lg backdrop-blur-xl">
-            <ControlHint keys={['W', 'A', 'S', 'D']} label="Move" />
+            <ControlHint keys={['W', 'A', 'S', 'D']} label={t('walkthrough.move')} />
             <div className="h-px w-full bg-border/30" />
-            <InlineControlHint keyLabel="Space" label="Jump" />
-            <InlineControlHint keyLabel="Shift" label="Sprint" />
-            <InlineControlHint keyLabel="E / R" label="Interact" />
-            <InlineControlHint keyLabel="T" label="Close" />
+            <InlineControlHint keyLabel="Space" label={t('walkthrough.jump')} />
+            <InlineControlHint keyLabel="Shift" label={t('walkthrough.sprint')} />
+            <InlineControlHint keyLabel="E / R" label={t('walkthrough.interact')} />
+            <InlineControlHint keyLabel="T" label={t('walkthrough.close')} />
             <div className="h-px w-full bg-border/30" />
             <span className="text-center text-muted-foreground/60 text-xs">
-              Click to look around
+              {t('walkthrough.lookAround')}
             </span>
           </div>
         </div>

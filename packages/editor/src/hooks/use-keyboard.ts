@@ -9,6 +9,7 @@ import {
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { useEffect } from 'react'
+import { useEditorUiText } from '../components/ui/editor-ui-text'
 import { Vector3 } from 'three'
 import {
   classifyParticipant,
@@ -164,6 +165,8 @@ export const useKeyboard = ({
   isVersionPreviewMode?: boolean
   disabled?: boolean
 } = {}) => {
+  const ui = useEditorUiText()
+
   useEffect(() => {
     if (disabled) {
       return
@@ -628,7 +631,9 @@ export const useKeyboard = ({
           const BULK_DELETE_THRESHOLD = 10
           if (selectedNodeIds.length >= BULK_DELETE_THRESHOLD) {
             const confirmed = window.confirm(
-              `Delete ${selectedNodeIds.length} selected elements? This cannot be undone if the undo history is exhausted.`,
+              `${ui('Delete')} ${selectedNodeIds.length} ${ui(
+                'selected elements? This cannot be undone if the undo history is exhausted.',
+              )}`,
             )
             if (!confirmed) return
           }
@@ -678,7 +683,7 @@ export const useKeyboard = ({
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [disabled, isVersionPreviewMode])
+  }, [disabled, isVersionPreviewMode, ui])
 
   return null
 }

@@ -29,6 +29,7 @@ import useEditor from '../../../store/use-editor'
 import { MobilePanelSheet } from './mobile-panel-sheet'
 import { MobileSelectionBar } from './mobile-selection-bar'
 import { getNodeDisplay } from './node-display'
+import { useNodeUiText } from '../controls/node-ui-text'
 import { resetDesktopInspectorCollapsed } from './panel-wrapper'
 import { ParametricInspector } from './parametric-inspector'
 import { ReferencePanel } from './reference-panel'
@@ -96,6 +97,7 @@ function MobilePanelLayer({
   panel: React.ReactNode
   isReference: boolean
 }) {
+  const nodeUi = useNodeUiText()
   const setSelection = useViewer((s) => s.setSelection)
   const setSelectedReferenceId = useEditor((s) => s.setSelectedReferenceId)
   const setMovingNode = useEditor((s) => s.setMovingNode)
@@ -160,7 +162,7 @@ function MobilePanelLayer({
         icon={display.icon}
         onClose={() => setIsSheetOpen(false)}
         open={isSheetOpen}
-        title={display.label}
+        title={nodeUi(display.label)}
       >
         {panel}
       </MobilePanelSheet>

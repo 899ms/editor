@@ -79,14 +79,16 @@ export const ductTerminalDefinition: NodeDefinition<typeof DuctTerminalNode> = {
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Click', label: 'Place register' },
-    { key: 'M', label: 'Mount: floor / ceiling / wall' },
-    { key: 'R / T', label: 'Rotate ±45° (floor / ceiling)' },
-    { key: 'Esc', label: 'Exit' },
+    { key: 'Click', label: 'Place register', labelKey: 'editor:contextual.hints.placeRegister' },
+    { key: 'M', label: 'Mount: floor / ceiling / wall', labelKey: 'editor:contextual.hints.mountTerminal' },
+    { key: 'R / T', label: 'Rotate ±45° (floor / ceiling)', labelKey: 'editor:contextual.hints.rotateTerminal45' },
+    { key: 'Esc', label: 'Exit', labelKey: 'editor:contextual.hints.exit' },
   ],
 
   presentation: {
     label: 'Register',
+    labelKey: 'nodes:kinds.ductTerminal',
+    descriptionKey: 'nodes:descriptions.ductTerminal',
     description:
       'Duct terminal — supply register, ceiling diffuser, or return grille. Duct runs end at its collar.',
     icon: { kind: 'url', src: '/icons/registers.webp' },

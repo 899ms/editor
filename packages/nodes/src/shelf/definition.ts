@@ -265,12 +265,14 @@ export const shelfDefinition: NodeDefinition<typeof ShelfNode> = {
   preview: () => import('./preview'),
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Left click', label: 'Place shelf' },
-    { key: 'Esc', label: 'Cancel' },
+    { key: 'Left click', label: 'Place shelf', labelKey: 'editor:contextual.hints.placeShelf' },
+    { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 
   presentation: {
     label: 'Shelf',
+    labelKey: 'nodes:kinds.shelf',
+    descriptionKey: 'nodes:descriptions.shelf',
     description: 'A configurable shelving unit. Items host on each row.',
     icon: { kind: 'url', src: '/icons/shelf.webp' },
     paletteSection: 'furnish',

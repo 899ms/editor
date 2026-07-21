@@ -773,7 +773,7 @@ function bakeWindowClip(
  * an explicit name wins, items fall back to their catalog asset name, other
  * kinds to a capitalized type. Levels override this with their display name.
  */
-function nodeDisplayLabel(node: AnyNode): string {
+function nodeExportName(node: AnyNode): string {
   if (node.name) return node.name
   switch (node.type) {
     case 'item':
@@ -823,7 +823,7 @@ function stampIdentity(
     const extras: Record<string, unknown> = { pascalId: id, kind: node.type }
     // Stamp a human label for every node (catalog name for items, a type label
     // otherwise) so the viewer breadcrumb/hover read names, not raw pascalIds.
-    extras.label = nodeDisplayLabel(node)
+    extras.label = nodeExportName(node)
     // Camera bookmarks ride on the identity node (any kind can carry one) so the
     // baked viewer flies to a saved pose on selection without a side file.
     if (node.camera) extras.camera = node.camera
