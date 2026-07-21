@@ -118,9 +118,17 @@ export const ductFittingDefinition: NodeDefinition<typeof DuctFittingNode> = {
   tool: () => import('./tool'),
   toolHints: [
     { key: 'Click', label: 'Place fitting', labelKey: 'editor:contextual.hints.placeFitting' },
-    { key: 'Hover a duct end', label: 'Snap onto the run', labelKey: 'editor:contextual.hints.snapOntoRun' },
+    {
+      key: 'Hover a duct end',
+      label: 'Snap onto the run',
+      labelKey: 'editor:contextual.hints.snapOntoRun',
+    },
     { key: 'R / T', label: 'Rotate ±45°', labelKey: 'editor:contextual.hints.rotate45' },
-    { key: 'Alt', label: 'Switch rotation axis (Y → X → Z)', labelKey: 'editor:contextual.hints.switchRotationAxis' },
+    {
+      key: 'Alt',
+      label: 'Switch rotation axis (Y → X → Z)',
+      labelKey: 'editor:contextual.hints.switchRotationAxis',
+    },
     { key: 'Esc', label: 'Exit', labelKey: 'editor:contextual.hints.exit' },
   ],
 

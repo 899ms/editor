@@ -1,7 +1,12 @@
 'use client'
 
 import { emitter, type GridEvent, HvacEquipmentNode, useScene } from '@pascal-app/core'
-import { isGridSnapActive, isMagneticSnapActive, triggerSFX, useEditor, NodeUiText
+import {
+  isGridSnapActive,
+  isMagneticSnapActive,
+  NodeUiText,
+  triggerSFX,
+  useEditor,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -123,7 +128,9 @@ const HvacEquipmentTool = () => {
         zIndexRange={[100, 0]}
       >
         <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
-          <span className="font-medium text-foreground"><NodeUiText>R/T rotate</NodeUiText></span>
+          <span className="font-medium text-foreground">
+            <NodeUiText>R/T rotate</NodeUiText>
+          </span>
         </div>
       </Html>
     </LevelOffsetGroup>

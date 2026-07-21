@@ -2,11 +2,6 @@
 
 import { Icon as IconifyIcon } from '@iconify/react'
 import {
-  resolveLocalizedDescription,
-  resolveLocalizedLabel,
-  usePascalTranslation,
-} from '@pascal-app/i18n'
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,6 +14,11 @@ import {
   useSidebarStore,
   type ViewMode,
 } from '@pascal-app/editor'
+import {
+  resolveLocalizedDescription,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 import {
   CLAY_PALETTE,
   type EdgeMode,

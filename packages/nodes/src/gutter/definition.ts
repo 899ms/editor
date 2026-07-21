@@ -175,7 +175,11 @@ export const gutterDefinition: NodeDefinition<typeof GutterNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place gutter on roof eave', labelKey: 'editor:contextual.hints.placeGutter' },
+    {
+      key: 'Left click',
+      label: 'Place gutter on roof eave',
+      labelKey: 'editor:contextual.hints.placeGutter',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

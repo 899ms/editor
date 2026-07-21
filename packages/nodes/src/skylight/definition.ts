@@ -264,7 +264,11 @@ export const skylightDefinition: NodeDefinition<typeof SkylightNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place skylight on roof', labelKey: 'editor:contextual.hints.placeSkylightOnRoof' },
+    {
+      key: 'Left click',
+      label: 'Place skylight on roof',
+      labelKey: 'editor:contextual.hints.placeSkylightOnRoof',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

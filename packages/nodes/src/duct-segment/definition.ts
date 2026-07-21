@@ -176,12 +176,32 @@ export const ductSegmentDefinition: NodeDefinition<typeof DuctSegmentNode> = {
   tool: () => import('./tool'),
   toolHints: [
     { key: 'Click', label: 'Start segment', labelKey: 'editor:contextual.hints.startSegment' },
-    { key: 'Click again', label: 'Place and continue', labelKey: 'editor:contextual.hints.placeAndContinue' },
-    { key: 'Alt + drag', label: 'Go vertical ↕, click to place', labelKey: 'editor:contextual.hints.goVertical' },
-    { key: '[ / ]', label: 'Duct diameter down / up', labelKey: 'editor:contextual.hints.ductDiameter' },
+    {
+      key: 'Click again',
+      label: 'Place and continue',
+      labelKey: 'editor:contextual.hints.placeAndContinue',
+    },
+    {
+      key: 'Alt + drag',
+      label: 'Go vertical ↕, click to place',
+      labelKey: 'editor:contextual.hints.goVertical',
+    },
+    {
+      key: '[ / ]',
+      label: 'Duct diameter down / up',
+      labelKey: 'editor:contextual.hints.ductDiameter',
+    },
     { key: 'Q', label: 'Round / rect trunk', labelKey: 'editor:contextual.hints.roundRectTrunk' },
-    { key: 'C', label: 'Ceiling / floor height', labelKey: 'editor:contextual.hints.ceilingFloorHeight' },
-    { key: 'Esc', label: 'Cancel start point', labelKey: 'editor:contextual.hints.cancelStartPoint' },
+    {
+      key: 'C',
+      label: 'Ceiling / floor height',
+      labelKey: 'editor:contextual.hints.ceilingFloorHeight',
+    },
+    {
+      key: 'Esc',
+      label: 'Cancel start point',
+      labelKey: 'editor:contextual.hints.cancelStartPoint',
+    },
   ],
 
   presentation: {

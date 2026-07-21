@@ -1,6 +1,5 @@
 'use client'
 
-import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import { emitter } from '@pascal-app/core'
 import { Check, Crop, Loader2, Maximize2, Monitor, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -10,6 +9,7 @@ import useEditor, {
   type SnapshotCropMode,
   type SnapshotStandardAspect,
 } from '../../store/use-editor'
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 
 // Local alias — distinct from `useEditor.captureMode` (which describes *why*
 // a capture is happening, e.g. `preset`). This one says HOW the captured
@@ -607,7 +607,10 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
             snapshot pitch only applies to the studio/reference flow. */}
         {!isMobile && !isPreset && (
           <span className="pointer-events-none max-w-90 rounded-lg border border-white/10 bg-neutral-950/85 px-3.5 py-1.5 text-center text-[11.5px] text-white/85 leading-relaxed backdrop-blur-md">
-            <EditorUiText>A snapshot freezes this exact camera angle as a reusable reference for renders & videos.</EditorUiText>
+            <EditorUiText>
+              A snapshot freezes this exact camera angle as a reusable reference for renders &
+              videos.
+            </EditorUiText>
           </span>
         )}
 

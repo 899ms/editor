@@ -198,7 +198,11 @@ export const ridgeVentDefinition: NodeDefinition<typeof RidgeVentNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place ridge vent on roof', labelKey: 'editor:contextual.hints.placeRidgeVent' },
+    {
+      key: 'Left click',
+      label: 'Place ridge vent on roof',
+      labelKey: 'editor:contextual.hints.placeRidgeVent',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

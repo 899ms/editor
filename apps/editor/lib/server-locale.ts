@@ -1,7 +1,7 @@
 import {
   createPascalServerI18n,
-  resolveInitialLocale,
   type PascalLocale,
+  resolveInitialLocale,
 } from '@pascal-app/i18n/server'
 import { cookies, headers } from 'next/headers'
 

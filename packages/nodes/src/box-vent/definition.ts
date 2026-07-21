@@ -213,7 +213,11 @@ export const boxVentDefinition: NodeDefinition<typeof BoxVentNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place box vent on roof', labelKey: 'editor:contextual.hints.placeBoxVent' },
+    {
+      key: 'Left click',
+      label: 'Place box vent on roof',
+      labelKey: 'editor:contextual.hints.placeBoxVent',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

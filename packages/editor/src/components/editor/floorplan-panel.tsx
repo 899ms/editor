@@ -1,6 +1,5 @@
 'use client'
 
-import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import { Icon } from '@iconify/react'
 import {
   type AnyNode,
@@ -187,6 +186,7 @@ import {
   WALL_JOIN_SNAP_RADIUS,
   type WallPlanPoint,
 } from '../tools/wall/wall-drafting'
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 
 import { PALETTE_COLORS } from '../ui/primitives/color-dot'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/primitives/tooltip'
@@ -3790,7 +3790,9 @@ function FloorplanGuideHandleHint({
             rotationModifierPressed ? 'opacity-40' : 'opacity-100',
           )}
         >
-          <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>resize</EditorUiText></span>
+          <span className="font-medium text-[11px] lowercase leading-none">
+            <EditorUiText>resize</EditorUiText>
+          </span>
           <Icon
             aria-hidden="true"
             className="h-3.5 w-3.5 shrink-0"
@@ -3805,11 +3807,15 @@ function FloorplanGuideHandleHint({
             rotationModifierPressed ? 'opacity-100' : 'opacity-40',
           )}
         >
-          <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>rotate</EditorUiText></span>
+          <span className="font-medium text-[11px] lowercase leading-none">
+            <EditorUiText>rotate</EditorUiText>
+          </span>
           {isMacPlatform ? (
             <Command aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
           ) : (
-            <span className="font-mono text-[10px] uppercase leading-none"><EditorUiText>ctrl</EditorUiText></span>
+            <span className="font-mono text-[10px] uppercase leading-none">
+              <EditorUiText>ctrl</EditorUiText>
+            </span>
           )}
           <Icon
             aria-hidden="true"
@@ -3821,9 +3827,13 @@ function FloorplanGuideHandleHint({
 
         {showScaleHint && (
           <div className="flex items-center gap-1.5 opacity-40">
-            <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>set scale</EditorUiText></span>
+            <span className="font-medium text-[11px] lowercase leading-none">
+              <EditorUiText>set scale</EditorUiText>
+            </span>
             <Ruler aria-hidden="true" className="h-3.5 w-3.5 shrink-0" strokeWidth={2.2} />
-            <span className="font-medium text-[11px] lowercase leading-none"><EditorUiText>panel</EditorUiText></span>
+            <span className="font-medium text-[11px] lowercase leading-none">
+              <EditorUiText>panel</EditorUiText>
+            </span>
           </div>
         )}
       </div>
@@ -11129,9 +11139,14 @@ export function FloorplanPanel({
                 <Ruler className="h-4 w-4 text-foreground/80" />
               </div>
               <div className="min-w-0">
-                <div className="font-medium text-sm"><EditorUiText>Set overlay scale</EditorUiText></div>
+                <div className="font-medium text-sm">
+                  <EditorUiText>Set overlay scale</EditorUiText>
+                </div>
                 <div className="mt-0.5 text-muted-foreground text-xs leading-4">
-                  <EditorUiText>Enter the real-world length of the line you just drew. The image will resize to match it.</EditorUiText>
+                  <EditorUiText>
+                    Enter the real-world length of the line you just drew. The image will resize to
+                    match it.
+                  </EditorUiText>
                 </div>
               </div>
             </div>
@@ -11168,10 +11183,18 @@ export function FloorplanPanel({
                   }
                   value={referenceScaleUnit}
                 >
-                  <option value="meters"><EditorUiText>Meters</EditorUiText></option>
-                  <option value="centimeters"><EditorUiText>Centimeters</EditorUiText></option>
-                  <option value="feet"><EditorUiText>Feet</EditorUiText></option>
-                  <option value="inches"><EditorUiText>Inches</EditorUiText></option>
+                  <option value="meters">
+                    <EditorUiText>Meters</EditorUiText>
+                  </option>
+                  <option value="centimeters">
+                    <EditorUiText>Centimeters</EditorUiText>
+                  </option>
+                  <option value="feet">
+                    <EditorUiText>Feet</EditorUiText>
+                  </option>
+                  <option value="inches">
+                    <EditorUiText>Inches</EditorUiText>
+                  </option>
                 </select>
               </div>
               <span

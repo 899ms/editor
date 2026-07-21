@@ -20,6 +20,7 @@ import {
   duplicateStairSubtree,
   getStairLevelOptions,
   MetricControl,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   resolveStairDestinationLevel,
@@ -30,7 +31,6 @@ import {
   ToggleControl,
   triggerSFX,
   useEditor,
-  NodeUiText,
   useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
@@ -353,7 +353,9 @@ export default function StairPanel() {
                 type="button"
               >
                 <span className="truncate">{seg.name || `${uiText('Segment')} ${i + 1}`}</span>
-                <span className="text-muted-foreground text-xs capitalize">{uiText(seg.segmentType)}</span>
+                <span className="text-muted-foreground text-xs capitalize">
+                  {uiText(seg.segmentType)}
+                </span>
               </button>
             ))}
           </div>

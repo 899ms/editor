@@ -229,8 +229,17 @@ export const slabDefinition: NodeDefinition<typeof SlabNode> = {
   },
 
   toolHints: [
-    { key: 'Left click', label: 'Trace slab outline', labelKey: 'editor:contextual.hints.traceSlabOutline' },
-    { key: 'Enter', label: 'Finish slab', labelKey: 'editor:contextual.hints.finishSlab', minDraftVertices: 3 },
+    {
+      key: 'Left click',
+      label: 'Trace slab outline',
+      labelKey: 'editor:contextual.hints.traceSlabOutline',
+    },
+    {
+      key: 'Enter',
+      label: 'Finish slab',
+      labelKey: 'editor:contextual.hints.finishSlab',
+      minDraftVertices: 3,
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

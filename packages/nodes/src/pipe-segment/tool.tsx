@@ -9,9 +9,9 @@ import {
   isGridSnapActive,
   isMagneticSnapActive,
   markToolCancelConsumed,
+  NodeUiText,
   triggerSFX,
   useEditor,
-  NodeUiText,
   useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'

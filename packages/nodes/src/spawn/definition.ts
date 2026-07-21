@@ -100,7 +100,11 @@ export const spawnDefinition: NodeDefinition<typeof SpawnNode> = {
   },
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Left click', label: 'Place spawn point', labelKey: 'editor:contextual.hints.placeSpawn' },
+    {
+      key: 'Left click',
+      label: 'Place spawn point',
+      labelKey: 'editor:contextual.hints.placeSpawn',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

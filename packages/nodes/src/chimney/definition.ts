@@ -402,7 +402,11 @@ export const chimneyDefinition: NodeDefinition<typeof ChimneyNode> = {
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Left click', label: 'Place chimney on roof', labelKey: 'editor:contextual.hints.placeChimneyOnRoof' },
+    {
+      key: 'Left click',
+      label: 'Place chimney on roof',
+      labelKey: 'editor:contextual.hints.placeChimneyOnRoof',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

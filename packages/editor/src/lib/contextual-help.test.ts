@@ -27,6 +27,7 @@ describe('resolveSelectModeHelpHints', () => {
       {
         keys: [['Cmd/Ctrl', 'Shift'], 'Left click'],
         label: 'Add or remove objects from the selection',
+        labelKey: 'editor:contextual.hints.addRemoveSelection',
         active: true,
       },
     ])
@@ -44,16 +45,19 @@ describe('resolveSelectModeHelpHints', () => {
     expect(hints).toContainEqual({
       keys: ['Left click'],
       label: 'Drag selected movable object',
+      labelKey: 'editor:contextual.hints.dragSelected',
     })
     expect(hints).toContainEqual({
       keys: ['Cmd/Ctrl', 'Right click'],
       label: 'Drag left or right to rotate selected object',
+      labelKey: 'editor:contextual.hints.dragRotateSelected',
     })
     // Cmd/Ctrl and Shift click both toggle selection membership (3D selection
     // manager and 2D floorplan alike) — advertised as a single or-group row.
     expect(hints).toContainEqual({
       keys: [['Cmd/Ctrl', 'Shift'], 'Left click'],
       label: 'Add or remove objects from the selection',
+      labelKey: 'editor:contextual.hints.addRemoveSelection',
       active: false,
     })
   })
@@ -71,14 +75,24 @@ describe('resolveSelectModeHelpHints', () => {
       {
         keys: ['Left click'],
         label: 'Click or drag the selection to move it as one',
+        labelKey: 'editor:contextual.hints.moveSelectionTogether',
       },
-      { keys: ['R / T'], label: 'Rotate the selection ±45°' },
+      {
+        keys: ['R / T'],
+        label: 'Rotate the selection ±45°',
+        labelKey: 'editor:contextual.hints.rotateSelection45',
+      },
       {
         keys: [['Cmd/Ctrl', 'Shift'], 'Left click'],
         label: 'Add or remove objects from the selection',
+        labelKey: 'editor:contextual.hints.addRemoveSelection',
         active: false,
       },
-      { keys: ['Esc'], label: 'Clear the selection (or click outside)' },
+      {
+        keys: ['Esc'],
+        label: 'Clear the selection (or click outside)',
+        labelKey: 'editor:contextual.hints.clearSelection',
+      },
     ])
   })
 
@@ -97,14 +111,17 @@ describe('resolveSelectModeHelpHints', () => {
       {
         keys: ['Left click'],
         label: 'Drag selected movable object',
+        labelKey: 'editor:contextual.hints.dragSelected',
       },
       {
         keys: ['Cmd/Ctrl', 'Right click'],
         label: 'Drag left or right to rotate selected object',
+        labelKey: 'editor:contextual.hints.dragRotateSelected',
       },
       {
         keys: [['Cmd/Ctrl', 'Shift'], 'Left click'],
         label: 'Add or remove objects from the selection',
+        labelKey: 'editor:contextual.hints.addRemoveSelection',
         active: true,
       },
     ])

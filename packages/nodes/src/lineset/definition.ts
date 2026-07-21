@@ -114,9 +114,21 @@ export const linesetDefinition: NodeDefinition<typeof LinesetNode> = {
   tool: () => import('./tool'),
   toolHints: [
     { key: 'Click', label: 'Start lineset', labelKey: 'editor:contextual.hints.startLineset' },
-    { key: 'Click again', label: 'Place it (locked to 45°)', labelKey: 'editor:contextual.hints.placeLocked45' },
-    { key: 'Alt + drag', label: 'Go vertical ↕, click to place', labelKey: 'editor:contextual.hints.goVertical' },
-    { key: 'Esc', label: 'Cancel start point', labelKey: 'editor:contextual.hints.cancelStartPoint' },
+    {
+      key: 'Click again',
+      label: 'Place it (locked to 45°)',
+      labelKey: 'editor:contextual.hints.placeLocked45',
+    },
+    {
+      key: 'Alt + drag',
+      label: 'Go vertical ↕, click to place',
+      labelKey: 'editor:contextual.hints.goVertical',
+    },
+    {
+      key: 'Esc',
+      label: 'Cancel start point',
+      labelKey: 'editor:contextual.hints.cancelStartPoint',
+    },
   ],
 
   presentation: {

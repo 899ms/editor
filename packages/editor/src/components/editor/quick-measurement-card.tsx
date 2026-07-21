@@ -3,9 +3,9 @@
 import type { QuickMeasurementMetric, QuickMeasurementReport } from '@pascal-app/core'
 import { Crosshair, MapPin } from 'lucide-react'
 import { memo } from 'react'
+import { formatAreaLabel, formatLinearMeasurement, formatVolumeLabel } from '../../lib/measurements'
 import { useNodeUiText } from '../ui/controls/node-ui-text'
 import { useEditorUiText } from '../ui/editor-ui-text'
-import { formatAreaLabel, formatLinearMeasurement, formatVolumeLabel } from '../../lib/measurements'
 
 function formatMetric(metric: QuickMeasurementMetric, unit: 'metric' | 'imperial'): string {
   if (metric.quantity === 'area') return formatAreaLabel(metric.value, unit, 2)

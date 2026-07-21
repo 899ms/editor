@@ -146,7 +146,11 @@ export const cupolaDefinition: NodeDefinition<typeof CupolaNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place cupola on roof', labelKey: 'editor:contextual.hints.placeCupola' },
+    {
+      key: 'Left click',
+      label: 'Place cupola on roof',
+      labelKey: 'editor:contextual.hints.placeCupola',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

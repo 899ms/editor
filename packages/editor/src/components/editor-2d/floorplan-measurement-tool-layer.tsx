@@ -1,6 +1,5 @@
 'use client'
 
-import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import {
   type AnyNode,
   type AnyNodeId,
@@ -45,6 +44,7 @@ import {
   useMeasurementDraft,
 } from '../../store/use-measurement-draft'
 import { formatAngleRadians } from '../tools/shared/segment-angle'
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import { FloorplanQuickMeasureLayer } from './floorplan-quick-measure-layer'
 import { useFloorplanRender } from './floorplan-render-context'
 import { resolveFloorplanLabelAngle } from './renderers/floorplan-label-angle'

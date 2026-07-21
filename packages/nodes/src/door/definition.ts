@@ -257,7 +257,11 @@ export const doorDefinition: NodeDefinition<typeof DoorNode> = {
   },
 
   toolHints: [
-    { key: 'Left click', label: 'Place door on wall', labelKey: 'editor:contextual.hints.placeDoor' },
+    {
+      key: 'Left click',
+      label: 'Place door on wall',
+      labelKey: 'editor:contextual.hints.placeDoor',
+    },
     { key: 'R', label: 'Flip side', labelKey: 'editor:contextual.hints.flipSide' },
     { key: 'Alt', label: 'Force place', labelKey: 'editor:contextual.hints.forcePlace' },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },

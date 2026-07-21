@@ -1050,7 +1050,8 @@ export const cabinetDefinition: NodeDefinition<typeof CabinetNode> = {
     { key: 'Click', label: 'Place cabinet', labelKey: 'editor:contextual.hints.placeCabinet' },
     {
       key: 'I',
-      label: 'Placement type', labelKey: 'editor:contextual.hints.placementType',
+      label: 'Placement type',
+      labelKey: 'editor:contextual.hints.placementType',
       chip: {
         subscribe: (onChange) => useCabinetPlacementType.subscribe(onChange),
         value: () => useCabinetPlacementType.getState().type,

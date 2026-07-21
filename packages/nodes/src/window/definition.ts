@@ -238,7 +238,11 @@ export const windowDefinition: NodeDefinition<typeof WindowNode> = {
   },
 
   toolHints: [
-    { key: 'Left click', label: 'Place window on wall', labelKey: 'editor:contextual.hints.placeWindowOnWall' },
+    {
+      key: 'Left click',
+      label: 'Place window on wall',
+      labelKey: 'editor:contextual.hints.placeWindowOnWall',
+    },
     { key: 'R', label: 'Flip side', labelKey: 'editor:contextual.hints.flipSide' },
     { key: 'Alt', label: 'Force place', labelKey: 'editor:contextual.hints.forcePlace' },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },

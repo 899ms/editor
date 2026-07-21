@@ -3,7 +3,6 @@
 import { useViewer } from '@pascal-app/viewer'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useEditorUiText } from '../ui/editor-ui-text'
 import { isActive } from '../../lib/interaction/scope'
 import useEditor from '../../store/use-editor'
 import useInteractionScope, { useMovingNode } from '../../store/use-interaction-scope'
@@ -13,6 +12,7 @@ import {
   startGroupPickUp,
 } from '../editor/group-actions'
 import { NodeActionMenu } from '../editor/node-action-menu'
+import { useEditorUiText } from '../ui/editor-ui-text'
 
 /**
  * Floating Move / Duplicate / Delete pill for a MULTI-selection in the 2D

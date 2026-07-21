@@ -317,7 +317,11 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
   toolHints: [
     { key: 'Left click', label: 'Place item', labelKey: 'editor:contextual.hints.placeItem' },
     { key: 'R / T', label: 'Rotate', labelKey: 'editor:contextual.hints.rotate' },
-    { key: 'Shift', label: 'Cycle snapping mode', labelKey: 'editor:contextual.hints.cycleSnappingMode' },
+    {
+      key: 'Shift',
+      label: 'Cycle snapping mode',
+      labelKey: 'editor:contextual.hints.cycleSnappingMode',
+    },
     { key: 'Alt', label: 'Force place', labelKey: 'editor:contextual.hints.forcePlace' },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],

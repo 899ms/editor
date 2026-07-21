@@ -5,9 +5,9 @@ import {
   CursorSphere,
   EDITOR_LAYER,
   isGridSnapActive,
+  NodeUiText,
   triggerSFX,
   useEditor,
-  NodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -232,15 +232,21 @@ const DuctFittingTool = () => {
         {/* Same pill shell as DimensionPill so the placement HUD matches
             the drawing / dragging readouts. */}
         <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
-          <span className="font-medium text-foreground"><NodeUiText>Axis</NodeUiText> {axis.toUpperCase()}</span>
+          <span className="font-medium text-foreground">
+            <NodeUiText>Axis</NodeUiText> {axis.toUpperCase()}
+          </span>
           <span aria-hidden className="text-muted-foreground">
             ·
           </span>
-          <span className="text-muted-foreground"><NodeUiText>R/T rotate</NodeUiText></span>
+          <span className="text-muted-foreground">
+            <NodeUiText>R/T rotate</NodeUiText>
+          </span>
           <span aria-hidden className="text-muted-foreground">
             ·
           </span>
-          <span className="text-muted-foreground"><NodeUiText>⌥ axis</NodeUiText></span>
+          <span className="text-muted-foreground">
+            <NodeUiText>⌥ axis</NodeUiText>
+          </span>
         </div>
       </Html>
       {/* Port-snap halo so the user sees the click will mate, not free-place. */}

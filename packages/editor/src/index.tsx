@@ -3,6 +3,11 @@
 // don't have to learn three separate package imports. The canonical
 // definitions still live in `@pascal-app/core` / `@pascal-app/viewer`.
 export { useScene } from '@pascal-app/core'
+export {
+  resolveLocalizedDescription,
+  resolveLocalizedLabel,
+  usePascalTranslation,
+} from '@pascal-app/i18n'
 export { useViewer } from '@pascal-app/viewer'
 export type { EditorProps } from './components/editor'
 export { default as Editor } from './components/editor'
@@ -181,12 +186,6 @@ export {
   ViewToggles as ViewerToolbarLeft,
 } from './components/ui/action-menu/view-toggles'
 export { useCommandPalette } from './components/ui/command-palette'
-export { EditorUiText, useEditorUiText } from './components/ui/editor-ui-text'
-export {
-  resolveLocalizedDescription,
-  resolveLocalizedLabel,
-  usePascalTranslation,
-} from '@pascal-app/i18n'
 export { ActionButton, ActionGroup } from './components/ui/controls/action-button'
 export { MaterialPaintPanel } from './components/ui/controls/material-paint-panel'
 export { MaterialPicker } from './components/ui/controls/material-picker'
@@ -196,6 +195,7 @@ export { PanelSection } from './components/ui/controls/panel-section'
 export { SegmentedControl } from './components/ui/controls/segmented-control'
 export { SliderControl } from './components/ui/controls/slider-control'
 export { ToggleControl } from './components/ui/controls/toggle-control'
+export { EditorUiText, useEditorUiText } from './components/ui/editor-ui-text'
 export { FloatingLevelSelector } from './components/ui/floating-level-selector'
 export { CATALOG_ITEMS } from './components/ui/item-catalog/catalog-items'
 // Item collections UI — used by the kind-owned ItemPanel in nodes/.

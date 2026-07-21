@@ -80,8 +80,16 @@ export const ductTerminalDefinition: NodeDefinition<typeof DuctTerminalNode> = {
   tool: () => import('./tool'),
   toolHints: [
     { key: 'Click', label: 'Place register', labelKey: 'editor:contextual.hints.placeRegister' },
-    { key: 'M', label: 'Mount: floor / ceiling / wall', labelKey: 'editor:contextual.hints.mountTerminal' },
-    { key: 'R / T', label: 'Rotate ±45° (floor / ceiling)', labelKey: 'editor:contextual.hints.rotateTerminal45' },
+    {
+      key: 'M',
+      label: 'Mount: floor / ceiling / wall',
+      labelKey: 'editor:contextual.hints.mountTerminal',
+    },
+    {
+      key: 'R / T',
+      label: 'Rotate ±45° (floor / ceiling)',
+      labelKey: 'editor:contextual.hints.rotateTerminal45',
+    },
     { key: 'Esc', label: 'Exit', labelKey: 'editor:contextual.hints.exit' },
   ],
 

@@ -501,8 +501,16 @@ export const dormerDefinition: NodeDefinition<typeof DormerNode> = {
 
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Left click', label: 'Place dormer on roof', labelKey: 'editor:contextual.hints.placeDormer' },
-    { key: 'R / Shift+R', label: 'Rotate ghost ±15°', labelKey: 'editor:contextual.hints.rotateGhost15' },
+    {
+      key: 'Left click',
+      label: 'Place dormer on roof',
+      labelKey: 'editor:contextual.hints.placeDormer',
+    },
+    {
+      key: 'R / Shift+R',
+      label: 'Rotate ghost ±15°',
+      labelKey: 'editor:contextual.hints.rotateGhost15',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

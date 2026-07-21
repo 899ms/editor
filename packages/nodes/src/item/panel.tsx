@@ -5,12 +5,12 @@ import {
   ActionButton,
   ActionGroup,
   CollectionsPopover,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SliderControl,
   triggerSFX,
   useEditor,
-  NodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Copy, Link, Link2Off, Move, Trash2 } from 'lucide-react'
@@ -110,7 +110,10 @@ export default function ItemPanel() {
         <SliderControl
           label={
             <>
-              X<sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>pos</NodeUiText></sub>
+              X
+              <sub className="ml-[1px] text-[11px] opacity-70">
+                <NodeUiText>pos</NodeUiText>
+              </sub>
             </>
           }
           max={node.position[0] + 2}
@@ -126,7 +129,10 @@ export default function ItemPanel() {
         <SliderControl
           label={
             <>
-              Y<sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>pos</NodeUiText></sub>
+              Y
+              <sub className="ml-[1px] text-[11px] opacity-70">
+                <NodeUiText>pos</NodeUiText>
+              </sub>
             </>
           }
           max={node.position[1] + 2}
@@ -142,7 +148,10 @@ export default function ItemPanel() {
         <SliderControl
           label={
             <>
-              Z<sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>pos</NodeUiText></sub>
+              Z
+              <sub className="ml-[1px] text-[11px] opacity-70">
+                <NodeUiText>pos</NodeUiText>
+              </sub>
             </>
           }
           max={node.position[2] + 2}
@@ -161,7 +170,10 @@ export default function ItemPanel() {
         <SliderControl
           label={
             <>
-              Y<sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>rot</NodeUiText></sub>
+              Y
+              <sub className="ml-[1px] text-[11px] opacity-70">
+                <NodeUiText>rot</NodeUiText>
+              </sub>
             </>
           }
           max={Math.round((node.rotation[1] * 180) / Math.PI) + 45}
@@ -219,7 +231,10 @@ export default function ItemPanel() {
           <SliderControl
             label={
               <>
-                <NodeUiText>XYZ</NodeUiText><sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>scale</NodeUiText></sub>
+                <NodeUiText>XYZ</NodeUiText>
+                <sub className="ml-[1px] text-[11px] opacity-70">
+                  <NodeUiText>scale</NodeUiText>
+                </sub>
               </>
             }
             max={10}
@@ -237,7 +252,10 @@ export default function ItemPanel() {
             <SliderControl
               label={
                 <>
-                  X<sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>scale</NodeUiText></sub>
+                  X
+                  <sub className="ml-[1px] text-[11px] opacity-70">
+                    <NodeUiText>scale</NodeUiText>
+                  </sub>
                 </>
               }
               max={10}
@@ -252,7 +270,10 @@ export default function ItemPanel() {
             <SliderControl
               label={
                 <>
-                  Y<sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>scale</NodeUiText></sub>
+                  Y
+                  <sub className="ml-[1px] text-[11px] opacity-70">
+                    <NodeUiText>scale</NodeUiText>
+                  </sub>
                 </>
               }
               max={10}
@@ -267,7 +288,10 @@ export default function ItemPanel() {
             <SliderControl
               label={
                 <>
-                  Z<sub className="ml-[1px] text-[11px] opacity-70"><NodeUiText>scale</NodeUiText></sub>
+                  Z
+                  <sub className="ml-[1px] text-[11px] opacity-70">
+                    <NodeUiText>scale</NodeUiText>
+                  </sub>
                 </>
               }
               max={10}
@@ -285,7 +309,9 @@ export default function ItemPanel() {
 
       <PanelSection title="Info">
         <div className="flex items-center justify-between px-2 py-1 text-muted-foreground text-sm">
-          <span><NodeUiText>Dimensions</NodeUiText></span>
+          <span>
+            <NodeUiText>Dimensions</NodeUiText>
+          </span>
           {(() => {
             const [w, h, d] = getScaledDimensions(node)
             return (

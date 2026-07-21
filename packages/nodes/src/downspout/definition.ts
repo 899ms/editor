@@ -189,8 +189,16 @@ export const downspoutDefinition: NodeDefinition<typeof DownspoutNode> = {
   preview: () => import('./preview'),
   tool: () => import('./tool'),
   toolHints: [
-    { key: 'Hover gutter', label: 'Highlight outlet', labelKey: 'editor:contextual.hints.highlightOutlet' },
-    { key: 'Left click', label: 'Drop downspout from outlet', labelKey: 'editor:contextual.hints.dropDownspout' },
+    {
+      key: 'Hover gutter',
+      label: 'Highlight outlet',
+      labelKey: 'editor:contextual.hints.highlightOutlet',
+    },
+    {
+      key: 'Left click',
+      label: 'Drop downspout from outlet',
+      labelKey: 'editor:contextual.hints.dropDownspout',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

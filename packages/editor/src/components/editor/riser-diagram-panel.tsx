@@ -1,11 +1,11 @@
 'use client'
 
-import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import { type AnyNodeId, buildRiserDiagram, useScene } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { X } from 'lucide-react'
 import { useMemo } from 'react'
 import useEditor from '../../store/use-editor'
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 
 const WASTE_COLOR = '#0ea5e9'
 const VENT_COLOR = '#a855f7'
@@ -50,8 +50,12 @@ function RiserDiagramContent() {
     <div className="dark pointer-events-auto absolute top-4 right-4 z-30 flex max-h-[80vh] w-[26rem] flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/95 text-foreground shadow-lg backdrop-blur-xl">
       <div className="flex items-center justify-between border-border/40 border-b px-4 py-2.5">
         <div className="flex flex-col">
-          <span className="font-medium text-sm"><EditorUiText>Riser Diagram</EditorUiText></span>
-          <span className="text-muted-foreground text-xs"><EditorUiText>DWV plumbing isometric</EditorUiText></span>
+          <span className="font-medium text-sm">
+            <EditorUiText>Riser Diagram</EditorUiText>
+          </span>
+          <span className="text-muted-foreground text-xs">
+            <EditorUiText>DWV plumbing isometric</EditorUiText>
+          </span>
         </div>
         <button
           className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-white/10"
@@ -63,7 +67,8 @@ function RiserDiagramContent() {
 
       <div className="flex items-center gap-3 border-border/40 border-b px-4 py-2 text-xs">
         <span className="flex items-center gap-1.5">
-          <span className="h-0.5 w-4" style={{ background: WASTE_COLOR }} /> <EditorUiText>Waste</EditorUiText>
+          <span className="h-0.5 w-4" style={{ background: WASTE_COLOR }} />{' '}
+          <EditorUiText>Waste</EditorUiText>
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-0 w-4 border-t-2 border-dashed" style={{ borderColor: VENT_COLOR }} />{' '}
@@ -130,7 +135,9 @@ function RiserDiagramContent() {
           </svg>
         ) : (
           <div className="flex h-32 items-center justify-center px-6 text-center text-muted-foreground text-sm">
-            <EditorUiText>No drain, waste, or vent pipes yet. Draw plumbing to see the riser diagram.</EditorUiText>
+            <EditorUiText>
+              No drain, waste, or vent pipes yet. Draw plumbing to see the riser diagram.
+            </EditorUiText>
           </div>
         )}
       </div>

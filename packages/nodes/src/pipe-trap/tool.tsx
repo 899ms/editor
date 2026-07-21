@@ -1,8 +1,7 @@
 'use client'
 
 import { emitter, type GridEvent, PipeTrapNode, useScene } from '@pascal-app/core'
-import { isGridSnapActive, triggerSFX, useEditor, NodeUiText
-} from '@pascal-app/editor'
+import { isGridSnapActive, NodeUiText, triggerSFX, useEditor } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -123,11 +122,16 @@ const PipeTrapTool = () => {
         zIndexRange={[100, 0]}
       >
         <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
-          <span className="font-medium text-foreground">{diameter}<NodeUiText>" Trap</NodeUiText></span>
+          <span className="font-medium text-foreground">
+            {diameter}
+            <NodeUiText>" Trap</NodeUiText>
+          </span>
           <span aria-hidden className="text-muted-foreground">
             ·
           </span>
-          <span className="text-muted-foreground"><NodeUiText>R/T rotate</NodeUiText></span>
+          <span className="text-muted-foreground">
+            <NodeUiText>R/T rotate</NodeUiText>
+          </span>
         </div>
       </Html>
     </LevelOffsetGroup>

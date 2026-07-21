@@ -1,6 +1,5 @@
 'use client'
 
-import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import {
   type AnyNode,
   type AnyNodeId,
@@ -58,6 +57,7 @@ import useInteractionScope, {
   useEndpointReshape,
   useIsCurveReshape,
 } from '../../store/use-interaction-scope'
+import { EditorUiText, useEditorUiText } from '../ui/editor-ui-text'
 import { IconRefGlyph } from '../ui/icon-ref'
 import { formatMeasurement, MeasurementPill } from './measurement-pill'
 import { NodeActionMenu } from './node-action-menu'
@@ -900,11 +900,15 @@ export function FloatingActionMenu() {
                     <span aria-hidden className="text-muted-foreground">
                       ·
                     </span>
-                    <span className="text-muted-foreground"><EditorUiText>R/T rotate</EditorUiText></span>
+                    <span className="text-muted-foreground">
+                      <EditorUiText>R/T rotate</EditorUiText>
+                    </span>
                     <span aria-hidden className="text-muted-foreground">
                       ·
                     </span>
-                    <span className="text-muted-foreground"><EditorUiText>⌥ axis</EditorUiText></span>
+                    <span className="text-muted-foreground">
+                      <EditorUiText>⌥ axis</EditorUiText>
+                    </span>
                   </div>
                 ) : null}
               </div>
@@ -934,9 +938,7 @@ function SystemSummaryPill({ nodeId, unit }: { nodeId: AnyNodeId; unit: 'metric'
     <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
       <span className="font-medium text-foreground">
         {summary.systems.length > 0
-          ? summary.systems
-              .map((sys) => ui(sys[0]!.toUpperCase() + sys.slice(1)))
-              .join(' + ')
+          ? summary.systems.map((sys) => ui(sys[0]!.toUpperCase() + sys.slice(1))).join(' + ')
           : ui('System')}
       </span>
       {summary.runCount > 0 ? (
@@ -965,7 +967,9 @@ function SystemSummaryPill({ nodeId, unit }: { nodeId: AnyNodeId; unit: 'metric'
           <span aria-hidden className="text-muted-foreground">
             ·
           </span>
-          <span className="font-medium text-amber-500"><EditorUiText>⚠ no equipment</EditorUiText></span>
+          <span className="font-medium text-amber-500">
+            <EditorUiText>⚠ no equipment</EditorUiText>
+          </span>
         </>
       )}
     </div>

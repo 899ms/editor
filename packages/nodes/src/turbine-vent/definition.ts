@@ -119,7 +119,11 @@ export const turbineVentDefinition: NodeDefinition<typeof TurbineVentNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place turbine vent on roof', labelKey: 'editor:contextual.hints.placeTurbineVent' },
+    {
+      key: 'Left click',
+      label: 'Place turbine vent on roof',
+      labelKey: 'editor:contextual.hints.placeTurbineVent',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

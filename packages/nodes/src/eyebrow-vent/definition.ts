@@ -153,7 +153,11 @@ export const eyebrowVentDefinition: NodeDefinition<typeof EyebrowVentNode> = {
     move: () => import('./move-tool'),
   },
   toolHints: [
-    { key: 'Left click', label: 'Place eyebrow vent on roof', labelKey: 'editor:contextual.hints.placeEyebrowVent' },
+    {
+      key: 'Left click',
+      label: 'Place eyebrow vent on roof',
+      labelKey: 'editor:contextual.hints.placeEyebrowVent',
+    },
     { key: 'Esc', label: 'Cancel', labelKey: 'editor:contextual.hints.cancel' },
   ],
 

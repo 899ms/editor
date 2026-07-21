@@ -21,13 +21,13 @@ import {
   ActionButton,
   ActionGroup,
   duplicateRoofSubtree,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
   SliderControl,
   triggerSFX,
   useEditor,
-  NodeUiText,
   useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
@@ -275,7 +275,9 @@ export default function RoofPanel() {
               type="button"
             >
               <span className="truncate">{seg.name || `${uiText('Segment')} ${i + 1}`}</span>
-              <span className="text-muted-foreground text-xs capitalize">{uiText(seg.roofType)}</span>
+              <span className="text-muted-foreground text-xs capitalize">
+                {uiText(seg.roofType)}
+              </span>
             </button>
           ))}
         </div>
@@ -372,7 +374,9 @@ export default function RoofPanel() {
                 type="button"
               >
                 <span className="truncate">{chimney.name || `${uiText('Chimney')} ${i + 1}`}</span>
-                <span className="text-muted-foreground text-xs"><NodeUiText>chimney</NodeUiText></span>
+                <span className="text-muted-foreground text-xs">
+                  <NodeUiText>chimney</NodeUiText>
+                </span>
               </button>
             ))}
             <ActionGroup>
@@ -393,7 +397,9 @@ export default function RoofPanel() {
                 type="button"
               >
                 <span className="truncate">{dormer.name || `${uiText('Dormer')} ${i + 1}`}</span>
-                <span className="text-muted-foreground text-xs"><NodeUiText>dormer</NodeUiText></span>
+                <span className="text-muted-foreground text-xs">
+                  <NodeUiText>dormer</NodeUiText>
+                </span>
               </button>
             ))}
             <ActionGroup>
@@ -413,8 +419,12 @@ export default function RoofPanel() {
                 onClick={() => handleSelectElement(skylight.id)}
                 type="button"
               >
-                <span className="truncate">{skylight.name || `${uiText('Skylight')} ${i + 1}`}</span>
-                <span className="text-muted-foreground text-xs"><NodeUiText>skylight</NodeUiText></span>
+                <span className="truncate">
+                  {skylight.name || `${uiText('Skylight')} ${i + 1}`}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  <NodeUiText>skylight</NodeUiText>
+                </span>
               </button>
             ))}
             <ActionGroup>
@@ -434,8 +444,12 @@ export default function RoofPanel() {
                 onClick={() => handleSelectElement(panel.id)}
                 type="button"
               >
-                <span className="truncate">{panel.name || `${uiText('Solar Panel')} ${i + 1}`}</span>
-                <span className="text-muted-foreground text-xs"><NodeUiText>solar panel</NodeUiText></span>
+                <span className="truncate">
+                  {panel.name || `${uiText('Solar Panel')} ${i + 1}`}
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  <NodeUiText>solar panel</NodeUiText>
+                </span>
               </button>
             ))}
             <ActionGroup>
@@ -523,7 +537,9 @@ export default function RoofPanel() {
                 type="button"
               >
                 <span className="truncate">{gutter.name || `${uiText('Gutter')} ${i + 1}`}</span>
-                <span className="text-muted-foreground text-xs"><NodeUiText>gutter</NodeUiText></span>
+                <span className="text-muted-foreground text-xs">
+                  <NodeUiText>gutter</NodeUiText>
+                </span>
               </button>
             ))}
             <ActionGroup>

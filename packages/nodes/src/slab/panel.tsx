@@ -5,6 +5,7 @@ import {
   ActionButton,
   ActionGroup,
   holeEditScope,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SliderControl,
@@ -12,7 +13,6 @@ import {
   useEditingHole,
   useEditor,
   useInteractionScope,
-  NodeUiText,
   useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
@@ -194,7 +194,9 @@ export function SlabPanel() {
 
       <PanelSection title="Info">
         <div className="flex items-center justify-between px-2 py-1 text-muted-foreground text-sm">
-          <span><NodeUiText>Area</NodeUiText></span>
+          <span>
+            <NodeUiText>Area</NodeUiText>
+          </span>
           <span className="font-mono text-white">{area.toFixed(2)} m²</span>
         </div>
       </PanelSection>
@@ -270,7 +272,9 @@ export function SlabPanel() {
             })}
           </div>
         ) : (
-          <div className="px-2 py-3 text-center text-muted-foreground text-xs"><NodeUiText>No holes</NodeUiText></div>
+          <div className="px-2 py-3 text-center text-muted-foreground text-xs">
+            <NodeUiText>No holes</NodeUiText>
+          </div>
         )}
 
         <div className="px-1 pt-1 pb-1">

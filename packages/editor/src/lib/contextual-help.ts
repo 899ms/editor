@@ -83,7 +83,8 @@ export function resolveSelectModeHelpHints({
 
     hints.push({
       keys: [[COMMAND_KEY, SHIFT_KEY], LEFT_CLICK],
-      label: 'Add or remove objects from the selection', labelKey: 'editor:contextual.hints.addRemoveSelection',
+      label: 'Add or remove objects from the selection',
+      labelKey: 'editor:contextual.hints.addRemoveSelection',
       active: true,
     })
     return hints
@@ -95,15 +96,25 @@ export function resolveSelectModeHelpHints({
   if (selectedCount > 1) {
     hints.push({
       keys: [LEFT_CLICK],
-      label: 'Click or drag the selection to move it as one', labelKey: 'editor:contextual.hints.moveSelectionTogether',
+      label: 'Click or drag the selection to move it as one',
+      labelKey: 'editor:contextual.hints.moveSelectionTogether',
     })
-    hints.push({ keys: [ROTATE_KEYS], label: 'Rotate the selection ±45°', labelKey: 'editor:contextual.hints.rotateSelection45' })
+    hints.push({
+      keys: [ROTATE_KEYS],
+      label: 'Rotate the selection ±45°',
+      labelKey: 'editor:contextual.hints.rotateSelection45',
+    })
     hints.push({
       keys: [[COMMAND_KEY, SHIFT_KEY], LEFT_CLICK],
-      label: 'Add or remove objects from the selection', labelKey: 'editor:contextual.hints.addRemoveSelection',
+      label: 'Add or remove objects from the selection',
+      labelKey: 'editor:contextual.hints.addRemoveSelection',
       active: commandPressed || shiftPressed,
     })
-    hints.push({ keys: [ESC_KEY], label: 'Clear the selection (or click outside)', labelKey: 'editor:contextual.hints.clearSelection' })
+    hints.push({
+      keys: [ESC_KEY],
+      label: 'Clear the selection (or click outside)',
+      labelKey: 'editor:contextual.hints.clearSelection',
+    })
     return hints
   }
 
@@ -113,12 +124,32 @@ export function resolveSelectModeHelpHints({
   // detaches the joint mid-drag; a fitting's cluster adds rotate arcs, with
   // R / T (and Alt to switch axis) for keyboard rotation.
   if (mepSelection === 'run') {
-    hints.push({ keys: [CLICK], label: 'Click a handle dot to show move arrows', labelKey: 'editor:contextual.hints.showRunHandles' })
-    hints.push({ keys: [ALT_KEY], label: 'Detach the joint while dragging an arrow', labelKey: 'editor:contextual.hints.detachJoint' })
+    hints.push({
+      keys: [CLICK],
+      label: 'Click a handle dot to show move arrows',
+      labelKey: 'editor:contextual.hints.showRunHandles',
+    })
+    hints.push({
+      keys: [ALT_KEY],
+      label: 'Detach the joint while dragging an arrow',
+      labelKey: 'editor:contextual.hints.detachJoint',
+    })
   } else if (mepSelection === 'fitting') {
-    hints.push({ keys: [CLICK], label: 'Click the handle dot to show move + rotate handles', labelKey: 'editor:contextual.hints.showFittingHandles' })
-    hints.push({ keys: [ROTATE_KEYS], label: 'Rotate ±45°', labelKey: 'editor:contextual.hints.rotate45' })
-    hints.push({ keys: [ALT_KEY], label: 'Switch the rotation axis (Y → X → Z)', labelKey: 'editor:contextual.hints.switchRotationAxis' })
+    hints.push({
+      keys: [CLICK],
+      label: 'Click the handle dot to show move + rotate handles',
+      labelKey: 'editor:contextual.hints.showFittingHandles',
+    })
+    hints.push({
+      keys: [ROTATE_KEYS],
+      label: 'Rotate ±45°',
+      labelKey: 'editor:contextual.hints.rotate45',
+    })
+    hints.push({
+      keys: [ALT_KEY],
+      label: 'Switch the rotation axis (Y → X → Z)',
+      labelKey: 'editor:contextual.hints.switchRotationAxis',
+    })
   }
 
   // The rows are the same whatever modifier is held — guides/snapping are
@@ -128,20 +159,23 @@ export function resolveSelectModeHelpHints({
   if (hasMovableSelection) {
     hints.push({
       keys: [LEFT_CLICK],
-      label: 'Drag selected movable object', labelKey: 'editor:contextual.hints.dragSelected',
+      label: 'Drag selected movable object',
+      labelKey: 'editor:contextual.hints.dragSelected',
     })
   }
 
   if (hasRotatableSelection) {
     hints.push({
       keys: [COMMAND_KEY, RIGHT_CLICK],
-      label: 'Drag left or right to rotate selected object', labelKey: 'editor:contextual.hints.dragRotateSelected',
+      label: 'Drag left or right to rotate selected object',
+      labelKey: 'editor:contextual.hints.dragRotateSelected',
     })
   }
 
   hints.push({
     keys: [[COMMAND_KEY, SHIFT_KEY], LEFT_CLICK],
-    label: 'Add or remove objects from the selection', labelKey: 'editor:contextual.hints.addRemoveSelection',
+    label: 'Add or remove objects from the selection',
+    labelKey: 'editor:contextual.hints.addRemoveSelection',
     active: commandPressed || shiftPressed,
   })
 

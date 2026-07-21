@@ -9,7 +9,6 @@ import {
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { useEffect } from 'react'
-import { useEditorUiText } from '../components/ui/editor-ui-text'
 import { Vector3 } from 'three'
 import {
   classifyParticipant,
@@ -20,6 +19,7 @@ import {
   rotateGroupPatches,
 } from '../components/editor/group-transform-shared'
 import { steppedRotation } from '../components/tools/item/placement-math'
+import { useEditorUiText } from '../components/ui/editor-ui-text'
 import { resolveDirectManipulationNode } from '../lib/direct-manipulation'
 import { toggleDoorOpenState } from '../lib/door-interaction'
 import { guideEmitter } from '../lib/guide-events'

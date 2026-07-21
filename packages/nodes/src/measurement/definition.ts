@@ -48,10 +48,26 @@ export const measurementDefinition: NodeDefinition<typeof MeasurementNode> = {
   },
   tool: () => import('./tool-router'),
   toolHints: [
-    { key: 'Left click', label: 'Place measurement point', labelKey: 'editor:contextual.hints.placeMeasurementPoint' },
-    { key: 'Enter', label: 'Finish measurement', labelKey: 'editor:contextual.hints.finishMeasurement' },
-    { key: 'Backspace', label: 'Remove last point', labelKey: 'editor:contextual.hints.removeLastPoint' },
-    { key: 'Esc', label: 'Finish and continue', labelKey: 'editor:contextual.hints.finishAndContinue' },
+    {
+      key: 'Left click',
+      label: 'Place measurement point',
+      labelKey: 'editor:contextual.hints.placeMeasurementPoint',
+    },
+    {
+      key: 'Enter',
+      label: 'Finish measurement',
+      labelKey: 'editor:contextual.hints.finishMeasurement',
+    },
+    {
+      key: 'Backspace',
+      label: 'Remove last point',
+      labelKey: 'editor:contextual.hints.removeLastPoint',
+    },
+    {
+      key: 'Esc',
+      label: 'Finish and continue',
+      labelKey: 'editor:contextual.hints.finishAndContinue',
+    },
   ],
 
   presentation: {

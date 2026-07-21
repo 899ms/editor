@@ -8,12 +8,12 @@ import type {
 import { createSceneApi, useScene } from '@pascal-app/core'
 import {
   ActionButton,
+  NodeUiText,
   PanelSection,
   PanelWrapper,
   SegmentedControl,
   SliderControl,
   ToggleControl,
-  NodeUiText,
   useNodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'

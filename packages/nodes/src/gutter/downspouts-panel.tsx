@@ -9,7 +9,13 @@ import {
   type RoofSegmentNode,
   useScene,
 } from '@pascal-app/core'
-import { ActionButton, ActionGroup, PanelSection, triggerSFX, useNodeUiText } from '@pascal-app/editor'
+import {
+  ActionButton,
+  ActionGroup,
+  PanelSection,
+  triggerSFX,
+  useNodeUiText,
+} from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { useShallow } from 'zustand/react/shallow'
 import { computeEaveY } from './eave-snap'

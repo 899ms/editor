@@ -41,10 +41,10 @@ import {
   measurementPolygonLabelAnchor,
   measurementPolygonMidpoints,
   metersToLinearUnit,
+  NodeUiText,
   useEditor,
   useInteractionScope,
   useMeasurementDraft,
-  NodeUiText,
   useNodeUiText,
 } from '@pascal-app/editor'
 import { SCENE_LAYER, useViewer } from '@pascal-app/viewer'

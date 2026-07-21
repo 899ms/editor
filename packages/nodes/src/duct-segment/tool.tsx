@@ -19,9 +19,9 @@ import {
   isGridSnapActive,
   isMagneticSnapActive,
   markToolCancelConsumed,
+  NodeUiText,
   triggerSFX,
   useEditor,
-  NodeUiText,
 } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'

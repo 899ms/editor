@@ -1,8 +1,8 @@
 'use client'
 
 import { nodeRegistry } from '@pascal-app/core'
-import { resolveLocalizedLabel, usePascalTranslation } from '@pascal-app/i18n'
 import { MaterialPaintPanel, triggerSFX, useEditor } from '@pascal-app/editor'
+import { resolveLocalizedLabel, usePascalTranslation } from '@pascal-app/i18n'
 import { useLiquidLineToolOptions } from '@pascal-app/nodes'
 import Image from 'next/image'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
