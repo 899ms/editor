@@ -118,6 +118,7 @@ import { FloorplanCursorIndicatorOverlay as Editor2dFloorplanCursorIndicatorOver
 import { FloorplanGroupActionMenu } from '../editor-2d/floorplan-group-action-menu'
 import { FloorplanSiteKeyHandler } from '../editor-2d/floorplan-hotkey-handlers'
 import { FloorplanMeasurementToolLayer } from '../editor-2d/floorplan-measurement-tool-layer'
+import { FloorplanRegisteredToolLayer } from '../editor-2d/floorplan-registered-tool-layer'
 import { FloorplanRegistryActionMenu } from '../editor-2d/floorplan-registry-action-menu'
 import { FloorplanRegistryMoveOverlay } from '../editor-2d/floorplan-registry-move-overlay'
 import {
@@ -2416,6 +2417,7 @@ function buildDraftWall(levelId: string, start: WallPlanPoint, end: WallPlanPoin
     visible: true,
     metadata: {},
     children: [],
+    assemblyLayers: [],
     start,
     end,
     frontSide: 'unknown',
@@ -2719,9 +2721,10 @@ function formatMeasurement(
   value: number,
   unit: 'metric' | 'imperial',
   metersPerUnit: number | null = null,
+  metricNotation: 'meters' | 'millimeters' = 'meters',
 ) {
   const measuredValue = metersPerUnit && metersPerUnit > 0 ? value * metersPerUnit : value
-  return formatLinearMeasurement(measuredValue, unit)
+  return formatLinearMeasurement(measuredValue, unit, metricNotation)
 }
 
 function formatNumber(value: number, fractionDigits = 2) {
@@ -3614,6 +3617,7 @@ function FloorplanReferenceScaleDraftLine({
   unitsPerPixel: number
 }) {
   const cursor = useFloorplanDraftPreview((s) => s.cursorPoint)
+  const metricNotation = useViewer((state) => state.metricNotation)
   if (!cursor) {
     return null
   }
@@ -3625,6 +3629,8 @@ function FloorplanReferenceScaleDraftLine({
       label={`Ref ${formatMeasurement(
         Math.hypot(cursor[0] - start[0], cursor[1] - start[1]),
         unit,
+        null,
+        metricNotation,
       )}`}
       palette={palette}
       start={start}
@@ -4006,6 +4012,7 @@ const FloorplanSiteEdgeLabelLayer = memo(function FloorplanSiteEdgeLabelLayer({
   unit: 'metric' | 'imperial'
   unitsPerPixel: number
 }) {
+  const metricNotation = useViewer((state) => state.metricNotation)
   if (!(shouldShow && sitePolygon && sitePolygon.polygon.length >= 2)) {
     return null
   }
@@ -4054,7 +4061,7 @@ const FloorplanSiteEdgeLabelLayer = memo(function FloorplanSiteEdgeLabelLayer({
       labelAngleDeg += 180
     }
 
-    const label = formatMeasurement(length, unit)
+    const label = formatMeasurement(length, unit, null, metricNotation)
     const width = Math.max(label.length * upx * 6.4 + padX * 2, minWidth)
     const height = fontSize + padY * 2
 
@@ -5029,6 +5036,7 @@ function FloorplanLinearDraftLayer({
   unitsPerPixel: number
   sceneRotationDeg: number
 }) {
+  const metricNotation = useViewer((state) => state.metricNotation)
   const wallDraftEnd = useFloorplanDraftPreview((s) => s.wallDraftEnd)
   const fenceDraftEnd = useFloorplanDraftPreview((s) => s.fenceDraftEnd)
   const roofDraftEnd = useFloorplanDraftPreview((s) => s.roofDraftEnd)
@@ -5147,7 +5155,7 @@ function FloorplanLinearDraftLayer({
     }
 
     return {
-      lengthLabel: formatMeasurement(length, unit),
+      lengthLabel: formatMeasurement(length, unit, null, metricNotation),
       midpoint: [
         (wallDraftStart[0] + wallDraftEnd[0]) / 2,
         (wallDraftStart[1] + wallDraftEnd[1]) / 2,
@@ -5155,10 +5163,84 @@ function FloorplanLinearDraftLayer({
       direction: [dx / length, dy / length] as WallPlanPoint,
       angleLabels,
     }
-  }, [isWallBuildActive, unit, wallDraftEnd, wallDraftStart, walls])
+  }, [isWallBuildActive, metricNotation, unit, wallDraftEnd, wallDraftStart, walls])
+
+  // Axis guides for wall and fence drafts — parity with the 3D tools'
+  // `DraftAxisGuides`: an X/Z cross through the draft start, and a single
+  // long line PERPENDICULAR to the segment through the moving endpoint (a
+  // second cross would collide with the start cross on axis-aligned
+  // segments). Long solid lines in world space — cheap for the SVG renderer,
+  // unlike dashed strokes which tessellate per dash over 2000 m. Stroke
+  // width is budgeted in screen pixels via `unitsPerPixel`, matching the
+  // alignment-guide layer.
+  const draftAxisGuideLines = useMemo(() => {
+    const lines: Array<{ x1: number; y1: number; x2: number; y2: number }> = []
+    const pushCross = (point: WallPlanPoint) => {
+      lines.push(
+        {
+          x1: point[0] - DRAFT_AXIS_GUIDE_EXTENT,
+          y1: point[1],
+          x2: point[0] + DRAFT_AXIS_GUIDE_EXTENT,
+          y2: point[1],
+        },
+        {
+          x1: point[0],
+          y1: point[1] - DRAFT_AXIS_GUIDE_EXTENT,
+          x2: point[0],
+          y2: point[1] + DRAFT_AXIS_GUIDE_EXTENT,
+        },
+      )
+    }
+    const pushDraft = (start: WallPlanPoint, end: WallPlanPoint) => {
+      pushCross(start)
+      const dx = end[0] - start[0]
+      const dy = end[1] - start[1]
+      const length = Math.hypot(dx, dy)
+      if (length < 1e-6) return
+      const nx = -dy / length
+      const ny = dx / length
+      lines.push({
+        x1: end[0] - nx * DRAFT_AXIS_GUIDE_EXTENT,
+        y1: end[1] - ny * DRAFT_AXIS_GUIDE_EXTENT,
+        x2: end[0] + nx * DRAFT_AXIS_GUIDE_EXTENT,
+        y2: end[1] + ny * DRAFT_AXIS_GUIDE_EXTENT,
+      })
+    }
+    if (isWallBuildActive && wallDraftStart && wallDraftEnd) {
+      pushDraft(wallDraftStart, wallDraftEnd)
+    }
+    if (isFenceBuildActive && fenceDraftStart && fenceDraftEnd) {
+      pushDraft(fenceDraftStart, fenceDraftEnd)
+    }
+    return lines.length > 0 ? lines : null
+  }, [
+    isFenceBuildActive,
+    isWallBuildActive,
+    fenceDraftEnd,
+    fenceDraftStart,
+    wallDraftEnd,
+    wallDraftStart,
+  ])
 
   return (
     <>
+      {draftAxisGuideLines && (
+        <g pointerEvents="none">
+          {draftAxisGuideLines.map((line, index) => (
+            <line
+              key={index}
+              stroke="#818cf8"
+              strokeOpacity={0.5}
+              strokeWidth={unitsPerPixel}
+              x1={line.x1}
+              x2={line.x2}
+              y1={line.y1}
+              y2={line.y2}
+            />
+          ))}
+        </g>
+      )}
+
       <FloorplanDraftLayer
         anchorFill={draftStroke}
         draftAnchorPoints={EMPTY_DRAFT_ANCHOR_POINTS}
@@ -5187,6 +5269,8 @@ function FloorplanLinearDraftLayer({
 }
 
 const EMPTY_DRAFT_ANCHOR_POINTS: Array<{ x: number; y: number; isPrimary: boolean }> = []
+/** World-space half-length of the 2D draft axis guide lines (matches the 3D tools' 2000 m guides). */
+const DRAFT_AXIS_GUIDE_EXTENT = 1000
 
 export function FloorplanPanel({
   /**
@@ -5244,6 +5328,7 @@ export function FloorplanPanel({
   const setPreviewSelectedIds = useViewer((state) => state.setPreviewSelectedIds)
   const isDark = useViewer((state) => getSceneTheme(state.sceneTheme).appearance === 'dark')
   const unit = useViewer((state) => state.unit)
+  const metricNotation = useViewer((state) => state.metricNotation)
   const showGrid = useViewer((state) => state.showGrid)
   const showGuides = useViewer((state) => state.showGuides)
   const setShowGuides = useViewer((state) => state.setShowGuides)
@@ -11169,7 +11254,12 @@ export function FloorplanPanel({
                 Drawn line
               </div>
               <div className="mt-1 font-medium text-sm">
-                {formatMeasurement(pendingReferenceScale.measuredLengthUnits, unit)}
+                {formatMeasurement(
+                  pendingReferenceScale.measuredLengthUnits,
+                  unit,
+                  null,
+                  metricNotation,
+                )}
               </div>
             </div>
 
@@ -11432,6 +11522,7 @@ export function FloorplanPanel({
                   <FloorplanWallMoveGhostLayer />
                 </g>
                 <FloorplanMeasurementToolLayer />
+                <FloorplanRegisteredToolLayer />
                 {floorplanSceneSlot}
               </FloorplanRenderProvider>
               {/* Cursor-driven placement ghost for movingNode when the
