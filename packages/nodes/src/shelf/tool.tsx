@@ -8,11 +8,16 @@ import {
   useScene,
 } from '@pascal-app/core'
 import {
+  type FloorPlacementClickTriggerEvent,
   getFloorStackPreviewPosition,
+  getLevelLocalSnappedPosition,
   isAlignmentGuideActive,
   isGridSnapActive,
   isMagneticSnapActive,
   movementSfxStepKey,
+  resolveAlignedFloorPlacement,
+  stopPlacementCommitPropagation,
+  subscribeFloorPlacementClicks,
   triggerSFX,
   useAlignmentGuides,
   useEditor,
@@ -20,13 +25,6 @@ import {
 import { useViewer } from '@pascal-app/viewer'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Group } from 'three'
-import {
-  type FloorPlacementClickTriggerEvent,
-  getLevelLocalSnappedPosition,
-  resolveAlignedFloorPlacement,
-  stopPlacementCommitPropagation,
-  subscribeFloorPlacementClicks,
-} from '../shared/floor-placement'
 import { shelfDefinition } from './definition'
 import ShelfPreview from './preview'
 

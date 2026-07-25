@@ -4,6 +4,7 @@ const glnBaseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 const editorBaseUrl = process.env.EDITOR_E2E_BASE_URL ?? 'http://localhost:32102'
 
 type SceneNode = {
+  diameter?: number
   end?: [number, number]
   finish?: string
   id: string
@@ -13,6 +14,7 @@ type SceneNode = {
   rotation?: [number, number, number]
   start?: [number, number]
   systemId?: string
+  stratificationView?: boolean
   type: string
   visible?: boolean
   width?: number
@@ -46,7 +48,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   page,
   request,
 }) => {
-  test.setTimeout(180_000)
+  test.setTimeout(420_000)
 
   await page.goto(`${glnBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
@@ -104,9 +106,18 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
       visible: false,
     })
 
+  await page.getByRole('button', { name: '新建系统' }).click()
+  const backupSystemName = page.getByRole('textbox', { name: '系统名称' }).last()
+  await expect(backupSystemName).toHaveValue('住宅光冷暖系统 2')
+  await backupSystemName.fill('备用光冷暖系统')
+  await backupSystemName.press('Enter')
+
   await page.getByRole('button', { name: '光冷暖设备' }).click()
   await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible()
-  await expect(page.getByRole('combobox', { name: '所属系统' })).toHaveValue(/^gln-system_/)
+  const systemSelector = page.getByRole('combobox', { name: '所属系统' })
+  await systemSelector.selectOption({ label: '一层光冷暖系统' })
+  const selectedSystemId = await systemSelector.inputValue()
+  expect(selectedSystemId).toMatch(/^gln-system_/)
   await page.getByRole('button', { name: /放置外机/ }).click()
   const canvas = page.locator('[data-pascal-viewer-3d] canvas')
   await expect(canvas).toBeVisible()
@@ -142,7 +153,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     })
     .toEqual({
       parented: true,
-      systemId: expect.stringMatching(/^gln-system_/),
+      systemId: selectedSystemId,
       type: 'gln:outdoor-unit',
     })
 
@@ -255,6 +266,131 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     )
     .toBe(floorplanPositionJson)
 
+  const expandSidebar = page.getByRole('button', { name: '展开侧栏' })
+  if (await expandSidebar.isVisible()) await expandSidebar.click()
+  if (!(await page.locator('[data-gln-equipment-panel]').isVisible())) {
+    await page.getByRole('button', { name: '光冷暖设备' }).click()
+  }
+  await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible()
+  const placeTank = page.getByRole('button', { name: /放置缓冲水箱/ })
+  await placeTank.click()
+  await expect(placeTank).toHaveAttribute('aria-pressed', 'true')
+  await expect(placeTank).toHaveAttribute('aria-busy', 'false')
+  const tankPlaceX = bounds.x + bounds.width * 0.58
+  const tankPlaceY = bounds.y + bounds.height * 0.72
+  await page.mouse.move(tankPlaceX - 40, tankPlaceY - 30)
+  await page.mouse.move(tankPlaceX, tankPlaceY, { steps: 4 })
+  await expect(page.locator('[data-floorplan-placement-preview]')).toBeVisible()
+  await page.mouse.click(tankPlaceX, tankPlaceY)
+
+  let bufferTankId = ''
+  let initialTankPosition: [number, number, number] | undefined
+  await expect
+    .poll(async () => {
+      const scene = await fetchScene(request, glnBaseUrl, sceneId as string)
+      const tank = Object.values(scene.graph.nodes).find((node) => node.type === 'gln:buffer-tank')
+      bufferTankId = tank?.id ?? ''
+      initialTankPosition = tank?.position
+      return tank
+        ? {
+            systemId: tank.systemId,
+            type: tank.type,
+            stratificationView: tank.stratificationView,
+          }
+        : null
+    })
+    .toEqual({
+      systemId: selectedSystemId,
+      type: 'gln:buffer-tank',
+      stratificationView: true,
+    })
+
+  await expect(page.getByRole('heading', { name: '缓冲水箱' })).toBeVisible()
+  await page.getByRole('button', { name: '展开面板' }).click()
+  await page.getByText('0.65', { exact: true }).click()
+  const diameterInput = page.getByRole('textbox', { name: '水箱直径' })
+  await diameterInput.fill('0.80')
+  await diameterInput.press('Enter')
+  await page.getByRole('button', { name: '石墨灰' }).click()
+  await page.keyboard.press('r')
+  await expect
+    .poll(async () => {
+      const tank = await fetchNode(request, glnBaseUrl, sceneId as string, bufferTankId)
+      return {
+        diameter: tank?.diameter,
+        finish: tank?.finish,
+        rotation: tank?.rotation,
+      }
+    })
+    .toEqual({
+      diameter: 0.8,
+      finish: 'graphite',
+      rotation: [0, Math.PI / 4, 0],
+    })
+
+  expect(initialTankPosition).toBeDefined()
+  const initialTankPositionJson = JSON.stringify(initialTankPosition)
+  await page.getByRole('button', { name: '3D' }).click()
+  await expect(canvas).toBeVisible()
+  await page
+    .locator('button')
+    .filter({ hasText: /^移动$/ })
+    .click()
+  await page.waitForTimeout(300)
+  const tankMoveX = canvasBounds.x + canvasBounds.width * 0.32
+  const tankMoveY = canvasBounds.y + canvasBounds.height * 0.74
+  await page.mouse.move(tankMoveX - 50, tankMoveY - 30)
+  await page.mouse.move(tankMoveX, tankMoveY, { steps: 4 })
+  await page.mouse.click(tankMoveX, tankMoveY)
+
+  let movedTankPositionJson = ''
+  await expect
+    .poll(async () => {
+      const tank = await fetchNode(request, glnBaseUrl, sceneId as string, bufferTankId)
+      movedTankPositionJson = JSON.stringify(tank?.position)
+      return movedTankPositionJson
+    })
+    .not.toBe(initialTankPositionJson)
+
+  await page.getByRole('button', { name: '2D' }).click()
+  await expect(floorplan).toBeVisible()
+  const bufferTank2d = page
+    .locator(`.floorplan-registry-entry[data-node-id="${bufferTankId}"]`)
+    .first()
+  await expect(bufferTank2d).toBeVisible()
+  await bufferTank2d.click()
+  await page.locator('button[aria-label="移动"]').click()
+  await page.waitForTimeout(300)
+  const tankFloorplanMoveX = bounds.x + bounds.width * 0.34
+  const tankFloorplanMoveY = bounds.y + bounds.height * 0.38
+  await page.mouse.move(tankFloorplanMoveX - 45, tankFloorplanMoveY + 35)
+  await page.mouse.move(tankFloorplanMoveX, tankFloorplanMoveY, { steps: 4 })
+  await page.mouse.click(tankFloorplanMoveX, tankFloorplanMoveY)
+
+  let tankFloorplanPositionJson = ''
+  await expect
+    .poll(async () => {
+      const tank = await fetchNode(request, glnBaseUrl, sceneId as string, bufferTankId)
+      tankFloorplanPositionJson = JSON.stringify(tank?.position)
+      return tankFloorplanPositionJson
+    })
+    .not.toBe(movedTankPositionJson)
+
+  const tankDeleteAction = page.locator('button[aria-label="删除"]')
+  await expect(tankDeleteAction).toBeVisible()
+  await tankDeleteAction.click()
+  await expect
+    .poll(async () => await fetchNode(request, glnBaseUrl, sceneId as string, bufferTankId))
+    .toBeUndefined()
+  await page.keyboard.press('Control+z')
+  await expect
+    .poll(async () =>
+      JSON.stringify(
+        (await fetchNode(request, glnBaseUrl, sceneId as string, bufferTankId))?.position,
+      ),
+    )
+    .toBe(tankFloorplanPositionJson)
+
   await page.keyboard.press('b')
   await page.keyboard.press('c')
   await expect(page.getByRole('button', { name: /单段墙体/ })).toBeVisible()
@@ -273,11 +409,15 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveAttribute(
     'data-gln-client-node-types',
-    /gln:outdoor-unit/,
+    /gln:buffer-tank/,
   )
   await page.getByRole('button', { name: '光冷暖系统' }).click()
-  await expect(page.getByRole('textbox', { name: '系统名称' })).toHaveValue('一层光冷暖系统')
-  await expect(page.getByRole('button', { name: '制冷' })).toHaveAttribute('aria-pressed', 'true')
+  const reloadedSystemNames = page.getByRole('textbox', { name: '系统名称' })
+  await expect(reloadedSystemNames.first()).toHaveValue('一层光冷暖系统')
+  await expect(reloadedSystemNames.last()).toHaveValue('备用光冷暖系统')
+  const reloadedCoolingModes = page.getByRole('button', { name: '制冷' })
+  await expect(reloadedCoolingModes.first()).toHaveAttribute('aria-pressed', 'true')
+  await expect(reloadedCoolingModes.last()).toHaveAttribute('aria-pressed', 'false')
   const reloadedScene = await fetchScene(request, glnBaseUrl, sceneId as string)
   expect(reloadedScene.nodeCount).toBeGreaterThan(initialScene.nodeCount)
   const walls = Object.values(reloadedScene.graph.nodes).filter((node) => node.type === 'wall')
@@ -288,9 +428,19 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     id: outdoorUnitId,
     position: JSON.parse(floorplanPositionJson),
     rotation: [0, Math.PI / 4, 0],
-    systemId: expect.stringMatching(/^gln-system_/),
+    systemId: selectedSystemId,
     type: 'gln:outdoor-unit',
     width: 1.2,
+  })
+  expect(reloadedScene.graph.nodes[bufferTankId]).toMatchObject({
+    diameter: 0.8,
+    finish: 'graphite',
+    id: bufferTankId,
+    position: JSON.parse(tankFloorplanPositionJson),
+    rotation: [0, Math.PI / 4, 0],
+    stratificationView: true,
+    systemId: selectedSystemId,
+    type: 'gln:buffer-tank',
   })
   expect(
     Object.values(reloadedScene.graph.nodes)

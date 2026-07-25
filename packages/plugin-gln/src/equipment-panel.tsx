@@ -2,12 +2,13 @@
 
 import { useScene } from '@pascal-app/core'
 import { useEditor, useViewer } from '@pascal-app/editor'
-import { Fan, MapPin } from 'lucide-react'
+import { Cylinder, Fan, MapPin } from 'lucide-react'
 import { useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useGlnEquipmentStore } from './equipment-store'
 
 const OUTDOOR_UNIT_KIND = 'gln:outdoor-unit'
+const BUFFER_TANK_KIND = 'gln:buffer-tank'
 
 function SystemOption({ systemId }: { systemId: string }) {
   const name = useScene(
@@ -24,15 +25,19 @@ export default function GlnEquipmentPanel() {
         .map((node) => (node as { id: string }).id),
     ),
   )
-  const outdoorUnitCount = useScene(
+  const equipmentCount = useScene(
     (state) =>
       Object.values(state.nodes).filter(
-        (node) => (node as { type: string }).type === OUTDOOR_UNIT_KIND,
+        (node) =>
+          (node as { type: string }).type === OUTDOOR_UNIT_KIND ||
+          (node as { type: string }).type === BUFFER_TANK_KIND,
       ).length,
   )
   const readOnly = useScene((state) => state.readOnly)
   const levelId = useViewer((state) => state.selection.levelId)
   const activeTool = useEditor((state) => state.tool)
+  const readyKind = useGlnEquipmentStore((state) => state.readyKind)
+  const setReadyKind = useGlnEquipmentStore((state) => state.setReadyKind)
   const systemId = useGlnEquipmentStore((state) => state.systemId)
   const setSystemId = useGlnEquipmentStore((state) => state.setSystemId)
 
@@ -42,12 +47,16 @@ export default function GlnEquipmentPanel() {
   }, [systemId, systemIds, setSystemId])
 
   const canPlace = !readOnly && !!levelId && !!systemId
-  const placing = activeTool === OUTDOOR_UNIT_KIND
 
-  const activate = () => {
+  useEffect(() => {
+    void Promise.all([import('./outdoor-unit-tool'), import('./buffer-tank-tool')])
+  }, [])
+
+  const activate = (kind: typeof OUTDOOR_UNIT_KIND | typeof BUFFER_TANK_KIND) => {
     if (!canPlace) return
+    setReadyKind(null)
     const editor = useEditor.getState()
-    ;(editor.setTool as (tool: string) => void)(OUTDOOR_UNIT_KIND)
+    ;(editor.setTool as (tool: string) => void)(kind)
     editor.setMode('build')
   }
 
@@ -57,7 +66,7 @@ export default function GlnEquipmentPanel() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-semibold text-lg text-sidebar-foreground">光冷暖设备</h2>
           <span className="rounded-full bg-sidebar-accent px-2 py-0.5 text-sidebar-foreground/70 text-xs">
-            {outdoorUnitCount} 台
+            {equipmentCount} 台
           </span>
         </div>
         <p className="mt-1 text-sidebar-foreground/60 text-sm">
@@ -82,14 +91,15 @@ export default function GlnEquipmentPanel() {
       </label>
 
       <button
-        aria-pressed={placing}
+        aria-busy={activeTool === OUTDOOR_UNIT_KIND && readyKind !== OUTDOOR_UNIT_KIND}
+        aria-pressed={activeTool === OUTDOOR_UNIT_KIND}
         className={`flex min-h-24 items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-          placing
+          activeTool === OUTDOOR_UNIT_KIND
             ? 'border-sidebar-ring bg-sidebar-accent'
             : 'border-sidebar-border hover:border-sidebar-ring/60 hover:bg-sidebar-accent/50'
         } disabled:cursor-not-allowed disabled:opacity-45`}
         disabled={!canPlace}
-        onClick={activate}
+        onClick={() => activate(OUTDOOR_UNIT_KIND)}
         type="button"
       >
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-background">
@@ -99,6 +109,29 @@ export default function GlnEquipmentPanel() {
           <span className="block font-medium">放置外机</span>
           <span className="mt-1 block text-sidebar-foreground/55 text-xs">
             参数化设备，带供水和回水接口
+          </span>
+        </span>
+      </button>
+
+      <button
+        aria-busy={activeTool === BUFFER_TANK_KIND && readyKind !== BUFFER_TANK_KIND}
+        aria-pressed={activeTool === BUFFER_TANK_KIND}
+        className={`flex min-h-24 items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+          activeTool === BUFFER_TANK_KIND
+            ? 'border-sidebar-ring bg-sidebar-accent'
+            : 'border-sidebar-border hover:border-sidebar-ring/60 hover:bg-sidebar-accent/50'
+        } disabled:cursor-not-allowed disabled:opacity-45`}
+        disabled={!canPlace}
+        onClick={() => activate(BUFFER_TANK_KIND)}
+        type="button"
+      >
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-background">
+          <Cylinder className="h-7 w-7" />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-medium">放置缓冲水箱</span>
+          <span className="mt-1 block text-sidebar-foreground/55 text-xs">
+            带主机侧与负载侧四个水路接口
           </span>
         </span>
       </button>

@@ -1,4 +1,4 @@
-import type { FloorPlacementClickTriggerEvent } from '../shared/floor-placement'
+import type { FloorPlacementClickTriggerEvent } from '@pascal-app/editor'
 import { planToRunLocal, runLocalToPlan } from './run-layout'
 import { CABINET_BASE_WIDTH } from './run-ops'
 

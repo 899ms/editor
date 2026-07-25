@@ -272,6 +272,16 @@ export {
   resolveElevatorSupportLevelId,
   resolveElevatorSupportY,
 } from './lib/elevator-support'
+export {
+  FLOOR_PLACEMENT_ALIGNMENT_THRESHOLD_M,
+  FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS,
+  type FloorPlacementClickTriggerEvent,
+  getLevelLocalSnappedPosition,
+  resolveAlignedFloorPlacement,
+  stopPlacementCommitPropagation,
+  subscribeFloorPlacementClicks,
+  subscribeFloorPlacementDoubleClicks,
+} from './lib/floor-placement'
 // Floor-plan stair helpers — the cumulative-transform walk
 // (`computeFloorplanStairSegmentTransforms`) and the rich segment-entry
 // builder (`buildFloorplanStairEntry`) used by the kind-owned stair

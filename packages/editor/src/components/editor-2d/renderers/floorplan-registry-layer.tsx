@@ -55,6 +55,7 @@ import {
   curveReshapeScope,
   endpointReshapeScope,
   holeEditScope,
+  type InteractionScope,
   tangentReshapeScope,
 } from '../../../lib/interaction/scope'
 import { sfxEmitter } from '../../../lib/sfx-bus'
@@ -115,6 +116,16 @@ const HOVER_TRANSITION = 'opacity 180ms cubic-bezier(0.2, 0, 0, 1)'
 const DIRECT_DRAG_THRESHOLD_PX = 4
 const DIRECT_ROTATE_EPSILON = 1e-6
 const DIRECT_ROTATE_RADIANS_PER_PIXEL = Math.PI / 180
+
+export function shouldPassRegistryClicksToPlacement({
+  scope,
+  registered,
+}: {
+  scope: InteractionScope
+  registered: boolean
+}) {
+  return scope.kind === 'placing' && scope.driver === 'kind-tool' && registered
+}
 
 /**
  * Snapshot of node fields captured at drag-start, used by the single-undo
@@ -405,6 +416,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
   const editorPhase = useEditor((s) => s.phase)
   const editorMode = useEditor((s) => s.mode)
   const editorTool = useEditor((s) => s.tool)
+  const interactionScope = useInteractionScope((s) => s.scope)
   const structureLayer = useEditor((s) => s.structureLayer)
   const floorplanSelectionTool = useEditor((s) => s.floorplanSelectionTool)
   const endpointReshape = useEndpointReshape()
@@ -413,6 +425,11 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
       editorMode === 'build' &&
       (editorTool === 'door' || editorTool === 'window')) ||
     (movingNode != null && !!nodeRegistry.get(movingNode.type)?.capabilities?.wallOpeningPlacement)
+  const isRegistryPlacementActive = shouldPassRegistryClicksToPlacement({
+    scope: interactionScope,
+    registered: interactionScope.kind === 'placing' && nodeRegistry.has(interactionScope.nodeType),
+  })
+  const passRegistryClicksToPlacement = isOpeningPlacementActive || isRegistryPlacementActive
   const isMarqueeSelectionActive =
     editorMode === 'select' &&
     floorplanSelectionTool === 'marquee' &&
@@ -1277,7 +1294,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
     // still propagate normally inside the registry tree.
     <g
       className="floorplan-registry-layer"
-      onClick={isOpeningPlacementActive ? undefined : handleClickStop}
+      onClick={passRegistryClicksToPlacement ? undefined : handleClickStop}
       opacity={isAmbient ? 0.3 : undefined}
       style={isAmbient ? NO_POINTER_EVENTS_STYLE : undefined}
     >
@@ -1298,7 +1315,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             hoveredHandleId={handleIdForNode(hoveredHandleId, entry.id)}
             interactiveElevators={interactiveElevators}
             isMarqueeSelectionActive={isMarqueeSelectionActive}
-            isOpeningPlacementActive={isOpeningPlacementActive}
+            isOpeningPlacementActive={passRegistryClicksToPlacement}
             key={`base-${entry.id}`}
             levelDataCacheRef={levelDataCacheRef}
             levelNodeIdsByType={floorplanData.levelNodeIdsByType}
@@ -1349,7 +1366,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             hoveredHandleId={handleIdForNode(hoveredHandleId, entry.id)}
             interactiveElevators={interactiveElevators}
             isMarqueeSelectionActive={isMarqueeSelectionActive}
-            isOpeningPlacementActive={isOpeningPlacementActive}
+            isOpeningPlacementActive={passRegistryClicksToPlacement}
             key={`overlay-${entry.id}`}
             levelDataCacheRef={levelDataCacheRef}
             levelNodeIdsByType={floorplanData.levelNodeIdsByType}

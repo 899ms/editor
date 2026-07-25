@@ -77,6 +77,7 @@ export const glnOutdoorUnitDefinition: GlnOutdoorUnitDefinition = {
   toolHints: [
     { key: 'Click', label: '放置外机' },
     { key: 'R / T', label: '旋转 ±45°' },
+    { key: 'Alt', label: '强制自由放置' },
     { key: 'Esc', label: '退出' },
   ],
 

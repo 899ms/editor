@@ -1,11 +1,12 @@
 import { describe, expect, test } from 'bun:test'
 import { glnHostPanels, glnPlugin } from './index'
 
-describe('GLN outdoor-unit plugin contribution', () => {
-  test('registers the outdoor unit beside the logical system', () => {
+describe('GLN equipment plugin contribution', () => {
+  test('registers both physical equipment kinds beside the logical system', () => {
     expect(glnPlugin.nodes?.map((definition) => definition.kind)).toEqual([
       'gln:system',
       'gln:outdoor-unit',
+      'gln:buffer-tank',
     ])
   })
 
@@ -13,7 +14,7 @@ describe('GLN outdoor-unit plugin contribution', () => {
     expect(glnHostPanels.map((panel) => panel.id)).toEqual(['gln:systems', 'gln:equipment'])
     expect(glnHostPanels.find((panel) => panel.id === 'gln:equipment')).toMatchObject({
       label: '光冷暖设备',
-      kinds: ['gln:outdoor-unit'],
+      kinds: ['gln:outdoor-unit', 'gln:buffer-tank'],
       pluginId: 'pascal:gln',
       mandatory: true,
     })
