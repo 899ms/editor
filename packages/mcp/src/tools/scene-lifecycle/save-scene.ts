@@ -101,7 +101,9 @@ export function registerSaveScene(server: McpServer, bridge: SceneOperations): v
         }
         const errors: { nodeId: string; path: string; message: string }[] = []
         for (const [nodeId, node] of Object.entries(rawNodes as Record<string, unknown>)) {
-          const res = safeParseRegisteredNode(node)
+          const res = safeParseRegisteredNode(node, {
+            nodes: rawNodes as Record<string, unknown>,
+          })
           if (!res.success) {
             for (const issue of res.error.issues) {
               errors.push({

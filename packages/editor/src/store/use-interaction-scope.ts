@@ -13,6 +13,7 @@ import {
   IDLE_SCOPE,
   type InteractionScope,
   isCurveReshape,
+  moveToolNodeOf,
   movingNodeOf,
   reshapingNodeId,
   tangentReshapeInfo,
@@ -124,6 +125,9 @@ export const useReshapingNode = (): AnyNode | null => {
 // is already a stable reference for the whole gesture (nothing calls `begin` mid
 // drag). Returns null whenever no placing/moving interaction is active.
 export const useMovingNode = (): AnyNode | null => useInteractionScope((s) => movingNodeOf(s.scope))
+
+export const useMoveToolNode = (): AnyNode | null =>
+  useInteractionScope((s) => moveToolNodeOf(s.scope))
 
 // Imperative (non-React) read for event handlers / effects.
 export const getMovingNode = (): AnyNode | null =>

@@ -4,6 +4,7 @@ import { resolveBuiltInNodeUiText, usePascalTranslation } from '@pascal-app/i18n
 import { cn } from '../../../lib/utils'
 
 interface SegmentedControlProps<T extends string> {
+  ariaLabel?: string
   value: T
   onChange: (value: T) => void
   options: { label: React.ReactNode; value: T }[]
@@ -11,6 +12,7 @@ interface SegmentedControlProps<T extends string> {
 }
 
 export function SegmentedControl<T extends string>({
+  ariaLabel,
   value,
   onChange,
   options,
@@ -19,10 +21,12 @@ export function SegmentedControl<T extends string>({
   const { t } = usePascalTranslation('nodes')
   return (
     <div
+      aria-label={ariaLabel}
       className={cn(
         'flex h-9 w-full items-center rounded-lg border border-border/50 bg-[#2C2C2E] p-[3px]',
         className,
       )}
+      role="group"
     >
       {options.map((option) => {
         const isSelected = value === option.value

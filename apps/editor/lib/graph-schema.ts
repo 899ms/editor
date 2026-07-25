@@ -21,7 +21,7 @@ export const apiGraphSchema = z
   })
   .superRefine((value, ctx) => {
     for (const [nodeId, node] of Object.entries(value.nodes)) {
-      const res = safeParseRegisteredNode(node)
+      const res = safeParseRegisteredNode(node, { nodes: value.nodes })
       if (!res.success) {
         for (const issue of res.error.issues) {
           ctx.addIssue({

@@ -2043,6 +2043,12 @@ export type Relations = {
   hosts?: readonly string[]
   affectsSpatial?: readonly string[]
   cascadeDelete?: 'descendants' | 'children' | 'none'
+  /**
+   * Persisted foreign-key fields owned by this kind. Each key names a node
+   * property and each value lists the allowed target kinds. Graph-boundary
+   * parsers use this declaration to reject missing or wrong-kind references.
+   */
+  references?: Readonly<Record<string, readonly string[]>>
 }
 
 // ─── ParametricDescriptor ────────────────────────────────────────────
@@ -2132,7 +2138,10 @@ export type ParamGroup<N> = {
   fields: ParamField<N>[]
 }
 
-export type ParamField<N> =
+export type ParamField<N> = {
+  /** Optional host-ready label for plugin-owned vocabulary. */
+  label?: string
+} & (
   | {
       key: keyof N
       kind: 'number'
@@ -2148,6 +2157,8 @@ export type ParamField<N> =
       key: keyof N
       kind: 'enum'
       options: readonly string[]
+      /** Optional display labels for plugin-owned enum values. */
+      optionLabels?: Partial<Record<string, string>>
       /** Defaults to 'select' (dropdown). 'segmented' renders the inline
        *  tabbed switcher — better for short option lists (2-4 items). */
       display?: 'select' | 'segmented'
@@ -2168,6 +2179,7 @@ export type ParamField<N> =
       component: ComponentType<{ node: N; onUpdate: (patch: Partial<N>) => void }>
       visibleIf?: (n: N) => boolean
     }
+)
 
 export type Issue = { field?: string; msg: string; severity?: 'error' | 'warning' }
 

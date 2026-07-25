@@ -1,6 +1,6 @@
 'use client'
 
-import { useScene } from '@pascal-app/core'
+import { emitter, useScene } from '@pascal-app/core'
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
 import { type SceneGraph, saveSceneToLocalStorage } from '../lib/scene'
 
@@ -9,6 +9,29 @@ const STRUCTURAL_NODE_COUNT = 4
 
 export function isSuspiciousNodeDrop(previousNodeCount: number, currentNodeCount: number) {
   return previousNodeCount > STRUCTURAL_NODE_COUNT && currentNodeCount <= STRUCTURAL_NODE_COUNT
+}
+
+export type AuthorizedNodeDrop = {
+  from: number
+  to: number
+}
+
+export function extendAuthorizedNodeDrop(
+  current: AuthorizedNodeDrop | null,
+  event: { previousNodeCount: number; currentNodeCount: number },
+): AuthorizedNodeDrop {
+  return current?.to === event.previousNodeCount
+    ? { from: current.from, to: event.currentNodeCount }
+    : { from: event.previousNodeCount, to: event.currentNodeCount }
+}
+
+export function shouldBlockAutosaveNodeDrop(
+  previousNodeCount: number,
+  currentNodeCount: number,
+  authorizedDrop: AuthorizedNodeDrop | null,
+) {
+  if (!isSuspiciousNodeDrop(previousNodeCount, currentNodeCount)) return false
+  return !(authorizedDrop?.from === previousNodeCount && authorizedDrop.to === currentNodeCount)
 }
 
 export function shouldFlushAutosaveOnCleanup({
@@ -83,6 +106,12 @@ export function useAutoSave({
     let lastCollectionsRef = useScene.getState().collections
     let lastMaterialsRef = useScene.getState().materials
     let lastInstalledPluginsRef = useScene.getState().installedPlugins
+    let authorizedNodeDrop: AuthorizedNodeDrop | null = null
+
+    const onNodesDeleted = (event: { previousNodeCount: number; currentNodeCount: number }) => {
+      authorizedNodeDrop = extendAuthorizedNodeDrop(authorizedNodeDrop, event)
+    }
+    emitter.on('scene:nodes-deleted', onNodesDeleted)
 
     async function executeSave() {
       if (isLoadingSceneRef.current || isVersionPreviewModeRef.current) {
@@ -103,14 +132,13 @@ export function useAutoSave({
       // Guard: refuse to autosave if the scene went from populated to nearly empty.
       // This catches accidental full deletions before they're persisted.
       const currentNodeCount = Object.keys(nodes).length
-      if (isSuspiciousNodeDrop(lastNodeCount, currentNodeCount)) {
+      if (shouldBlockAutosaveNodeDrop(lastNodeCount, currentNodeCount, authorizedNodeDrop)) {
         console.warn(
           `[autosave] Blocked: scene dropped from ${lastNodeCount} to ${currentNodeCount} nodes. Likely accidental deletion.`,
         )
         setSaveStatus('error')
         return
       }
-      lastNodeCount = currentNodeCount
 
       isSavingRef.current = true
       pendingSaveRef.current = false
@@ -123,6 +151,8 @@ export function useAutoSave({
           saveSceneToLocalStorage(sceneGraph)
         }
         hasDirtyChangesRef.current = false
+        lastNodeCount = currentNodeCount
+        authorizedNodeDrop = null
         setSaveStatus('saved')
       } catch {
         setSaveStatus('error')
@@ -198,7 +228,7 @@ export function useAutoSave({
       if (!hasDirtyChangesRef.current) return
       const { nodes, rootNodeIds, collections, materials, installedPlugins } = useScene.getState()
       const currentNodeCount = Object.keys(nodes).length
-      if (isSuspiciousNodeDrop(lastNodeCount, currentNodeCount)) {
+      if (shouldBlockAutosaveNodeDrop(lastNodeCount, currentNodeCount, authorizedNodeDrop)) {
         console.warn(
           `[autosave] Blocked unload flush: scene dropped from ${lastNodeCount} to ${currentNodeCount} nodes. Likely accidental deletion.`,
         )
@@ -208,6 +238,7 @@ export function useAutoSave({
 
       hasDirtyChangesRef.current = false
       lastNodeCount = currentNodeCount
+      authorizedNodeDrop = null
       const sceneGraph = {
         nodes,
         rootNodeIds,
@@ -227,6 +258,7 @@ export function useAutoSave({
 
     return () => {
       executeSaveRef.current = null
+      emitter.off('scene:nodes-deleted', onNodesDeleted)
       window.removeEventListener('beforeunload', flushOnExit)
       window.removeEventListener('pagehide', flushOnExit)
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)

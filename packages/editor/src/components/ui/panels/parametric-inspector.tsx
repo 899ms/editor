@@ -298,7 +298,7 @@ interface FieldRendererProps {
 function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
   const { t } = usePascalTranslation('nodes')
   const key = String(field.key)
-  const localizedKey = resolveBuiltInNodeUiText(prettifyKey(key), t)
+  const localizedKey = field.label ?? resolveBuiltInNodeUiText(prettifyKey(key), t)
   // Subscribe only to this field's value. Zustand compares with ===, so when
   // another field on the same node changes (which produces a new node object
   // reference), this primitive value stays equal and the field doesn't
@@ -352,14 +352,20 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
       const str = typeof value === 'string' ? value : (field.options[0] ?? '')
       if (field.display === 'segmented') {
         return (
-          <SegmentedControl
-            onChange={(next) => onUpdate({ [key]: next } as Partial<AnyNode>)}
-            options={field.options.map((opt) => ({
-              label: resolveBuiltInNodeUiText(prettifyEnumValue(opt), t),
-              value: opt,
-            }))}
-            value={str}
-          />
+          <div className="space-y-1.5 px-3 py-2">
+            <span className="text-foreground/80 text-xs">{localizedKey}</span>
+            <SegmentedControl
+              ariaLabel={localizedKey}
+              onChange={(next) => onUpdate({ [key]: next } as Partial<AnyNode>)}
+              options={field.options.map((opt) => ({
+                label:
+                  field.optionLabels?.[opt] ??
+                  resolveBuiltInNodeUiText(prettifyEnumValue(opt), t),
+                value: opt,
+              }))}
+              value={str}
+            />
+          </div>
         )
       }
       return (
@@ -372,7 +378,8 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
           >
             {field.options.map((opt) => (
               <option key={opt} value={opt}>
-                {resolveBuiltInNodeUiText(prettifyEnumValue(opt), t)}
+                {field.optionLabels?.[opt] ??
+                  resolveBuiltInNodeUiText(prettifyEnumValue(opt), t)}
               </option>
             ))}
           </select>

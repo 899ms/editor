@@ -1,3 +1,4 @@
+import { emitter } from '../../events/bus'
 import { nodeRegistry, safeParseRegisteredNode } from '../../registry/registry'
 import {
   type AnyNode,
@@ -1059,6 +1060,7 @@ export const deleteNodesAction = (
   ids: AnyNodeId[],
 ) => {
   if (get().readOnly) return
+  const previousNodeCount = Object.keys(get().nodes).length
   const parentsToMarkDirty = new Set<AnyNodeId>()
   const nodesToMarkDirty = new Set<AnyNodeId>()
   const deletedIds = new Set<AnyNodeId>()
@@ -1188,5 +1190,9 @@ export const deleteNodesAction = (
   })
   nodesToMarkDirty.forEach((id) => {
     get().markDirty(id)
+  })
+  emitter.emit('scene:nodes-deleted', {
+    previousNodeCount,
+    currentNodeCount: Object.keys(get().nodes).length,
   })
 }

@@ -16,7 +16,7 @@ import {
   useEditingHole,
   useEndpointReshape,
   useIsCurveReshape,
-  useMovingNode,
+  useMoveToolNode,
   useReshapingNode,
   useTangentReshape,
 } from '../../store/use-interaction-scope'
@@ -67,7 +67,7 @@ export const ToolManager: React.FC = () => {
   const phase = useEditor((state) => state.phase)
   const mode = useEditor((state) => state.mode)
   const tool = useEditor((state) => state.tool)
-  const movingNode = useMovingNode()
+  const movingNode = useMoveToolNode()
   const movingNodeOrigin = useEditor((state) => state.movingNodeOrigin)
   const endpointReshape = useEndpointReshape()
   const controlPointReshape = useControlPointReshape()

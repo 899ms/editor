@@ -323,4 +323,158 @@ describe('safeParseRegisteredNode', () => {
       }).success,
     ).toBe(true)
   })
+
+  test('accepts a registered plugin child in a built-in parent when the graph relationship agrees', () => {
+    registerNode(
+      makeDefinition('test:level-child', {
+        capabilities: { hostable: { parents: ['level'] } },
+        schema: z.object({
+          object: z.literal('node'),
+          id: z.string(),
+          type: z.literal('test:level-child'),
+          parentId: z.string(),
+          value: z.number(),
+        }) as any,
+      }),
+    )
+
+    const nodes = {
+      level_1: {
+        object: 'node',
+        id: 'level_1',
+        type: 'level',
+        parentId: null,
+        children: ['test_child_1'],
+        level: 0,
+      },
+      test_child_1: {
+        object: 'node',
+        id: 'test_child_1',
+        type: 'test:level-child',
+        parentId: 'level_1',
+        value: 1,
+      },
+    }
+
+    const result = safeParseRegisteredNode(nodes.level_1, { nodes })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect((result.data as { children: string[] }).children).toEqual(['test_child_1'])
+    }
+  })
+
+  test('rejects a registered child reference when its parentId points elsewhere', () => {
+    registerNode(
+      makeDefinition('test:level-child', {
+        capabilities: { hostable: { parents: ['level'] } },
+        schema: z.object({
+          object: z.literal('node'),
+          id: z.string(),
+          type: z.literal('test:level-child'),
+          parentId: z.string(),
+        }) as any,
+      }),
+    )
+
+    const nodes = {
+      level_1: {
+        object: 'node',
+        id: 'level_1',
+        type: 'level',
+        parentId: null,
+        children: ['test_child_1'],
+        level: 0,
+      },
+      test_child_1: {
+        object: 'node',
+        id: 'test_child_1',
+        type: 'test:level-child',
+        parentId: 'level_2',
+      },
+    }
+
+    expect(safeParseRegisteredNode(nodes.level_1, { nodes }).success).toBe(false)
+  })
+
+  test('rejects a registered plugin child without an explicit host contract', () => {
+    registerNode(
+      makeDefinition('test:unhosted-child', {
+        schema: z.object({
+          object: z.literal('node'),
+          id: z.string(),
+          type: z.literal('test:unhosted-child'),
+          parentId: z.string(),
+        }) as any,
+      }),
+    )
+    const nodes = {
+      level_1: {
+        object: 'node',
+        id: 'level_1',
+        type: 'level',
+        parentId: null,
+        children: ['test_child_1'],
+        level: 0,
+      },
+      test_child_1: {
+        object: 'node',
+        id: 'test_child_1',
+        type: 'test:unhosted-child',
+        parentId: 'level_1',
+      },
+    }
+
+    expect(safeParseRegisteredNode(nodes.level_1, { nodes }).success).toBe(false)
+  })
+
+  test('validates registered node references against the full graph', () => {
+    registerNode(
+      makeDefinition('test:system', {
+        schema: z.object({ id: z.string(), type: z.literal('test:system') }) as any,
+      }),
+    )
+    registerNode(
+      makeDefinition('test:device', {
+        relations: { references: { systemId: ['test:system'] } },
+        schema: z.object({
+          id: z.string(),
+          type: z.literal('test:device'),
+          systemId: z.string(),
+        }) as any,
+      }),
+    )
+    const validNodes = {
+      system_1: { id: 'system_1', type: 'test:system' },
+      device_1: { id: 'device_1', type: 'test:device', systemId: 'system_1' },
+    }
+    expect(safeParseRegisteredNode(validNodes.device_1, { nodes: validNodes }).success).toBe(true)
+    expect(
+      safeParseRegisteredNode(validNodes.device_1, {
+        nodes: { device_1: validNodes.device_1 },
+      }).success,
+    ).toBe(false)
+    expect(
+      safeParseRegisteredNode(validNodes.device_1, {
+        nodes: {
+          ...validNodes,
+          system_1: { id: 'system_1', type: 'test:device', systemId: 'system_1' },
+        },
+      }).success,
+    ).toBe(false)
+  })
+
+  test('rejects an unknown child reference even when graph context is provided', () => {
+    const nodes = {
+      level_1: {
+        object: 'node',
+        id: 'level_1',
+        type: 'level',
+        parentId: null,
+        children: ['unknown_child_1'],
+        level: 0,
+      },
+    }
+
+    expect(safeParseRegisteredNode(nodes.level_1, { nodes }).success).toBe(false)
+  })
 })

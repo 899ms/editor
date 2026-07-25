@@ -37,6 +37,7 @@ export {
   nodeRegistry,
   type PluginDiscovery,
   type PluginRegistrationOptions,
+  type RegisteredNodeParseContext,
   registerNode,
   registerPlugin,
   requirePlugin,
