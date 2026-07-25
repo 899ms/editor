@@ -28,6 +28,7 @@ import {
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import {
+  type ComponentProps,
   memo,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -69,6 +70,7 @@ import {
   isIdle,
   tangentReshapeScope,
 } from '../../../lib/interaction/scope'
+import { emitCanvasNodeSelection } from '../../../lib/selection-routing'
 import { sfxEmitter } from '../../../lib/sfx-bus'
 import { clearSurfacePlanSnapFeedback } from '../../../lib/surface-plan-snap'
 import useDirectManipulationFeedback from '../../../store/use-direct-manipulation-feedback'
@@ -77,6 +79,7 @@ import useEditor from '../../../store/use-editor'
 import useFloorplanAnnotationVisibility from '../../../store/use-floorplan-annotation-visibility'
 import useFloorplanPreflight from '../../../store/use-floorplan-preflight'
 import useInteractionScope, {
+  getMovingNode,
   useEndpointReshape,
   useMovingNode,
 } from '../../../store/use-interaction-scope'
@@ -88,17 +91,24 @@ import {
   startFloorplanGroupMove,
   startFloorplanGroupRotate,
 } from '../floorplan-group-move'
-import { useFloorplanRender } from '../floorplan-render-context'
+import {
+  useFloorplanSceneRotation,
+  useFloorplanStaticRender,
+  useFloorplanStaticUnitsPerPixel,
+} from '../floorplan-render-context'
 import {
   floorplanAnnotationObstacleMode,
   isFloorplanAnnotationObstacleGeometry,
-  observeSvgAnnotationLayoutChanges,
   resolveSvgAnnotationCollisions,
   svgAnnotationLabelId,
 } from './floorplan-annotation-layout'
 import { FloorplanDimensionRenderer } from './floorplan-dimension-renderer'
 import { FloorplanGeometryRenderer } from './floorplan-geometry-renderer'
-import { resolveFloorplanLabelAngle } from './floorplan-label-angle'
+import {
+  resolveFloorplanAnnotationUpdate,
+  resolveFloorplanLabelAngle,
+  updateSvgFloorplanLabelOrientations,
+} from './floorplan-label-angle'
 
 /**
  * Registry-driven floor-plan layer.
@@ -138,6 +148,13 @@ const HOVER_TRANSITION = 'opacity 180ms cubic-bezier(0.2, 0, 0, 1)'
 const DIRECT_DRAG_THRESHOLD_PX = 4
 const DIRECT_ROTATE_EPSILON = 1e-6
 const DIRECT_ROTATE_RADIANS_PER_PIXEL = Math.PI / 180
+
+const ScaleAwareFloorplanGroupSelectionBox = memo(function ScaleAwareFloorplanGroupSelectionBox(
+  props: Omit<ComponentProps<typeof FloorplanGroupSelectionBox>, 'unitsPerPixel'>,
+) {
+  const unitsPerPixel = useFloorplanStaticUnitsPerPixel()
+  return <FloorplanGroupSelectionBox {...props} unitsPerPixel={unitsPerPixel} />
+})
 
 /**
  * Snapshot of node fields captured at drag-start, used by the single-undo
@@ -232,7 +249,7 @@ export function subscribeFloorplanAffordanceToolCancel(
 // affordances return `null` (no polygon/wall snapping chip). Keyed off the
 // affordance name the kinds register (`move-vertex` / `move-edge` / `add-vertex`
 // / `curve` / `move-endpoint`).
-function affordanceReshapeScope(
+export function floorplanAffordanceReshapeScope(
   affordance: string,
   nodeId: string,
   payload: unknown,
@@ -240,30 +257,30 @@ function affordanceReshapeScope(
   if (affordance.includes('vertex') || affordance.includes('edge')) {
     const holeIndex = (payload as { holeIndex?: number } | undefined)?.holeIndex
     return holeIndex !== undefined
-      ? holeEditScope({ nodeId, holeIndex })
-      : boundaryReshapeScope(nodeId)
+      ? holeEditScope({ nodeId, holeIndex, driver: 'floorplan' })
+      : boundaryReshapeScope(nodeId, 'floorplan')
   }
   if (affordance.includes('curve')) {
-    return curveReshapeScope(nodeId)
+    return curveReshapeScope(nodeId, 'floorplan')
   }
   if (affordance.includes('control-point')) {
     const index = (payload as { index?: number } | undefined)?.index ?? 0
-    return controlPointReshapeScope(nodeId, index)
+    return controlPointReshapeScope(nodeId, index, 'floorplan')
   }
   if (affordance.includes('tangent')) {
     const target = payload as { index?: number; side?: 'in' | 'out' } | undefined
-    return tangentReshapeScope(nodeId, target?.index ?? 0, target?.side ?? 'out')
+    return tangentReshapeScope(nodeId, target?.index ?? 0, target?.side ?? 'out', 'floorplan')
   }
   if (affordance.includes('endpoint')) {
     const endpoint = (payload as { endpoint?: 'start' | 'end' } | undefined)?.endpoint ?? 'end'
-    return endpointReshapeScope(nodeId, endpoint)
+    return endpointReshapeScope(nodeId, endpoint, 'floorplan')
   }
   // Roof-segment width/depth resize — a no-angle dimension edit, so the
   // no-angle 'polygon' snap set (grid / lines / off) via a boundary scope.
   // Matched exactly so a still-legacy `*-resize` affordance on another kind
   // doesn't get a chip its snap math can't honour yet.
   if (affordance === 'roof-segment-resize') {
-    return boundaryReshapeScope(nodeId)
+    return boundaryReshapeScope(nodeId, 'floorplan')
   }
   // 2D corner rotate-arrow (column / elevator / roof-segment / shelf / spawn /
   // stair). Begin the same handle-drag scope the 3D rotate gizmo uses, label-
@@ -345,6 +362,35 @@ const POINTER_CURSOR_STYLE = { cursor: 'pointer' } as const
 const MOVE_CURSOR_STYLE = { cursor: 'move' } as const
 const NO_POINTER_EVENTS_STYLE = { pointerEvents: 'none' } as const
 
+export function isFloorplanOpeningPlacementState({
+  phase,
+  mode,
+  tool,
+  movingNodeHasWallOpeningPlacement,
+}: {
+  phase: string
+  mode: string
+  tool: string | null
+  movingNodeHasWallOpeningPlacement: boolean
+}): boolean {
+  return (
+    (phase === 'structure' && mode === 'build' && (tool === 'door' || tool === 'window')) ||
+    movingNodeHasWallOpeningPlacement
+  )
+}
+
+function isFloorplanOpeningPlacementActiveNow(): boolean {
+  const { phase, mode, tool } = useEditor.getState()
+  const movingNode = getMovingNode()
+  return isFloorplanOpeningPlacementState({
+    phase,
+    mode,
+    tool,
+    movingNodeHasWallOpeningPlacement:
+      movingNode != null && !!nodeRegistry.get(movingNode.type)?.capabilities?.wallOpeningPlacement,
+  })
+}
+
 function snapshotNode(node: AnyNode): NodeSnapshot {
   // Shallow-clone every non-id, non-type field. Arrays / vec tuples are
   // deep-cloned to detach from the live store reference.
@@ -417,7 +463,8 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
 
   const levelId = selectedLevelId ?? ambientLevelId
   const isAmbient = !selectedLevelId && !!ambientLevelId
-  const renderCtx = useFloorplanRender()
+  const renderCtx = useFloorplanStaticRender()
+  const sceneRotationDeg = renderCtx?.getSceneRotationDeg() ?? 0
   const setMovingNode = useEditor((s) => s.setMovingNode)
   const setMovingNodeOrigin = useEditor((s) => s.setMovingNodeOrigin)
   // Door / window placement (both build and move) needs the SVG's
@@ -427,17 +474,10 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
   // wall's registry entry would otherwise swallow the click via
   // `handleClickStop` / `handleSelect`, so the placement never fires.
   // Pass clicks through in that case.
-  const editorPhase = useEditor((s) => s.phase)
   const editorMode = useEditor((s) => s.mode)
-  const editorTool = useEditor((s) => s.tool)
   const structureLayer = useEditor((s) => s.structureLayer)
   const floorplanSelectionTool = useEditor((s) => s.floorplanSelectionTool)
   const endpointReshape = useEndpointReshape()
-  const isOpeningPlacementActive =
-    (editorPhase === 'structure' &&
-      editorMode === 'build' &&
-      (editorTool === 'door' || editorTool === 'window')) ||
-    (movingNode != null && !!nodeRegistry.get(movingNode.type)?.capabilities?.wallOpeningPlacement)
   const isMarqueeSelectionActive =
     editorMode === 'select' &&
     floorplanSelectionTool === 'marquee' &&
@@ -553,13 +593,16 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
   const applyEntrySelection = useCallback(
     (id: AnyNodeId, shouldToggle: boolean) => {
       const currentSelectedIds = useViewer.getState().selection.selectedIds
-      setSelection({
-        selectedIds: shouldToggle
-          ? currentSelectedIds.includes(id)
-            ? currentSelectedIds.filter((selectedId) => selectedId !== id)
-            : [...currentSelectedIds, id]
-          : [id],
-      })
+      const nextSelectedIds = shouldToggle
+        ? currentSelectedIds.includes(id)
+          ? currentSelectedIds.filter((selectedId) => selectedId !== id)
+          : [...currentSelectedIds, id]
+        : [id]
+      setSelection({ selectedIds: nextSelectedIds })
+      if (nextSelectedIds.length === 1 && nextSelectedIds[0] === id) {
+        const node = useScene.getState().nodes[id]
+        if (node) emitCanvasNodeSelection(node)
+      }
       // Setting selection re-renders the entry — the overlay pass mounts
       // (endpoint handles, etc.), reshuffling DOM under the cursor between
       // pointerdown and click. If the click target ends up on the SVG
@@ -583,6 +626,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
   )
 
   const handleClickStop = useCallback((event: React.MouseEvent<SVGGElement>) => {
+    if (isFloorplanOpeningPlacementActiveNow()) return
     event.stopPropagation()
   }, [])
 
@@ -825,6 +869,11 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
 
   const handleEntryPointerDown = useCallback(
     (id: AnyNodeId, event: ReactPointerEvent<SVGGElement>) => {
+      // Keep this handler mounted during opening placement and arbitrate from
+      // the stores at event time. Commit clears the interaction scope before
+      // React paints the next frame; a render-time `undefined` handler leaves
+      // a short dead zone where the first post-placement selection is lost.
+      if (isFloorplanOpeningPlacementActiveNow()) return
       if (startDirectMoveDrag(id, event)) return
       if (startDirectRotateDrag(id, event)) return
       if (startGroupMoveDrag(id, event)) return
@@ -1055,7 +1104,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
       // the right chip during the edit AND `getActiveSnapContext()` resolves the
       // polygon / wall mode-set the affordance's snap math reads. Torn down on
       // release / cancel below. `null` for resize / rotate (no snapping chip).
-      const reshapeScope = affordanceReshapeScope(affordance, nodeId, payload)
+      const reshapeScope = floorplanAffordanceReshapeScope(affordance, nodeId, payload)
       if (reshapeScope) {
         useInteractionScope.getState().begin(reshapeScope)
       }
@@ -1301,7 +1350,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
   const entries = floorplanData.entries
   if (entries.length === 0) return null
 
-  const unitsPerPixel = renderCtx?.unitsPerPixel ?? 1
   const palette = renderCtx?.palette
 
   return (
@@ -1321,7 +1369,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
     // still propagate normally inside the registry tree.
     <g
       className="floorplan-registry-layer"
-      onClick={isOpeningPlacementActive ? undefined : handleClickStop}
+      onClick={handleClickStop}
       opacity={isAmbient ? 0.3 : undefined}
       style={isAmbient ? NO_POINTER_EVENTS_STYLE : undefined}
     >
@@ -1343,7 +1391,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             hoveredHandleId={handleIdForNode(hoveredHandleId, entry.id)}
             interactiveElevators={interactiveElevators}
             isMarqueeSelectionActive={isMarqueeSelectionActive}
-            isOpeningPlacementActive={isOpeningPlacementActive}
             key={`base-${entry.id}`}
             levelDataCacheRef={levelDataCacheRef}
             levelNodeIdsByType={floorplanData.levelNodeIdsByType}
@@ -1360,7 +1407,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             onHoveredIdChange={setHoveredId}
             palette={palette}
             pass="base"
-            sceneRotationDeg={renderCtx?.sceneRotationDeg ?? 0}
+            sceneRotationDeg={sceneRotationDeg}
             selected={selectedIdSet.has(entry.id)}
             suppressHandles={isMultiSelect && selectedIdSet.has(entry.id)}
             groupMoveCursor={groupParticipantIdSet?.has(entry.id) ?? false}
@@ -1370,7 +1417,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             unit={unit}
             metricNotation={metricNotation}
             wallDimensionReference={wallDimensionReference}
-            unitsPerPixel={unitsPerPixel}
             visibilityRootId={entry.ctxOverrides ? undefined : (levelId as AnyNodeId)}
             ctxOverrides={entry.ctxOverrides}
           />
@@ -1397,7 +1443,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             hoveredHandleId={handleIdForNode(hoveredHandleId, entry.id)}
             interactiveElevators={interactiveElevators}
             isMarqueeSelectionActive={isMarqueeSelectionActive}
-            isOpeningPlacementActive={isOpeningPlacementActive}
             key={`overlay-${entry.id}`}
             levelDataCacheRef={levelDataCacheRef}
             levelNodeIdsByType={floorplanData.levelNodeIdsByType}
@@ -1414,7 +1459,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             onHoveredIdChange={setHoveredId}
             palette={palette}
             pass="overlay"
-            sceneRotationDeg={renderCtx?.sceneRotationDeg ?? 0}
+            sceneRotationDeg={sceneRotationDeg}
             selected={selectedIdSet.has(entry.id)}
             suppressHandles={isMultiSelect && selectedIdSet.has(entry.id)}
             groupMoveCursor={groupParticipantIdSet?.has(entry.id) ?? false}
@@ -1424,7 +1469,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             unit={unit}
             metricNotation={metricNotation}
             wallDimensionReference={wallDimensionReference}
-            unitsPerPixel={unitsPerPixel}
             visibilityRootId={entry.ctxOverrides ? undefined : (levelId as AnyNodeId)}
             ctxOverrides={entry.ctxOverrides}
           />
@@ -1434,11 +1478,10 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
       {/* Dashed group bbox — shows what a group drag carries along while a
           multi-selection exists, rides the live delta mid-drag, and doubles
           as the group's whole-area drag handle. */}
-      <FloorplanGroupSelectionBox
+      <ScaleAwareFloorplanGroupSelectionBox
         onPointerDown={handleGroupBoxPointerDown}
         onRotatePointerDown={handleGroupBoxRotatePointerDown}
         palette={palette}
-        unitsPerPixel={unitsPerPixel}
       />
       {/* Transient live-rotation readout — drawn last so the wedge + degree
           chip sit above all handle chrome while a rotate-arrow is dragged. */}
@@ -1446,8 +1489,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
         <RotationAngleOverlay
           overlay={rotationOverlay}
           palette={palette}
-          sceneRotationDeg={renderCtx?.sceneRotationDeg ?? 0}
-          unitsPerPixel={unitsPerPixel}
+          sceneRotationDeg={sceneRotationDeg}
         />
       ) : null}
     </g>
@@ -1456,40 +1498,119 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
 
 function FloorplanAnnotationLayoutResolver({ active }: { active: boolean }) {
   const markerRef = useRef<SVGGElement>(null)
-  const [layoutEpoch, setLayoutEpoch] = useState(0)
+  const collisionLabelElementsRef = useRef<SVGGElement[]>([])
+  const registryLabelElementsRef = useRef<SVGGElement[]>([])
+  const appliedRotationDegRef = useRef<number | null>(null)
+  const appliedLayoutInputsRef = useRef<object | null>(null)
   const interactionIdle = useInteractionScope((state) => isIdle(state.scope))
+  const sceneRotationDeg = useFloorplanSceneRotation()
+  const [settledLayoutEpoch, setSettledLayoutEpoch] = useState(0)
+  const drawingType = useDrawingView((state) => state.drawingType)
   const annotationLayoutOverrides = useDrawingView((state) => state.annotationLayoutOverrides)
+  const annotationVisibility = useFloorplanAnnotationVisibility((state) => state.visibility)
+  const wallDimensionReference = useFloorplanAnnotationVisibility(
+    (state) => state.wallDimensionReference,
+  )
+  const layoutInputs = useMemo(
+    () => ({
+      annotationVisibility,
+      annotationLayoutOverrides,
+      drawingType,
+      interactionIdle,
+      settledLayoutEpoch,
+      wallDimensionReference,
+    }),
+    [
+      annotationVisibility,
+      annotationLayoutOverrides,
+      drawingType,
+      interactionIdle,
+      settledLayoutEpoch,
+      wallDimensionReference,
+    ],
+  )
   const setAnnotationLayoutOverride = useDrawingView((state) => state.setAnnotationLayoutOverride)
   const setPreflightIssues = useFloorplanPreflight((state) => state.setIssues)
   const resetPreflightIssues = useFloorplanPreflight((state) => state.reset)
   const layoutEnabled = active && interactionIdle
-  useLayoutEffect(() => {
+
+  useEffect(() => {
     if (!layoutEnabled) return
-    const registryLayer = markerRef.current?.parentElement
-    if (!registryLayer) return
-    return observeSvgAnnotationLayoutChanges(registryLayer, () => {
-      setLayoutEpoch((epoch) => epoch + 1)
+    let frame: number | null = null
+    const invalidateLayout = () => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        setSettledLayoutEpoch((epoch) => epoch + 1)
+      })
+    }
+    const unsubscribeScene = useScene.subscribe((state, previousState) => {
+      if (
+        state.nodes !== previousState.nodes ||
+        state.installedPlugins !== previousState.installedPlugins
+      ) {
+        invalidateLayout()
+      }
     })
+    const unsubscribeTransforms = useLiveTransforms.subscribe((state, previousState) => {
+      if (state.transforms !== previousState.transforms) invalidateLayout()
+    })
+    const unsubscribeOverrides = useLiveNodeOverrides.subscribe((state, previousState) => {
+      if (state.overrides !== previousState.overrides) invalidateLayout()
+    })
+    const unsubscribeInteractive = useInteractive.subscribe((state, previousState) => {
+      if (state.elevators !== previousState.elevators) invalidateLayout()
+    })
+
+    return () => {
+      unsubscribeScene()
+      unsubscribeTransforms()
+      unsubscribeOverrides()
+      unsubscribeInteractive()
+      if (frame !== null) window.cancelAnimationFrame(frame)
+    }
   }, [layoutEnabled])
+
   useLayoutEffect(() => {
-    // The epoch is only a trigger; collision inputs are measured from the live SVG below.
-    void layoutEpoch
+    // Explicit layout inputs replace the former whole-subtree MutationObserver.
     if (!active) {
+      appliedLayoutInputsRef.current = null
       resetPreflightIssues()
       return
     }
     if (!interactionIdle) return
-    const svg = markerRef.current?.ownerSVGElement
     const registryLayer = markerRef.current?.parentElement
-    if (!(svg && registryLayer)) return
+    if (!registryLayer) return
+    const update = resolveFloorplanAnnotationUpdate({
+      layoutInputsChanged: appliedLayoutInputsRef.current !== layoutInputs,
+      nextRotationDeg: sceneRotationDeg,
+      previousRotationDeg: appliedRotationDegRef.current,
+    })
+    if (update.resolveCollisions) {
+      const svg = markerRef.current?.ownerSVGElement
+      if (!svg) return
+      collisionLabelElementsRef.current = Array.from(
+        svg.querySelectorAll<SVGGElement>('[data-floorplan-annotation-label]'),
+      )
+      registryLabelElementsRef.current = collisionLabelElementsRef.current.filter((label) =>
+        registryLayer.contains(label),
+      )
+    }
+    const labels = registryLabelElementsRef.current
+    if (update.updateLabelPresentation) {
+      updateSvgFloorplanLabelOrientations(labels, sceneRotationDeg)
+      appliedRotationDegRef.current = sceneRotationDeg
+    }
+    if (!update.resolveCollisions) return
+    const svg = markerRef.current?.ownerSVGElement
+    if (!svg) return
     const preflightIssues = resolveSvgAnnotationCollisions(svg, {
+      labels: collisionLabelElementsRef.current,
       layoutOverrides: annotationLayoutOverrides,
     })
     setPreflightIssues(preflightIssues)
+    appliedLayoutInputsRef.current = layoutInputs
 
-    const labels = Array.from(
-      registryLayer.querySelectorAll<SVGGElement>('[data-floorplan-annotation-label]'),
-    )
     for (const [index, label] of labels.entries()) {
       const id = svgAnnotationLabelId(label, index)
       label.dataset.floorplanAnnotationId = id
@@ -1500,8 +1621,9 @@ function FloorplanAnnotationLayoutResolver({ active }: { active: boolean }) {
     active,
     annotationLayoutOverrides,
     interactionIdle,
-    layoutEpoch,
+    layoutInputs,
     resetPreflightIssues,
+    sceneRotationDeg,
     setPreflightIssues,
   ])
 
@@ -1519,9 +1641,7 @@ function FloorplanAnnotationLayoutResolver({ active }: { active: boolean }) {
     }
 
     const labelId = (label: SVGGElement): string => {
-      const labels = Array.from(
-        registryLayer.querySelectorAll<SVGGElement>('[data-floorplan-annotation-label]'),
-      )
+      const labels = registryLabelElementsRef.current
       return svgAnnotationLabelId(label, Math.max(0, labels.indexOf(label)))
     }
 
@@ -1613,9 +1733,7 @@ function FloorplanAnnotationLayoutResolver({ active }: { active: boolean }) {
       cancelActivePointerDrag?.()
       registryLayer.removeEventListener('pointerdown', onPointerDown)
       registryLayer.removeEventListener('dblclick', onDoubleClick)
-      for (const label of registryLayer.querySelectorAll<SVGGElement>(
-        '[data-floorplan-annotation-label]',
-      )) {
+      for (const label of registryLabelElementsRef.current) {
         label.style.pointerEvents = ''
         label.style.cursor = ''
       }
@@ -1655,7 +1773,6 @@ type FloorplanRegistryEntryProps = {
   hoveredHandleId: string | null
   interactiveElevators: unknown
   isMarqueeSelectionActive: boolean
-  isOpeningPlacementActive: boolean
   levelDataCacheRef: { current: Map<string, LevelDataCacheEntry> }
   levelNodeIdsByType: ReadonlyMap<string, readonly AnyNodeId[]>
   moving: boolean
@@ -1695,7 +1812,6 @@ type FloorplanRegistryEntryProps = {
   unit: 'metric' | 'imperial'
   metricNotation: 'meters' | 'millimeters'
   wallDimensionReference: FloorplanWallDimensionReference
-  unitsPerPixel: number
   visibilityRootId: AnyNodeId | undefined
 }
 
@@ -1712,7 +1828,6 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
   hoveredHandleId,
   interactiveElevators,
   isMarqueeSelectionActive,
-  isOpeningPlacementActive,
   levelDataCacheRef,
   levelNodeIdsByType,
   moving,
@@ -1738,7 +1853,6 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
   unit,
   metricNotation,
   wallDimensionReference,
-  unitsPerPixel,
   visibilityRootId,
 }: FloorplanRegistryEntryProps): React.ReactElement | null {
   const live = useLiveTransforms((s) => (floorplanVisible ? s.transforms.get(nodeId) : undefined))
@@ -1861,9 +1975,8 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
       : visibleGeometry
   if (!geometry) return null
 
-  const entryClick = isOpeningPlacementActive || isMarqueeSelectionActive ? undefined : onClickStop
-  const entryPointerDown =
-    isOpeningPlacementActive || isMarqueeSelectionActive ? undefined : handlePointerDown
+  const entryClick = isMarqueeSelectionActive ? undefined : onClickStop
+  const entryPointerDown = isMarqueeSelectionActive ? undefined : handlePointerDown
 
   return (
     <g
@@ -1889,7 +2002,6 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
         onMoveHandlePointerDown={handleMoveHandlePointerDown}
         palette={palette}
         sceneRotationDeg={sceneRotationDeg}
-        unitsPerPixel={unitsPerPixel}
       />
     </g>
   )
@@ -2162,7 +2274,7 @@ export function getFloorplanLevelData(
 
 type InteractiveGeometryProps = {
   geometry: FloorplanGeometry
-  unitsPerPixel: number
+  unitsPerPixel?: number
   palette: FloorplanPalette | undefined
   hatchPatternId: string | undefined
   hoveredHandleId: string | null
@@ -2190,7 +2302,7 @@ type InteractiveGeometryProps = {
 
 export const InteractiveGeometry = memo(function InteractiveGeometry({
   geometry,
-  unitsPerPixel,
+  unitsPerPixel: unitsPerPixelOverride,
   palette,
   hatchPatternId,
   hoveredHandleId,
@@ -2204,6 +2316,9 @@ export const InteractiveGeometry = memo(function InteractiveGeometry({
   onHandlePointerDown,
   onMoveHandlePointerDown,
 }: InteractiveGeometryProps): React.ReactElement {
+  const liveUnitsPerPixel = useFloorplanStaticUnitsPerPixel()
+  const unitsPerPixel = unitsPerPixelOverride ?? liveUnitsPerPixel
+
   return renderInteractive(geometry, 0)
 
   function renderInteractive(g: FloorplanGeometry, keyHint: number): React.ReactElement {
@@ -2772,9 +2887,15 @@ export const InteractiveGeometry = memo(function InteractiveGeometry({
         const labelTransform = `translate(${g.cx} ${g.cy}) rotate(${degrees}) translate(0 ${-(g.offsetPx ?? 0) * labelUnitsPerPixel})`
         return (
           <g
+            data-floorplan-annotation-angle-radians={g.angle}
             data-floorplan-annotation-default-transform={labelTransform}
             data-floorplan-annotation-label=""
             data-floorplan-annotation-priority="20"
+            data-floorplan-annotation-screen-upright={g.screenUpright ? 'true' : undefined}
+            data-floorplan-annotation-transform-after-rotation={`translate(0 ${
+              -(g.offsetPx ?? 0) * labelUnitsPerPixel
+            })`}
+            data-floorplan-annotation-transform-before-rotation={`translate(${g.cx} ${g.cy})`}
             key={keyHint}
             pointerEvents="none"
             transform={labelTransform}
@@ -3405,7 +3526,7 @@ const ROTATION_WEDGE_SEGMENTS = 48
 export function RotationAngleOverlay({
   overlay,
   palette,
-  unitsPerPixel,
+  unitsPerPixel: unitsPerPixelOverride,
   sceneRotationDeg,
 }: {
   overlay: RotationOverlayState
@@ -3413,9 +3534,11 @@ export function RotationAngleOverlay({
     FloorplanPalette,
     'measurementLabelBackground' | 'measurementLabelText' | 'measurementStroke'
   >
-  unitsPerPixel: number
+  unitsPerPixel?: number
   sceneRotationDeg: number
 }): React.ReactElement {
+  const liveUnitsPerPixel = useFloorplanStaticUnitsPerPixel()
+  const unitsPerPixel = unitsPerPixelOverride ?? liveUnitsPerPixel
   const { pivot, startAngle, endAngle, radius, sweep } = overlay
   const span = endAngle - startAngle
   const count = Math.max(8, Math.ceil((Math.abs(span) / Math.PI) * ROTATION_WEDGE_SEGMENTS))

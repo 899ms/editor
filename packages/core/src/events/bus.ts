@@ -222,7 +222,6 @@ type CameraControlEvents = {
   'camera-controls:orbit-ccw': undefined
   'camera-controls:fit-scene': CameraControlFitSceneEvent
   'camera-controls:generate-thumbnail': ThumbnailGenerateEvent
-  'camera-controls:pose': CameraPose
   'camera-controls:apply-pose': CameraPose
   'camera-controls:cancel-pose': undefined
   'camera-controls:interaction-start': undefined
@@ -277,6 +276,12 @@ type RoomPresetEvents = {
 }
 
 type SelectionEvents = {
+  /**
+   * A node click accepted by an editor canvas selection path after proxy and
+   * phase routing. Hosts can react to the user's 2D/3D selection intent
+   * without treating programmatic selection changes as canvas clicks.
+   */
+  'selection:canvas-node-click': AnyNode
   /**
    * "Reveal this node" intent — the editor's node action menu emits it with the
    * selected node; whoever owns the node's catalog/panel (host browser, a
