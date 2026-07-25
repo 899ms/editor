@@ -10,10 +10,12 @@ import {
 import {
   CursorSphere,
   getFloorStackPreviewPosition,
+  getLevelLocalSnappedPosition,
   isAlignmentGuideActive,
   isGridSnapActive,
   isMagneticSnapActive,
   movementSfxStepKey,
+  resolveAlignedFloorPlacement,
   triggerSFX,
   useAlignmentGuides,
   useEditor,
@@ -21,10 +23,6 @@ import {
 import { useViewer } from '@pascal-app/viewer'
 import { useEffect, useMemo, useRef } from 'react'
 import type { Group } from 'three'
-import {
-  getLevelLocalSnappedPosition,
-  resolveAlignedFloorPlacement,
-} from '../shared/floor-placement'
 
 function getExistingSpawnIds() {
   const nodes = useScene.getState().nodes

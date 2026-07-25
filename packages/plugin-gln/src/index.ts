@@ -1,5 +1,6 @@
 import type { Plugin } from '@pascal-app/core/registry'
 import type { ComponentType } from 'react'
+import { glnBufferTankNodeDefinition } from './buffer-tank-definition'
 import { GLN_PLUGIN_ID } from './constants'
 import { glnOutdoorUnitNodeDefinition } from './outdoor-unit-definition'
 import { glnSystemNodeDefinition } from './system-definition'
@@ -20,7 +21,7 @@ type GlnHostPanel = {
 export const glnPlugin: Plugin = {
   id: GLN_PLUGIN_ID,
   apiVersion: 1,
-  nodes: [glnSystemNodeDefinition, glnOutdoorUnitNodeDefinition],
+  nodes: [glnSystemNodeDefinition, glnOutdoorUnitNodeDefinition, glnBufferTankNodeDefinition],
 }
 
 export const glnSystemHostPanel: GlnHostPanel = {
@@ -41,7 +42,7 @@ export const glnEquipmentHostPanel: GlnHostPanel = {
   label: '光冷暖设备',
   icon: { kind: 'iconify', name: 'lucide:fan' },
   component: () => import('./equipment-panel'),
-  kinds: ['gln:outdoor-unit'],
+  kinds: ['gln:outdoor-unit', 'gln:buffer-tank'],
   pluginId: GLN_PLUGIN_ID,
   description: '放置和编辑光冷暖系统的物理设备。',
   creator: { name: 'GLN' },
@@ -52,6 +53,14 @@ export const glnEquipmentHostPanel: GlnHostPanel = {
 export const glnHostPanels = [glnSystemHostPanel, glnEquipmentHostPanel] as const
 export const glnHostPanel = glnSystemHostPanel
 
+export {
+  glnBufferTankDefinition,
+  glnBufferTankNodeDefinition,
+} from './buffer-tank-definition'
+export { buildGlnBufferTankFloorplan } from './buffer-tank-floorplan'
+export { buildGlnBufferTankGeometry } from './buffer-tank-geometry'
+export { getGlnBufferTankPorts } from './buffer-tank-ports'
+export { GlnBufferTankFinish, GlnBufferTankNode } from './buffer-tank-schema'
 export { GLN_PLUGIN_ID } from './constants'
 export {
   glnOutdoorUnitDefinition,

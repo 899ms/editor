@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { nodeRegistry, registerPlugin } from '@pascal-app/core/registry'
 import { SceneBridge } from '@pascal-app/mcp'
-import { GlnOutdoorUnitNode, GlnSystemNode, glnPlugin } from '@pascal-app/plugin-gln'
+import {
+  GlnBufferTankNode,
+  GlnOutdoorUnitNode,
+  GlnSystemNode,
+  glnPlugin,
+} from '@pascal-app/plugin-gln'
 import { ensureGlnPluginRegistered } from './register-gln-plugin'
 
 describe('GLN plugin registration', () => {
@@ -18,11 +23,21 @@ describe('GLN plugin registration', () => {
       width: 1.1,
       finish: 'graphite',
     })
+    const bufferTank = GlnBufferTankNode.parse({
+      systemId: system.id,
+      position: [4, 0, 3],
+      diameter: 0.8,
+      finish: 'graphite',
+    })
     const bridge = new SceneBridge()
 
     bridge.loadJSON({
-      nodes: { [system.id]: system, [outdoorUnit.id]: outdoorUnit },
-      rootNodeIds: [system.id, outdoorUnit.id],
+      nodes: {
+        [system.id]: system,
+        [outdoorUnit.id]: outdoorUnit,
+        [bufferTank.id]: bufferTank,
+      },
+      rootNodeIds: [system.id, outdoorUnit.id, bufferTank.id],
       installedPlugins: [],
     })
 
@@ -38,6 +53,14 @@ describe('GLN plugin registration', () => {
       position: [2, 0, 3],
       width: 1.1,
       finish: 'graphite',
+    })
+    expect(bridge.exportJSON().nodes[bufferTank.id]).toMatchObject({
+      type: 'gln:buffer-tank',
+      systemId: system.id,
+      position: [4, 0, 3],
+      diameter: 0.8,
+      finish: 'graphite',
+      stratificationView: true,
     })
     expect(bridge.exportJSON().installedPlugins).toEqual([glnPlugin.id])
   })

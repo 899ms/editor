@@ -5,6 +5,7 @@ import {
   type GridEvent,
   movingFootprintAnchors,
   type NodeEvent,
+  nodeRegistry,
   resolveAlignment,
   sceneRegistry,
   snapPointToGrid,
@@ -102,15 +103,11 @@ export function resolveAlignedFloorPlacement({
   }
 }
 
-// Node-surface clicks (wall/slab/…) are synthesized on pointerup; the
-// browser's real `click` fires right after and would re-trigger the same
-// placement through the canvas-level `grid:click` listener, which R3F
-// stopPropagation cannot reach. Eat that one follow-up click.
 function swallowFollowUpBrowserClick() {
   if (typeof window === 'undefined') return
-  const swallow = (e: Event) => {
-    e.stopPropagation()
-    e.preventDefault()
+  const swallow = (event: Event) => {
+    event.stopPropagation()
+    event.preventDefault()
   }
   window.addEventListener('click', swallow, { capture: true, once: true })
   setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 300)
@@ -120,9 +117,7 @@ export function stopPlacementCommitPropagation(event: FloorPlacementClickTrigger
   const native = (event as { nativeEvent?: unknown }).nativeEvent
   const nativeStopPropagation = (native as { stopPropagation?: () => void } | undefined)
     ?.stopPropagation
-  if (typeof nativeStopPropagation === 'function') {
-    nativeStopPropagation.call(native)
-  }
+  if (typeof nativeStopPropagation === 'function') nativeStopPropagation.call(native)
   const direct = (event as { stopPropagation?: () => void }).stopPropagation
   if (typeof direct === 'function') direct.call(event)
   if ('node' in event) swallowFollowUpBrowserClick()
@@ -132,18 +127,17 @@ export function subscribeFloorPlacementClicks(
   onClick: (event: FloorPlacementClickTriggerEvent) => void,
 ) {
   emitter.on('grid:click', onClick)
-  type SuffixedKey<K extends string> = `${K}:${EventSuffix}`
-  type ClickKey = SuffixedKey<(typeof FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS)[number]>
-  for (const kind of FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS) {
-    const key = `${kind}:click` as ClickKey
-    emitter.on(key, onClick as never)
+  const triggerKinds = new Set<string>(FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS)
+  for (const [kind] of nodeRegistry.entries()) triggerKinds.add(kind)
+  type ClickKey = `${string}:${EventSuffix}`
+  for (const kind of triggerKinds) {
+    emitter.on(`${kind}:click` as ClickKey as never, onClick as never)
   }
 
   return () => {
     emitter.off('grid:click', onClick)
-    for (const kind of FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS) {
-      const key = `${kind}:click` as ClickKey
-      emitter.off(key, onClick as never)
+    for (const kind of triggerKinds) {
+      emitter.off(`${kind}:click` as ClickKey as never, onClick as never)
     }
   }
 }
@@ -152,18 +146,17 @@ export function subscribeFloorPlacementDoubleClicks(
   onDoubleClick: (event: FloorPlacementClickTriggerEvent) => void,
 ) {
   emitter.on('grid:double-click', onDoubleClick)
-  type SuffixedKey<K extends string> = `${K}:${EventSuffix}`
-  type DoubleClickKey = SuffixedKey<(typeof FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS)[number]>
-  for (const kind of FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS) {
-    const key = `${kind}:double-click` as DoubleClickKey
-    emitter.on(key, onDoubleClick as never)
+  const triggerKinds = new Set<string>(FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS)
+  for (const [kind] of nodeRegistry.entries()) triggerKinds.add(kind)
+  type DoubleClickKey = `${string}:${EventSuffix}`
+  for (const kind of triggerKinds) {
+    emitter.on(`${kind}:double-click` as DoubleClickKey as never, onDoubleClick as never)
   }
 
   return () => {
     emitter.off('grid:double-click', onDoubleClick)
-    for (const kind of FLOOR_PLACEMENT_CLICK_TRIGGER_KINDS) {
-      const key = `${kind}:double-click` as DoubleClickKey
-      emitter.off(key, onDoubleClick as never)
+    for (const kind of triggerKinds) {
+      emitter.off(`${kind}:double-click` as DoubleClickKey as never, onDoubleClick as never)
     }
   }
 }

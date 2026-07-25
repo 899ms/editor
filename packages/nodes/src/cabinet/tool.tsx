@@ -18,7 +18,9 @@ import {
 } from '@pascal-app/core'
 import {
   clearPlacementSurface,
+  type FloorPlacementClickTriggerEvent,
   getFloorStackPreviewPosition,
+  getLevelLocalSnappedPosition,
   getSideFromNormal,
   isGridSnapActive,
   isMagneticSnapActive,
@@ -27,6 +29,9 @@ import {
   movementSfxStepKey,
   PlacementBox,
   publishPlacementSurface,
+  stopPlacementCommitPropagation,
+  subscribeFloorPlacementClicks,
+  subscribeFloorPlacementDoubleClicks,
   triggerSFX,
   useEditor,
   useFacingPose,
@@ -38,13 +43,6 @@ import { Html } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type Group, Mesh, Quaternion, Vector3 } from 'three'
-import {
-  type FloorPlacementClickTriggerEvent,
-  getLevelLocalSnappedPosition,
-  stopPlacementCommitPropagation,
-  subscribeFloorPlacementClicks,
-  subscribeFloorPlacementDoubleClicks,
-} from '../shared/floor-placement'
 import { LevelOffsetGroup } from '../shared/level-offset-group'
 import { findClosestWallInPlan, type WallHit } from '../shared/wall-attach-target'
 import {

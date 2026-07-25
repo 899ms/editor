@@ -5,15 +5,78 @@ import type {
   FloorplanAffordanceSession,
   LiveNodeOverrides,
 } from '@pascal-app/core'
-import { type AnyNodeDefinition, emitter, nodeRegistry, registerNode } from '@pascal-app/core'
+import {
+  type AnyNodeDefinition,
+  emitter,
+  nodeRegistry,
+  registerNode,
+  ShelfNode,
+} from '@pascal-app/core'
 import { z } from 'zod'
 import {
   cancelFloorplanAffordanceDrag,
   collectFloorplanDependencyNodes,
   computeAffectedSiblingIds,
   floorplanHandleDoubleClickAffordance,
+  shouldPassRegistryClicksToPlacement,
   subscribeFloorplanAffordanceToolCancel,
 } from './floorplan-registry-layer'
+
+describe('registry placement click routing', () => {
+  test('passes registered build-tool clicks through existing floorplan geometry', () => {
+    expect(
+      shouldPassRegistryClicksToPlacement({
+        scope: {
+          kind: 'placing',
+          node: ShelfNode.parse({ position: [0, 0, 0] }),
+          nodeId: 'tank-preview',
+          nodeType: 'gln:buffer-tank',
+          view: '2d',
+          pressDrag: false,
+          driver: 'kind-tool',
+        },
+        registered: true,
+      }),
+    ).toBe(true)
+  })
+
+  test('keeps idle, generic, and unknown placement interactions on the registry layer', () => {
+    expect(
+      shouldPassRegistryClicksToPlacement({
+        scope: { kind: 'idle' },
+        registered: true,
+      }),
+    ).toBe(false)
+    expect(
+      shouldPassRegistryClicksToPlacement({
+        scope: {
+          kind: 'placing',
+          node: ShelfNode.parse({ position: [0, 0, 0] }),
+          nodeId: 'generic-preview',
+          nodeType: 'shelf',
+          view: '2d',
+          pressDrag: false,
+          driver: 'move-tool',
+        },
+        registered: true,
+      }),
+    ).toBe(false)
+    expect(
+      shouldPassRegistryClicksToPlacement({
+        scope: {
+          kind: 'placing',
+          node: ShelfNode.parse({ position: [0, 0, 0] }),
+          nodeId: 'missing-preview',
+          nodeType: 'missing:tool',
+          view: '2d',
+          pressDrag: false,
+          driver: 'kind-tool',
+        },
+        registered: false,
+      }),
+    ).toBe(false)
+  })
+})
 
 function cabinetRun(id: string, children: string[] = [], parentId: string | null = 'level_test') {
   return {
