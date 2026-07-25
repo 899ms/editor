@@ -4,7 +4,12 @@ import type { TemporalState } from 'zundo'
 import { temporal } from 'zundo'
 import { create, type StoreApi, type UseBoundStore } from 'zustand'
 import { parseMaterialRef, toSceneMaterialRef } from '../material-library'
-import { getNodePluginId, isNodeKindEnabled, nodeRegistry } from '../registry/registry'
+import {
+  getNodePluginId,
+  isNodeKindEnabled,
+  nodeRegistry,
+  resolveInstalledPluginIds,
+} from '../registry/registry'
 import { BuildingNode } from '../schema'
 import type { Collection, CollectionId } from '../schema/collections'
 import { generateCollectionId } from '../schema/collections'
@@ -899,12 +904,6 @@ function normalizeRootNodeIds(
   rootNodeIds: AnyNodeId[],
 ): AnyNodeId[] {
   const existingRootIds = rootNodeIds.filter((id) => Boolean(nodes[id]))
-  const siteRootIds = existingRootIds.filter((id) => nodes[id]?.type === 'site')
-
-  if (siteRootIds.length > 0) {
-    return siteRootIds
-  }
-
   return existingRootIds.filter((id) => nodes[id]?.parentId === null)
 }
 
@@ -1044,13 +1043,13 @@ const useScene: UseSceneStore = create<SceneState>()(
           dirtyNodes: new Set<AnyNodeId>(),
           collections: {},
           materials: {},
-          installedPlugins: [],
+          installedPlugins: resolveInstalledPluginIds() ?? [],
           hasExplicitPluginInstallState: false,
         })
       },
 
       clearScene: () => {
-        const installedPlugins = get().installedPlugins
+        const installedPlugins = resolveInstalledPluginIds(get().installedPlugins) ?? []
         const hasExplicitPluginInstallState = get().hasExplicitPluginInstallState
         get().unloadScene()
         get().loadScene() // Default scene
@@ -1100,7 +1099,7 @@ const useScene: UseSceneStore = create<SceneState>()(
           dirtyNodes: new Set<AnyNodeId>(),
           collections: extra?.collections ?? {},
           materials,
-          installedPlugins: Array.from(new Set(extra?.installedPlugins ?? [])),
+          installedPlugins: resolveInstalledPluginIds(extra?.installedPlugins) ?? [],
           hasExplicitPluginInstallState: extra?.hasExplicitPluginInstallState ?? false,
         })
         // Mark all nodes as dirty to trigger re-validation
@@ -1111,7 +1110,7 @@ const useScene: UseSceneStore = create<SceneState>()(
 
       setInstalledPlugins: (pluginIds, options) => {
         if (get().readOnly) return
-        const nextInstalledPlugins = Array.from(new Set(pluginIds))
+        const nextInstalledPlugins = resolveInstalledPluginIds(pluginIds) ?? []
         const previousInstalledPlugins = get().installedPlugins
         const dirtyNodes = new Set(get().dirtyNodes)
         for (const node of Object.values(get().nodes)) {
@@ -1130,6 +1129,14 @@ const useScene: UseSceneStore = create<SceneState>()(
       },
 
       loadScene: () => {
+        const installedPlugins = resolveInstalledPluginIds(get().installedPlugins) ?? []
+        if (
+          installedPlugins.length !== get().installedPlugins.length ||
+          installedPlugins.some((pluginId, index) => pluginId !== get().installedPlugins[index])
+        ) {
+          set({ installedPlugins })
+        }
+
         if (get().rootNodeIds.length > 0) {
           // Assign all nodes as dirty to force re-validation
           Object.values(get().nodes).forEach((node) => {
@@ -1162,7 +1169,7 @@ const useScene: UseSceneStore = create<SceneState>()(
         // Site is the root
         const rootNodeIds = [site.id]
 
-        set({ nodes, rootNodeIds })
+        set({ nodes, rootNodeIds, installedPlugins })
       },
 
       markDirty: (id) => {

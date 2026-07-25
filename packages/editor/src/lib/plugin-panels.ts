@@ -1,4 +1,4 @@
-import type { IconRef, LazyComponent } from '@pascal-app/core'
+import { type IconRef, type LazyComponent, requirePlugin } from '@pascal-app/core'
 
 export type EditorHostPanelWorkspace = string & {}
 
@@ -19,6 +19,8 @@ export type EditorHostPanel = {
   }
   pluginUrl?: string
   defaultInstalled?: boolean
+  /** Required by the host application and unavailable for user uninstall. */
+  mandatory?: boolean
 }
 
 function isDevMode(): boolean {
@@ -60,6 +62,15 @@ class EditorHostPanelRegistryImpl {
       ),
     )
 
+  getMandatoryPluginIds = (): string[] =>
+    Array.from(
+      new Set(
+        this.cached
+          .filter((panel) => panel.pluginId && panel.mandatory)
+          .map((panel) => panel.pluginId as string),
+      ),
+    )
+
   reset(): void {
     this.panels.clear()
     this.emit()
@@ -76,6 +87,7 @@ class EditorHostPanelRegistryImpl {
         throw new Error(`[editor:host-panels] duplicate panel id: "${panel.id}" already registered`)
       }
     }
+    if (panel.mandatory && panel.pluginId) requirePlugin(panel.pluginId)
     this.panels.set(panel.id, panel)
     this.emit()
   }

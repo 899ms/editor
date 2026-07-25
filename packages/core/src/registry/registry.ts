@@ -1,10 +1,12 @@
 import type { ZodObject } from 'zod'
+import { AnyNode } from '../schema/types'
 import type { AnyNodeDefinition, BakePolicy, NodeRegistry, Plugin } from './types'
 
 const HOST_API_VERSION = 1 as const
 const BUILTIN_PLUGIN_ID = 'pascal:core'
 
 const pluginIdsByKind = new Map<string, string>()
+const mandatoryPluginIds = new Set<string>()
 
 // True in dev / test builds, false in production. Tries Vite's
 // `import.meta.env.DEV` first (the editor app's bundler) and falls back
@@ -78,6 +80,7 @@ class NodeRegistryImpl implements NodeRegistry {
   _reset(): void {
     this.defs.clear()
     pluginIdsByKind.clear()
+    mandatoryPluginIds.clear()
   }
 }
 
@@ -90,9 +93,50 @@ export function registerNode(def: AnyNodeDefinition): void {
   nodeRegistry._register(def)
 }
 
+/**
+ * Validate a scene node against the active registry when its kind is registered,
+ * otherwise fall back to the built-in discriminated union. This is the shared
+ * untrusted-boundary parser for browser imports, HTTP APIs, and MCP.
+ */
+export function safeParseRegisteredNode(value: unknown) {
+  const kind =
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    typeof (value as { type?: unknown }).type === 'string'
+      ? (value as { type: string }).type
+      : null
+  const registeredSchema = kind ? nodeRegistry.get(kind)?.schema : undefined
+  return (registeredSchema ?? AnyNode).safeParse(value)
+}
+
 /** The plugin that registered a node kind, when it came through {@link loadPlugin}. */
 export function getNodePluginId(kind: string): string | undefined {
   return pluginIdsByKind.get(kind)
+}
+
+/** Plugin IDs that the active host requires in every project. */
+export function getMandatoryPluginIds(): string[] {
+  return Array.from(mandatoryPluginIds)
+}
+
+/**
+ * Merge the active host's required plugins into persisted project state while
+ * preserving the distinction between legacy scenes (undefined) and an
+ * explicitly empty install list.
+ */
+export function resolveInstalledPluginIds(pluginIds?: readonly string[]): string[] | undefined {
+  const mandatoryIds = getMandatoryPluginIds()
+  if (pluginIds === undefined && mandatoryIds.length === 0) return undefined
+  return Array.from(new Set([...(pluginIds ?? []), ...mandatoryIds]))
+}
+
+/** Mark a plugin as required by the active host without changing its manifest. */
+export function requirePlugin(pluginId: string): void {
+  if (typeof pluginId !== 'string' || pluginId.length === 0) {
+    throw new Error('[registry] mandatory plugin id must be a non-empty string')
+  }
+  mandatoryPluginIds.add(pluginId)
 }
 
 /**
@@ -257,7 +301,12 @@ export function isDrawnViaToolKind(kind: string): boolean {
   return def ? isDrawnViaTool(def) : false
 }
 
-export async function loadPlugin(plugin: Plugin): Promise<void> {
+export type PluginRegistrationOptions = {
+  /** Keep this plugin installed in every project opened by the active host. */
+  mandatory?: boolean
+}
+
+export function registerPlugin(plugin: Plugin, options: PluginRegistrationOptions = {}): void {
   if (plugin.apiVersion !== HOST_API_VERSION) {
     throw new Error(
       `[registry] plugin "${plugin.id}" requires apiVersion ${plugin.apiVersion}; host supports ${HOST_API_VERSION}`,
@@ -267,6 +316,14 @@ export async function loadPlugin(plugin: Plugin): Promise<void> {
     registerNode(def)
     pluginIdsByKind.set(def.kind, plugin.id)
   }
+  if (options.mandatory) requirePlugin(plugin.id)
+}
+
+export async function loadPlugin(
+  plugin: Plugin,
+  options: PluginRegistrationOptions = {},
+): Promise<void> {
+  registerPlugin(plugin, options)
 }
 
 /**

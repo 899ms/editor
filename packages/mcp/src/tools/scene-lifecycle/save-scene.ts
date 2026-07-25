@@ -1,6 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { SceneGraph } from '@pascal-app/core/clone-scene-graph'
-import { AnyNode } from '@pascal-app/core/schema'
+import { safeParseRegisteredNode } from '@pascal-app/core/registry'
 import { z } from 'zod'
 import type { SceneOperations } from '../../operations'
 import { SceneVersionConflictError } from '../../storage/types'
@@ -92,16 +92,16 @@ export function registerSaveScene(server: McpServer, bridge: SceneOperations): v
             'graph_required: pass `graph` when includeCurrentScene is false',
           )
         }
-        // Security: revalidate every node with AnyNode schema (including the
-        // AssetUrl allowlist) BEFORE persisting. Without this, the save_scene
-        // graph arg is a bypass for the URL hardening in A7. See P4 report.
+        // Security: revalidate every node through the active registry, with the
+        // built-in AnyNode union as fallback, BEFORE persisting. Without this,
+        // the save_scene graph arg bypasses the URL hardening in A7.
         const rawNodes = (graph as { nodes?: unknown }).nodes
         if (!rawNodes || typeof rawNodes !== 'object') {
           throwMcpError(ErrorCode.InvalidParams, 'graph.nodes must be an object')
         }
         const errors: { nodeId: string; path: string; message: string }[] = []
         for (const [nodeId, node] of Object.entries(rawNodes as Record<string, unknown>)) {
-          const res = AnyNode.safeParse(node)
+          const res = safeParseRegisteredNode(node)
           if (!res.success) {
             for (const issue of res.error.issues) {
               errors.push({

@@ -1,6 +1,9 @@
 import type { SceneOperations } from '@pascal-app/mcp/operations'
 import type { SceneStore } from '@pascal-app/mcp/storage'
 import { configureGlnDatabaseEnvironment } from './gln-database'
+import { ensureGlnPluginRegistered } from './register-gln-plugin'
+
+ensureGlnPluginRegistered()
 
 let cachedStore: Promise<SceneStore> | null = null
 let cachedOperations: Promise<SceneOperations> | null = null

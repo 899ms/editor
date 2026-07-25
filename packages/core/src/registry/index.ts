@@ -20,6 +20,7 @@ export {
   discoverPlugins,
   extendPluginDiscovery,
   getHostRefFields,
+  getMandatoryPluginIds,
   getNodePluginId,
   getSelectableKinds,
   hasRegistry3DMoveTool,
@@ -35,8 +36,13 @@ export {
   loadPlugin,
   nodeRegistry,
   type PluginDiscovery,
+  type PluginRegistrationOptions,
   registerNode,
+  registerPlugin,
+  requirePlugin,
   resolveFacingIndicator,
+  resolveInstalledPluginIds,
+  safeParseRegisteredNode,
   setPluginDiscovery,
 } from './registry'
 export {

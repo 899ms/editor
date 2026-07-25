@@ -9,6 +9,7 @@
     "build": "bun run prepare:assets && dotenv -e ../../.env.local -- next build",
     "start": "next start --port 3003",
     "lint": "biome lint",
+    "mcp": "bun scripts/gln-mcp.ts",
     "check-types": "next typegen && tsgo --noEmit",
     "test": "bun test lib"
   },
@@ -20,6 +21,7 @@
     "@pascal-app/i18n": "*",
     "@pascal-app/mcp": "*",
     "@pascal-app/nodes": "*",
+    "@pascal-app/plugin-gln": "workspace:*",
     "@pascal-app/plugin-trees": "workspace:*",
     "@pascal-app/viewer": "*",
     "@radix-ui/react-tooltip": "^1.2.8",

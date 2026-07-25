@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from 'bun:test'
 import { z } from 'zod'
 import {
   getHostRefFields,
+  getMandatoryPluginIds,
   getNodePluginId,
   isDrawnViaTool,
   isDrawnViaToolKind,
@@ -11,6 +12,9 @@ import {
   loadPlugin,
   nodeRegistry,
   registerNode,
+  registerPlugin,
+  resolveInstalledPluginIds,
+  safeParseRegisteredNode,
 } from './registry'
 import type { AnyNodeDefinition, Plugin } from './types'
 
@@ -194,6 +198,37 @@ describe('loadPlugin', () => {
     expect(getNodePluginId('b')).toBe('test:plugin')
   })
 
+  test('tracks plugin installation policy separately from the plugin manifest', () => {
+    registerPlugin(
+      {
+        id: 'test:required',
+        apiVersion: 1,
+        nodes: [makeDefinition('test:required-node')],
+      },
+      { mandatory: true },
+    )
+
+    expect(getMandatoryPluginIds()).toEqual(['test:required'])
+  })
+
+  test('merges mandatory plugins into explicit and legacy installation state', () => {
+    registerPlugin(
+      {
+        id: 'test:required',
+        apiVersion: 1,
+        nodes: [],
+      },
+      { mandatory: true },
+    )
+
+    expect(resolveInstalledPluginIds()).toEqual(['test:required'])
+    expect(resolveInstalledPluginIds([])).toEqual(['test:required'])
+    expect(resolveInstalledPluginIds(['test:optional', 'test:required'])).toEqual([
+      'test:optional',
+      'test:required',
+    ])
+  })
+
   test('enables plugin kinds only when the project has the plugin installed', async () => {
     await loadPlugin({ id: 'test:plugin', apiVersion: 1, nodes: [makeDefinition('plugin:node')] })
 
@@ -244,5 +279,48 @@ describe('loadPlugin', () => {
         loadPlugin({ id: 'b', apiVersion: 1, nodes: [makeDefinition('shared')] }),
       ).rejects.toThrow(/duplicate node kind/)
     })
+  })
+})
+
+describe('safeParseRegisteredNode', () => {
+  beforeEach(() => {
+    nodeRegistry._reset()
+  })
+
+  test('validates an external node through its registered schema', () => {
+    registerNode(
+      makeDefinition('test:registered', {
+        schema: z.object({
+          id: z.string(),
+          type: z.literal('test:registered'),
+          mode: z.enum(['cooling', 'heating', 'standby']),
+        }) as any,
+      }),
+    )
+
+    expect(
+      safeParseRegisteredNode({
+        id: 'test_registered',
+        type: 'test:registered',
+        mode: 'cooling',
+      }).success,
+    ).toBe(true)
+    expect(
+      safeParseRegisteredNode({
+        id: 'test_registered',
+        type: 'test:registered',
+        mode: 'invalid',
+      }).success,
+    ).toBe(false)
+  })
+
+  test('falls back to the built-in node union for an unregistered built-in kind', () => {
+    expect(
+      safeParseRegisteredNode({
+        id: 'site_registered_fallback',
+        type: 'site',
+        children: [],
+      }).success,
+    ).toBe(true)
   })
 })

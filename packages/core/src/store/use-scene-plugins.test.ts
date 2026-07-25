@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { z } from 'zod'
-import { loadPlugin, nodeRegistry } from '../registry'
+import { loadPlugin, nodeRegistry, registerPlugin } from '../registry'
 import type { AnyNodeDefinition } from '../registry/types'
 import type { AnyNode, AnyNodeId } from '../schema'
 import useScene from './use-scene'
@@ -29,12 +29,78 @@ describe('scene plugin installation state', () => {
     expect(useScene.getState().hasExplicitPluginInstallState).toBe(true)
   })
 
+  test('mandatory plugins cannot be removed through the scene store', () => {
+    registerPlugin(
+      {
+        id: 'test:required',
+        apiVersion: 1,
+        nodes: [],
+      },
+      { mandatory: true },
+    )
+
+    useScene.getState().setInstalledPlugins([], { explicit: true })
+
+    expect(useScene.getState().installedPlugins).toEqual(['test:required'])
+    expect(useScene.getState().hasExplicitPluginInstallState).toBe(true)
+  })
+
+  test('scene loading restores mandatory plugins omitted by persisted data', () => {
+    registerPlugin(
+      {
+        id: 'test:required',
+        apiVersion: 1,
+        nodes: [],
+      },
+      { mandatory: true },
+    )
+
+    useScene.getState().setScene({}, [], {
+      installedPlugins: [],
+      hasExplicitPluginInstallState: true,
+    })
+
+    expect(useScene.getState().installedPlugins).toEqual(['test:required'])
+  })
+
+  test('default and already-loaded scenes acquire plugins required after startup', () => {
+    useScene.getState().loadScene()
+
+    registerPlugin(
+      {
+        id: 'test:required',
+        apiVersion: 1,
+        nodes: [],
+      },
+      { mandatory: true },
+    )
+
+    useScene.getState().loadScene()
+
+    expect(useScene.getState().installedPlugins).toEqual(['test:required'])
+  })
+
   test('clearing geometry preserves project plugin installs', () => {
     useScene.getState().setInstalledPlugins(['pascal:trees'], { explicit: true })
     useScene.getState().clearScene()
 
     expect(useScene.getState().installedPlugins).toEqual(['pascal:trees'])
     expect(useScene.getState().hasExplicitPluginInstallState).toBe(true)
+  })
+
+  test('clearing a scene cannot restore plugin state without a mandatory plugin', () => {
+    registerPlugin(
+      {
+        id: 'test:required',
+        apiVersion: 1,
+        nodes: [],
+      },
+      { mandatory: true },
+    )
+
+    useScene.getState().clearScene()
+
+    expect(useScene.getState().installedPlugins).toEqual(['test:required'])
   })
 
   test('uninstall clears plugin build work and reinstall schedules it again', async () => {

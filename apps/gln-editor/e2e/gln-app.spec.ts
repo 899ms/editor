@@ -6,12 +6,16 @@ const editorBaseUrl = process.env.EDITOR_E2E_BASE_URL ?? 'http://localhost:32102
 type SceneNode = {
   end?: [number, number]
   id: string
+  mode?: string
+  name?: string
   start?: [number, number]
   type: string
+  visible?: boolean
 }
 
 type ScenePayload = {
   graph: {
+    installedPlugins?: string[]
     nodes: Record<string, SceneNode>
   }
   nodeCount: number
@@ -27,6 +31,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   page,
   request,
 }) => {
+  test.setTimeout(180_000)
+
   await page.goto(`${glnBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
   await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
@@ -39,7 +45,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   if (createResponse.status() !== 201) {
     throw new Error(`GLN scene creation failed: ${await createResponse.text()}`)
   }
-  await expect(page).toHaveURL(/\/scene\/[^/]+$/)
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 15_000 })
 
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)
   expect(sceneId).toBeTruthy()
@@ -55,6 +61,33 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   })
   expect(originalSceneResponse.status()).toBe(201)
   const originalScene = (await originalSceneResponse.json()) as { id: string }
+
+  await page.getByRole('button', { name: '光冷暖系统' }).click()
+  await expect(page.locator('[data-gln-systems-panel]')).toBeVisible()
+  await page.getByRole('button', { name: '新建系统' }).click()
+  const systemName = page.getByRole('textbox', { name: '系统名称' })
+  await expect(systemName).toHaveValue('住宅光冷暖系统 1')
+  await systemName.fill('一层光冷暖系统')
+  await systemName.press('Enter')
+  await page.getByRole('button', { name: '制冷' }).click()
+
+  await expect
+    .poll(async () => {
+      const scene = await fetchScene(request, glnBaseUrl, sceneId as string)
+      const system = Object.values(scene.graph.nodes).find((node) => node.type === 'gln:system')
+      return {
+        installed: scene.graph.installedPlugins?.includes('pascal:gln') ?? false,
+        mode: system?.mode,
+        name: system?.name,
+        visible: system?.visible,
+      }
+    })
+    .toEqual({
+      installed: true,
+      mode: 'cooling',
+      name: '一层光冷暖系统',
+      visible: false,
+    })
 
   await page.keyboard.press('b')
   await page.keyboard.press('c')
@@ -80,13 +113,33 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveAttribute(
     'data-gln-client-node-types',
-    /wall/,
+    /gln:system.*wall|wall.*gln:system/,
   )
+  await page.getByRole('button', { name: '光冷暖系统' }).click()
+  await expect(page.getByRole('textbox', { name: '系统名称' })).toHaveValue('一层光冷暖系统')
+  await expect(page.getByRole('button', { name: '制冷' })).toHaveAttribute('aria-pressed', 'true')
   const reloadedScene = await fetchScene(request, glnBaseUrl, sceneId as string)
   expect(reloadedScene.nodeCount).toBeGreaterThan(initialScene.nodeCount)
   const walls = Object.values(reloadedScene.graph.nodes).filter((node) => node.type === 'wall')
   expect(walls).toHaveLength(1)
   expect(walls[0]?.start).not.toEqual(walls[0]?.end)
+  expect(
+    Object.values(reloadedScene.graph.nodes)
+      .filter((node) => node.type !== 'gln:system')
+      .some((node) => node.mode !== undefined),
+  ).toBe(false)
+  const originalGlnImport = await request.post(`${editorBaseUrl}/api/scenes`, {
+    data: {
+      name: '不应导入的 GLN 场景',
+      graph: reloadedScene.graph,
+    },
+  })
+  expect(originalGlnImport.status()).toBe(400)
+
+  await page.getByRole('button', { name: '插件' }).click()
+  await page.getByRole('button', { name: /^光冷暖系统 已安装/ }).click()
+  await expect(page.getByRole('button', { name: '必需' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: '卸载' })).toHaveCount(0)
 
   const glnScenes = (await (await request.get(`${glnBaseUrl}/api/scenes`)).json()) as {
     scenes: { id: string; name: string }[]
@@ -101,8 +154,9 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   await page.goto(`${editorBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
   await page.getByRole('link', { name: '原版隔离场景' }).click()
-  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('[data-gln-client-node-types]')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '光冷暖系统' })).toHaveCount(0)
   const originalHealth = await request.get(`${editorBaseUrl}/api/health`)
   expect(await originalHealth.json()).toMatchObject({ app: 'editor', status: 'ok' })
 })

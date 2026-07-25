@@ -1,6 +1,6 @@
 'use client'
 
-import { EditorUiText } from '../editor-ui-text'
+import { EditorUiText, useEditorUiText } from '../editor-ui-text'
 import { Icon } from '@iconify/react'
 import { type IconRef, useScene } from '@pascal-app/core'
 import { resolveLocalizedLabel, usePascalTranslation } from '@pascal-app/i18n'
@@ -98,6 +98,7 @@ function resolvePanelComponent(panel: EditorHostPanel): ComponentType {
  */
 export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
   const { t } = usePascalTranslation()
+  const translateUiText = useEditorUiText()
   const registered = useSyncExternalStore(
     editorHostPanelRegistry.subscribe,
     editorHostPanelRegistry.getSnapshot,
@@ -109,10 +110,15 @@ export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
 
   useEffect(() => {
     const scene = useScene.getState()
-    if (scene.hasExplicitPluginInstallState) return
-    const defaults = editorHostPanelRegistry.getDefaultInstalledPluginIds()
-    if (defaults.every((pluginId) => scene.installedPlugins.includes(pluginId))) return
-    scene.setInstalledPlugins([...scene.installedPlugins, ...defaults], { explicit: false })
+    const mandatory = editorHostPanelRegistry.getMandatoryPluginIds()
+    const defaults = scene.hasExplicitPluginInstallState
+      ? []
+      : editorHostPanelRegistry.getDefaultInstalledPluginIds()
+    const required = Array.from(new Set([...mandatory, ...defaults]))
+    if (required.every((pluginId) => scene.installedPlugins.includes(pluginId))) return
+    scene.setInstalledPlugins([...scene.installedPlugins, ...required], {
+      explicit: scene.hasExplicitPluginInstallState,
+    })
   }, [registered])
 
   const fromRegistry = registered
@@ -133,7 +139,12 @@ export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
     )
   const manager: ExtraPanel[] =
     workspaceMode === 'edit' && !hostIds.has(pluginsManagerPanel.id)
-      ? [pluginsManagerPanel]
+      ? [
+          {
+            ...pluginsManagerPanel,
+            label: translateUiText(pluginsManagerPanel.label),
+          },
+        ]
       : []
   return [...(hostPanels ?? []), ...fromRegistry, ...manager]
 }

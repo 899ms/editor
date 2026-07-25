@@ -136,6 +136,8 @@ The host registers that panel with `registerEditorHostPanel`. Registered plugins
 
 Install/uninstall is a project-level visibility operation. Plugin code and node definitions stay loaded for the browser session because `loadPlugin` is add-only, but an uninstalled plugin's panel, placement UI, renderers, systems, and floor-plan output are disabled. Existing plugin nodes remain serialized in the scene graph and become visible again when the plugin is reinstalled; uninstall never deletes project data.
 
+Hosts may register a plugin with `{ mandatory: true }` or mark its host panel as `mandatory`. Mandatory plugins are merged into every project at scene creation, load, clear, API/MCP save, and persistence boundaries. The plugin manager presents them as required and does not offer uninstall. This is host policy rather than plugin-manifest metadata, so the same plugin package can remain optional in one app and mandatory in another.
+
 `creator` and `pluginUrl` are optional manager metadata. Selecting a plugin in the Plugins sidebar opens its detail page, where the host shows this metadata and the project install/uninstall control.
 
 Host panels mount lazily inside an error boundary. Use host CSS variables, keep CSS scoped to the plugin, and do not write global styles.
