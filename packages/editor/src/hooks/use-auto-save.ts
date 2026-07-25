@@ -11,6 +11,16 @@ export function isSuspiciousNodeDrop(previousNodeCount: number, currentNodeCount
   return previousNodeCount > STRUCTURAL_NODE_COUNT && currentNodeCount <= STRUCTURAL_NODE_COUNT
 }
 
+export function shouldFlushAutosaveOnCleanup({
+  hasDirtyChanges,
+  isLoadingScene,
+}: {
+  hasDirtyChanges: boolean
+  isLoadingScene: boolean
+}) {
+  return hasDirtyChanges && !isLoadingScene
+}
+
 export type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'paused' | 'error'
 
 interface UseAutoSaveOptions {
@@ -220,7 +230,14 @@ export function useAutoSave({
       window.removeEventListener('beforeunload', flushOnExit)
       window.removeEventListener('pagehide', flushOnExit)
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      flushOnExit()
+      if (
+        shouldFlushAutosaveOnCleanup({
+          hasDirtyChanges: hasDirtyChangesRef.current,
+          isLoadingScene: isLoadingSceneRef.current,
+        })
+      ) {
+        flushOnExit()
+      }
       unsubscribe()
     }
   }, [setSaveStatus])
