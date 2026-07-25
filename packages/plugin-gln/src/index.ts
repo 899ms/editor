@@ -4,6 +4,7 @@ import { glnBufferTankNodeDefinition } from './buffer-tank-definition'
 import { GLN_PLUGIN_ID } from './constants'
 import { glnOutdoorUnitNodeDefinition } from './outdoor-unit-definition'
 import { glnSystemNodeDefinition } from './system-definition'
+import { glnWallPanelNodeDefinition } from './wall-panel-definition'
 
 type GlnHostPanel = {
   id: string
@@ -21,7 +22,12 @@ type GlnHostPanel = {
 export const glnPlugin: Plugin = {
   id: GLN_PLUGIN_ID,
   apiVersion: 1,
-  nodes: [glnSystemNodeDefinition, glnOutdoorUnitNodeDefinition, glnBufferTankNodeDefinition],
+  nodes: [
+    glnSystemNodeDefinition,
+    glnOutdoorUnitNodeDefinition,
+    glnBufferTankNodeDefinition,
+    glnWallPanelNodeDefinition,
+  ],
 }
 
 export const glnSystemHostPanel: GlnHostPanel = {
@@ -42,7 +48,7 @@ export const glnEquipmentHostPanel: GlnHostPanel = {
   label: '光冷暖设备',
   icon: { kind: 'iconify', name: 'lucide:fan' },
   component: () => import('./equipment-panel'),
-  kinds: ['gln:outdoor-unit', 'gln:buffer-tank'],
+  kinds: ['gln:outdoor-unit', 'gln:buffer-tank', 'gln:wall-panel'],
   pluginId: GLN_PLUGIN_ID,
   description: '放置和编辑光冷暖系统的物理设备。',
   creator: { name: 'GLN' },
@@ -75,3 +81,17 @@ export {
 } from './outdoor-unit-schema'
 export { glnSystemDefinition, glnSystemNodeDefinition } from './system-definition'
 export { GlnSystemMode, GlnSystemNode } from './system-schema'
+export {
+  glnWallPanelDefinition,
+  glnWallPanelNodeDefinition,
+} from './wall-panel-definition'
+export { buildGlnWallPanelFloorplan } from './wall-panel-floorplan'
+export { buildGlnWallPanelGeometry } from './wall-panel-geometry'
+export { buildWallPanelHostPatch, resolveWallPanelTarget } from './wall-panel-installation'
+export { getGlnWallPanelPorts, localGlnWallPanelPorts } from './wall-panel-ports'
+export {
+  GlnWallPanelNode,
+  GlnWallPanelSide,
+  GlnWallPanelZoneAssignment,
+} from './wall-panel-schema'
+export { resolveWallPanelZone } from './wall-panel-zone'

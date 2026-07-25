@@ -157,6 +157,7 @@ function validateRegisteredReferences(
 ) {
   for (const [field, allowedKinds] of Object.entries(definition.relations?.references ?? {})) {
     const targetId = value[field]
+    if (targetId === null || targetId === undefined) continue
     if (typeof targetId !== 'string') {
       return registeredReferenceFailure(
         value,
