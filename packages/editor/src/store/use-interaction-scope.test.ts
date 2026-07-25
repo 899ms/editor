@@ -6,6 +6,7 @@ import {
   handleDragInfo,
   isActive,
   isIdle,
+  moveToolNodeOf,
   scopeNodeId,
   selectionEnabled,
 } from '../lib/interaction/scope'
@@ -112,6 +113,23 @@ describe('use-interaction-scope state machine', () => {
     s.begin({ kind: 'box-select' })
     expect(selectionEnabled(useInteractionScope.getState().scope)).toBe(false)
     expect(isActive(useInteractionScope.getState().scope)).toBe(true)
+  })
+
+  test('kind-owned placement stays observable without mounting the generic move driver', () => {
+    const node = mockNode('gln-outdoor-unit_1', 'gln:outdoor-unit')
+    const scope: ActiveInteractionScope = {
+      kind: 'placing',
+      node,
+      nodeId: node.id,
+      nodeType: node.type,
+      view: '3d',
+      pressDrag: false,
+      driver: 'kind-tool',
+    }
+
+    expect(scopeNodeId(scope)).toBe(node.id)
+    expect(moveToolNodeOf(scope)).toBeNull()
+    expect(moveToolNodeOf({ ...scope, driver: 'move-tool' })).toBe(node)
   })
 
   test('end is idempotent', () => {

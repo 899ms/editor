@@ -325,6 +325,7 @@ export function SliderControl({
               </span>
             )}
             <input
+              aria-label={typeof localizedLabel === 'string' ? localizedLabel : undefined}
               autoFocus
               className="w-14 bg-transparent p-0 text-right font-mono text-foreground outline-none selection:bg-primary/30"
               onBlur={submitValue}

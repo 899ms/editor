@@ -5,6 +5,7 @@ import { Check, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { GLN_PLUGIN_ID } from './constants'
+import { useGlnEquipmentStore } from './equipment-store'
 import { type GlnSystemMode, GlnSystemNode } from './system-schema'
 
 const MODES: Array<{ value: GlnSystemMode; label: string }> = [
@@ -120,6 +121,7 @@ export default function GlnSystemsPanel() {
       })
     }
     scene.createNode(system as unknown as AnyNode)
+    useGlnEquipmentStore.getState().setSystemId(system.id)
   }
 
   return (

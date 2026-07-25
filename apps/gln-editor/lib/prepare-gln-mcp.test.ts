@@ -22,6 +22,7 @@ describe('GLN MCP runtime preparation', () => {
     expect(env.PASCAL_DB_PATH).toBe(databasePath)
     expect(env.PASCAL_DATA_DIR).toBeUndefined()
     expect(nodeRegistry.has('gln:system')).toBe(true)
+    expect(nodeRegistry.has('gln:outdoor-unit')).toBe(true)
     expect(getMandatoryPluginIds()).toContain(GLN_PLUGIN_ID)
   })
 })

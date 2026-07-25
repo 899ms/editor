@@ -1,6 +1,7 @@
 import type { Plugin } from '@pascal-app/core/registry'
 import type { ComponentType } from 'react'
 import { GLN_PLUGIN_ID } from './constants'
+import { glnOutdoorUnitNodeDefinition } from './outdoor-unit-definition'
 import { glnSystemNodeDefinition } from './system-definition'
 
 type GlnHostPanel = {
@@ -19,10 +20,10 @@ type GlnHostPanel = {
 export const glnPlugin: Plugin = {
   id: GLN_PLUGIN_ID,
   apiVersion: 1,
-  nodes: [glnSystemNodeDefinition],
+  nodes: [glnSystemNodeDefinition, glnOutdoorUnitNodeDefinition],
 }
 
-export const glnHostPanel: GlnHostPanel = {
+export const glnSystemHostPanel: GlnHostPanel = {
   id: 'gln:systems',
   label: '光冷暖系统',
   icon: { kind: 'iconify', name: 'lucide:thermometer-sun' },
@@ -35,6 +36,33 @@ export const glnHostPanel: GlnHostPanel = {
   mandatory: true,
 }
 
+export const glnEquipmentHostPanel: GlnHostPanel = {
+  id: 'gln:equipment',
+  label: '光冷暖设备',
+  icon: { kind: 'iconify', name: 'lucide:fan' },
+  component: () => import('./equipment-panel'),
+  kinds: ['gln:outdoor-unit'],
+  pluginId: GLN_PLUGIN_ID,
+  description: '放置和编辑光冷暖系统的物理设备。',
+  creator: { name: 'GLN' },
+  defaultInstalled: true,
+  mandatory: true,
+}
+
+export const glnHostPanels = [glnSystemHostPanel, glnEquipmentHostPanel] as const
+export const glnHostPanel = glnSystemHostPanel
+
 export { GLN_PLUGIN_ID } from './constants'
+export {
+  glnOutdoorUnitDefinition,
+  glnOutdoorUnitNodeDefinition,
+} from './outdoor-unit-definition'
+export { buildGlnOutdoorUnitFloorplan } from './outdoor-unit-floorplan'
+export { buildGlnOutdoorUnitGeometry } from './outdoor-unit-geometry'
+export { getGlnOutdoorUnitPorts } from './outdoor-unit-ports'
+export {
+  GlnOutdoorUnitFinish,
+  GlnOutdoorUnitNode,
+} from './outdoor-unit-schema'
 export { glnSystemDefinition, glnSystemNodeDefinition } from './system-definition'
 export { GlnSystemMode, GlnSystemNode } from './system-schema'

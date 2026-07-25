@@ -34,6 +34,12 @@ export type InteractionScope =
       nodeType: string
       view: InteractionView
       pressDrag: boolean
+      /**
+       * Registry kinds with a dedicated placement component own pointer
+       * handling themselves. The default generic move tool must observe the
+       * scope for overlay policy without mounting a second placement driver.
+       */
+      driver?: 'move-tool' | 'kind-tool'
     }
   // Moving an existing node.
   | { kind: 'moving'; node: AnyNode; nodeId: string; nodeType: string; view: InteractionView }
@@ -91,6 +97,11 @@ export function scopeNodeId(scope: InteractionScope): string | null {
 // it cannot survive past the interaction's `end()`.
 export function movingNodeOf(scope: InteractionScope): AnyNode | null {
   return scope.kind === 'placing' || scope.kind === 'moving' ? scope.node : null
+}
+
+export function moveToolNodeOf(scope: InteractionScope): AnyNode | null {
+  if (scope.kind === 'placing' && scope.driver === 'kind-tool') return null
+  return movingNodeOf(scope)
 }
 
 // Selection/hover picking is only meaningful while idle. During any active

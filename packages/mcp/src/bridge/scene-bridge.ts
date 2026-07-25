@@ -121,7 +121,9 @@ export class SceneBridge {
 
     const validationErrors: ValidationError[] = []
     for (const [nodeId, node] of Object.entries(nodes)) {
-      const result = safeParseRegisteredNode(node)
+      const result = safeParseRegisteredNode(node, {
+        nodes: nodes as Record<string, unknown>,
+      })
       if (result.success) continue
       for (const issue of result.error.issues) {
         validationErrors.push({
@@ -471,7 +473,9 @@ export class SceneBridge {
     const errors: ValidationError[] = []
     const nodes = useScene.getState().nodes
     for (const [id, node] of Object.entries(nodes)) {
-      const res = safeParseRegisteredNode(node)
+      const res = safeParseRegisteredNode(node, {
+        nodes: nodes as Record<string, unknown>,
+      })
       if (res.success) continue
       for (const issue of res.error.issues) {
         errors.push({

@@ -266,6 +266,14 @@ type SelectionEvents = {
   'selection:find-node': AnyNode
 }
 
+type SceneMutationEvents = {
+  /** Explicit user-intent deletion, emitted after the graph mutation lands. */
+  'scene:nodes-deleted': {
+    previousNodeCount: number
+    currentNodeCount: number
+  }
+}
+
 type EditorEvents = GridEvents &
   NodeEvents<'wall', WallEvent> &
   NodeEvents<'fence', FenceEvent> &
@@ -320,6 +328,7 @@ type EditorEvents = GridEvents &
   SnapshotEvents &
   AIChatEvents &
   RoomPresetEvents &
-  SelectionEvents
+  SelectionEvents &
+  SceneMutationEvents
 
 export const emitter = mitt<EditorEvents>()

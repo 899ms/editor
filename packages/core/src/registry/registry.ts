@@ -1,4 +1,4 @@
-import type { ZodObject } from 'zod'
+import { type ZodObject, z } from 'zod'
 import { AnyNode } from '../schema/types'
 import type { AnyNodeDefinition, BakePolicy, NodeRegistry, Plugin } from './types'
 
@@ -98,7 +98,90 @@ export function registerNode(def: AnyNodeDefinition): void {
  * otherwise fall back to the built-in discriminated union. This is the shared
  * untrusted-boundary parser for browser imports, HTTP APIs, and MCP.
  */
-export function safeParseRegisteredNode(value: unknown) {
+export type RegisteredNodeParseContext = {
+  /**
+   * Full graph snapshot used to validate plugin-owned child relationships.
+   * Built-in parent schemas deliberately constrain their child ID prefixes;
+   * registered plugins extend that set when both sides of the relationship
+   * agree and the child passes its registered schema.
+   */
+  nodes?: Readonly<Record<string, unknown>>
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function registeredPluginChildren(
+  parent: Record<string, unknown>,
+  nodes: Readonly<Record<string, unknown>>,
+): Set<string> {
+  const parentId = typeof parent.id === 'string' ? parent.id : null
+  const parentKind = typeof parent.type === 'string' ? parent.type : null
+  const children = Array.isArray(parent.children) ? parent.children : []
+  const accepted = new Set<string>()
+  if (!(parentId && parentKind)) return accepted
+
+  for (const childId of children) {
+    if (typeof childId !== 'string') continue
+    const child = nodes[childId]
+    if (!isRecord(child)) continue
+    if (child.id !== childId || child.parentId !== parentId || typeof child.type !== 'string') {
+      continue
+    }
+    const definition = nodeRegistry.get(child.type)
+    if (!definition?.schema.safeParse(child).success) continue
+    const allowedParents = definition.capabilities.hostable?.parents
+    if (!allowedParents?.some((allowedKind) => allowedKind === '*' || allowedKind === parentKind)) {
+      continue
+    }
+    accepted.add(childId)
+  }
+
+  return accepted
+}
+
+function registeredReferenceFailure(value: unknown, path: string, message: string) {
+  return z
+    .any()
+    .superRefine((_input, ctx) => {
+      ctx.addIssue({ code: 'custom', message, path: [path] })
+    })
+    .safeParse(value)
+}
+
+function validateRegisteredReferences(
+  value: Record<string, unknown>,
+  definition: AnyNodeDefinition,
+  nodes: Readonly<Record<string, unknown>>,
+) {
+  for (const [field, allowedKinds] of Object.entries(definition.relations?.references ?? {})) {
+    const targetId = value[field]
+    if (typeof targetId !== 'string') {
+      return registeredReferenceFailure(
+        value,
+        field,
+        `Expected ${field} to reference ${allowedKinds.join(' or ')}`,
+      )
+    }
+    const target = nodes[targetId]
+    if (
+      !isRecord(target) ||
+      target.id !== targetId ||
+      typeof target.type !== 'string' ||
+      !allowedKinds.includes(target.type)
+    ) {
+      return registeredReferenceFailure(
+        value,
+        field,
+        `Reference ${targetId} must resolve to ${allowedKinds.join(' or ')}`,
+      )
+    }
+  }
+  return null
+}
+
+export function safeParseRegisteredNode(value: unknown, context: RegisteredNodeParseContext = {}) {
   const kind =
     typeof value === 'object' &&
     value !== null &&
@@ -106,8 +189,31 @@ export function safeParseRegisteredNode(value: unknown) {
     typeof (value as { type?: unknown }).type === 'string'
       ? (value as { type: string }).type
       : null
-  const registeredSchema = kind ? nodeRegistry.get(kind)?.schema : undefined
-  return (registeredSchema ?? AnyNode).safeParse(value)
+  const definition = kind ? nodeRegistry.get(kind) : undefined
+  const registeredSchema = definition?.schema
+  const result = (registeredSchema ?? AnyNode).safeParse(value)
+  if (result.success) {
+    if (!(definition && context.nodes && isRecord(result.data))) return result
+    return validateRegisteredReferences(result.data, definition, context.nodes) ?? result
+  }
+  if (registeredSchema || !context.nodes || !isRecord(value)) return result
+
+  const acceptedChildren = registeredPluginChildren(value, context.nodes)
+  if (acceptedChildren.size === 0 || !Array.isArray(value.children)) return result
+
+  const coreChildren = value.children.filter(
+    (childId) => typeof childId !== 'string' || !acceptedChildren.has(childId),
+  )
+  const coreResult = AnyNode.safeParse({ ...value, children: coreChildren })
+  if (!coreResult.success) return result
+
+  return {
+    success: true as const,
+    data: {
+      ...coreResult.data,
+      children: value.children,
+    },
+  }
 }
 
 /** The plugin that registered a node kind, when it came through {@link loadPlugin}. */

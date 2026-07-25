@@ -207,7 +207,7 @@ export function validateBuildJson(input: unknown): ValidateBuildJsonResult {
       const byType = stats.byType as Record<string, number | undefined>
       byType[type] = (byType[type] ?? 0) + 1
 
-      const parseResult = safeParseRegisteredNode(value)
+      const parseResult = safeParseRegisteredNode(value, { nodes })
       if (!parseResult.success) {
         schemaFailureCount += 1
         const issue = parseResult.error.issues[0]

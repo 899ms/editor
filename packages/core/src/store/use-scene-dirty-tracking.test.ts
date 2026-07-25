@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
+import { emitter } from '../events/bus'
 import { nodeRegistry } from '../registry/registry'
 import type { AnyNodeDefinition } from '../registry/types'
 import type { AnyNode, AnyNodeId } from '../schema/types'
@@ -73,5 +74,20 @@ describe('dirty tracking', () => {
     useScene.getState().deleteNodes([TRACKED])
     expect(useScene.getState().nodes[TRACKED]).toBeUndefined()
     expect(useScene.getState().dirtyNodes.has(TRACKED)).toBe(false)
+  })
+
+  test('deleteNodes emits the explicit user-intent node-count transition', () => {
+    const transitions: Array<{ previousNodeCount: number; currentNodeCount: number }> = []
+    const onDeleted = (event: { previousNodeCount: number; currentNodeCount: number }) => {
+      transitions.push(event)
+    }
+    emitter.on('scene:nodes-deleted', onDeleted)
+
+    try {
+      useScene.getState().deleteNodes([TRACKED])
+      expect(transitions).toEqual([{ previousNodeCount: 3, currentNodeCount: 2 }])
+    } finally {
+      emitter.off('scene:nodes-deleted', onDeleted)
+    }
   })
 })
