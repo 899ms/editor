@@ -1,0 +1,60 @@
+import type { SceneGraph } from '@pascal-app/editor'
+import { headers } from 'next/headers'
+import Link from 'next/link'
+import { SceneLoader, type SceneMeta } from '@/components/scene-loader'
+import { getRequestI18n } from '@/lib/server-locale'
+
+export const dynamic = 'force-dynamic'
+
+interface SceneWithGraph extends SceneMeta {
+  graph: SceneGraph
+}
+
+async function resolveBaseUrl(): Promise<string> {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+  const requestHeaders = await headers()
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host')
+  const protocol = requestHeaders.get('x-forwarded-proto') ?? 'http'
+  return host ? `${protocol}://${host}` : 'http://localhost:3003'
+}
+
+async function fetchScene(id: string): Promise<SceneWithGraph | null> {
+  const response = await fetch(`${await resolveBaseUrl()}/api/scenes/${encodeURIComponent(id)}`, {
+    cache: 'no-store',
+  })
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(`Failed to load scene: ${response.status}`)
+  return (await response.json()) as SceneWithGraph
+}
+
+export default async function ScenePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const [scene, { i18n }] = await Promise.all([fetchScene(id), getRequestI18n()])
+
+  if (!scene) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-md rounded-2xl border border-border/60 bg-background p-6 text-center shadow-xl">
+          <p className="font-mono text-muted-foreground text-xs uppercase tracking-wide">404</p>
+          <h1 className="mt-2 font-semibold text-lg">{i18n.t('editor:scenes.notFound')}</h1>
+          <p className="mt-2 text-muted-foreground text-sm">
+            {i18n.t('editor:scenes.notFoundDescription', { id })}
+          </p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Link
+              className="rounded-md border border-border bg-accent px-3 py-2 font-medium text-sm hover:bg-accent/80"
+              href="/scenes"
+            >
+              {i18n.t('editor:navigation.browseScenes')}
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const { graph, ...meta } = scene
+  return <SceneLoader initialScene={graph} meta={meta} />
+}
