@@ -3,15 +3,30 @@ import {
   type AnyNode,
   type AnyNodeId,
   DoorNode,
+  LevelNode,
+  nodeRegistry,
+  registerNode,
+  useScene,
   WallNode,
   WindowNode,
   ZoneNode,
 } from '@pascal-app/core'
+import { glnWallPanelNodeDefinition } from './wall-panel-definition'
+import { resolveWallPanelPlanTarget } from './wall-panel-floorplan-move'
 import { buildWallPanelHostPatch, resolveWallPanelTarget } from './wall-panel-installation'
+import { glnWallPanelParametrics } from './wall-panel-parametrics'
 import { getGlnWallPanelPorts, localGlnWallPanelPorts } from './wall-panel-ports'
 import { GlnWallPanelNode } from './wall-panel-schema'
 import { resolveWallPanelZone } from './wall-panel-zone'
 import { preservesManualWallPanelZone } from './wall-panel-zone-system'
+;(
+  globalThis as typeof globalThis & {
+    requestAnimationFrame?: (callback: FrameRequestCallback) => number
+  }
+).requestAnimationFrame ??= (callback) => {
+  callback(0)
+  return 0
+}
 
 const wall = WallNode.parse({
   id: 'wall_test',
@@ -116,6 +131,96 @@ describe('GLN wall-panel installation', () => {
       }),
     ).toMatchObject({ valid: false, reason: 'too-small' })
   })
+
+  test('allows panels on opposite faces but rejects a second panel on the same face', () => {
+    const front = panel({
+      id: 'gln-wall-panel_front',
+      position: [2, 1.25, 0.16],
+      side: 'front',
+    })
+    const nodes = {
+      [wall.id]: { ...wall, children: [front.id] },
+      [front.id]: front,
+    } as unknown as Record<AnyNodeId, AnyNode>
+
+    expect(
+      resolveWallPanelTarget({
+        wall: nodes[wall.id] as typeof wall,
+        nodes,
+        localX: 2,
+        side: 'back',
+        width: 0.9,
+        height: 2.5,
+        depth: 0.12,
+      }),
+    ).toMatchObject({ valid: true, reason: 'ok' })
+    expect(
+      resolveWallPanelTarget({
+        wall: nodes[wall.id] as typeof wall,
+        nodes,
+        localX: 2,
+        side: 'front',
+        width: 0.9,
+        height: 2.5,
+        depth: 0.12,
+      }),
+    ).toMatchObject({ valid: false, reason: 'opening-overlap' })
+  })
+
+  test('rejects an edited size that would overlap an opening and keeps the wall host canonical', () => {
+    const door = DoorNode.parse({
+      id: 'door_for_edit',
+      parentId: wall.id,
+      wallId: wall.id,
+      position: [2, 1, 0],
+      width: 0.9,
+      height: 2,
+    })
+    const existing = panel({ id: 'gln-wall-panel_edit', position: [0.65, 1.25, 0.16] })
+    const nodes = {
+      [wall.id]: { ...wall, children: [door.id, existing.id] },
+      [door.id]: door,
+      [existing.id]: existing,
+    } as unknown as Record<AnyNodeId, AnyNode>
+    const next = { ...existing, width: 3 }
+
+    expect(glnWallPanelParametrics.normalize?.(existing, next, { width: 3 }, nodes)).toMatchObject({
+      width: existing.width,
+      wallId: wall.id,
+      parentId: wall.id,
+    })
+  })
+
+  test('enforces the same size guard for direct scene-store edits', () => {
+    const door = DoorNode.parse({
+      id: 'door_for_store_edit',
+      parentId: wall.id,
+      wallId: wall.id,
+      position: [2, 1, 0],
+      width: 0.9,
+      height: 2,
+    })
+    const existing = panel({ id: 'gln-wall-panel_store-edit', position: [0.65, 1.25, 0.16] })
+    if (!nodeRegistry.has(glnWallPanelNodeDefinition.kind)) {
+      registerNode(glnWallPanelNodeDefinition)
+    }
+    useScene.setState({
+      nodes: {
+        [wall.id]: { ...wall, children: [door.id, existing.id] },
+        [door.id]: door,
+        [existing.id]: existing,
+      } as unknown as Record<AnyNodeId, AnyNode>,
+      rootNodeIds: [wall.id],
+      dirtyNodes: new Set(),
+      collections: {},
+      readOnly: false,
+    } as never)
+
+    useScene.getState().updateNode(existing.id, { width: 3 } as Partial<AnyNode>)
+    const updated = useScene.getState().nodes[existing.id] as GlnWallPanelNode
+    expect(updated.width).toBe(existing.width)
+    expect(updated.parentId).toBe(wall.id)
+  })
 })
 
 describe('GLN wall-panel local ports', () => {
@@ -128,11 +233,15 @@ describe('GLN wall-panel local ports', () => {
     })
 
     expect(localGlnWallPanelPorts(front).map(({ id, localX }) => [id, localX])).toEqual([
-      ['supply', 0.45],
-      ['return', -0.45],
+      ['supply', -0.37],
+      ['return', 0.37],
     ])
-    expect(getGlnWallPanelPorts(front, wall).map((port) => port.position[0])).toEqual([2.45, 1.55])
-    expect(getGlnWallPanelPorts(back, wall).map((port) => port.position[0])).toEqual([1.55, 2.45])
+    expect(getGlnWallPanelPorts(front, wall).map((port) => port.position[0])).toEqual([1.63, 2.37])
+    expect(getGlnWallPanelPorts(back, wall).map((port) => port.position[0])).toEqual([2.37, 1.63])
+    expect(getGlnWallPanelPorts(front, wall).map((port) => port.system)).toEqual([
+      'gln:load-supply',
+      'gln:load-return',
+    ])
   })
 })
 
@@ -197,21 +306,24 @@ describe('GLN wall-panel zone ownership', () => {
         [3, 4],
       ],
     })
+    const level = LevelNode.parse({
+      id: 'level_test',
+      children: [wall.id, nextWall.id, nextZone.id],
+    })
     const nodes = {
+      [level.id]: level,
+      [wall.id]: wall,
       [nextWall.id]: nextWall,
       [nextZone.id]: nextZone,
     } as unknown as Record<AnyNodeId, AnyNode>
-    const target = resolveWallPanelTarget({
-      wall: nextWall,
+    const target = resolveWallPanelPlanTarget({
+      node: panel(),
       nodes,
-      localX: 2,
-      side: 'front',
-      width: 0.9,
-      height: 2.5,
-      depth: 0.12,
+      planPoint: [5.8, 2],
     })
 
-    expect(target.valid).toBe(true)
+    expect(target?.valid).toBe(true)
+    if (!target) throw new Error('Expected a wall-panel plan target')
     const patch = buildWallPanelHostPatch(target, nodes)
     expect(patch).toMatchObject({
       parentId: nextWall.id,
@@ -224,7 +336,7 @@ describe('GLN wall-panel zone ownership', () => {
 
     const ports = getGlnWallPanelPorts(panel(patch), nextWall)
     expect(ports.map((port) => port.id)).toEqual(['supply', 'return'])
-    expect(ports[0]?.position[2]).toBeGreaterThan(ports[1]?.position[2] ?? Number.POSITIVE_INFINITY)
+    expect(ports[0]?.position[2]).toBeLessThan(ports[1]?.position[2] ?? Number.NEGATIVE_INFINITY)
   })
 
   test('returns every candidate instead of silently choosing an ambiguous zone', () => {

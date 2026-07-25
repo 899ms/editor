@@ -1,7 +1,50 @@
-import type { ParametricDescriptor } from '@pascal-app/core'
+import type { AnyNode, AnyNodeId, ParametricDescriptor, WallNode } from '@pascal-app/core'
+import { resolveWallPanelTarget } from './wall-panel-installation'
 import type { GlnWallPanelNode } from './wall-panel-schema'
 
+const HOST_CONSTRAINED_FIELDS = ['width', 'height', 'depth', 'position', 'side', 'wallId'] as const
+
+function normalizeWallPanelEdit(
+  prev: GlnWallPanelNode,
+  next: GlnWallPanelNode,
+  patch: Partial<GlnWallPanelNode>,
+  nodes: Readonly<Record<AnyNodeId, AnyNode>>,
+): Partial<GlnWallPanelNode> | undefined {
+  if (!HOST_CONSTRAINED_FIELDS.some((field) => field in patch) && patch.parentId === undefined) {
+    return undefined
+  }
+  const wall = nodes[next.wallId as AnyNodeId] as WallNode | undefined
+  if (wall?.type !== 'wall') return undefined
+  const target = resolveWallPanelTarget({
+    wall,
+    nodes,
+    localX: next.position[0],
+    side: next.side,
+    width: next.width,
+    height: next.height,
+    depth: next.depth,
+    ignoreId: next.id,
+  })
+
+  if (target.valid) {
+    return {
+      parentId: wall.id,
+      wallId: wall.id,
+      position: target.position,
+      rotation: target.rotation,
+      side: target.side,
+    }
+  }
+
+  const rollback: Partial<GlnWallPanelNode> = { parentId: prev.wallId, wallId: prev.wallId }
+  for (const field of ['width', 'height', 'depth', 'position', 'side', 'wallId'] as const) {
+    if (field in patch) rollback[field] = prev[field] as never
+  }
+  return rollback
+}
+
 export const glnWallPanelParametrics: ParametricDescriptor<GlnWallPanelNode> = {
+  normalize: normalizeWallPanelEdit,
   groups: [
     {
       label: '尺寸',

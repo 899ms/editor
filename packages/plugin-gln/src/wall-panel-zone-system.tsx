@@ -47,9 +47,11 @@ export default function WallPanelZoneSystem() {
         panel.wallStart[1] === wall.start[1] &&
         panel.wallEnd[0] === wall.end[0] &&
         panel.wallEnd[1] === wall.end[1]
+      const hostMismatch = panel.parentId !== wall.id
       if (
         (preserveManual || (panel.zoneId === resolution.zoneId && sameCandidates)) &&
-        sameWallFrame
+        sameWallFrame &&
+        !hostMismatch
       ) {
         continue
       }
@@ -57,10 +59,12 @@ export default function WallPanelZoneSystem() {
         id: panel.id as AnyNodeId,
         data: preserveManual
           ? {
+              parentId: wall.id,
               wallStart: wall.start,
               wallEnd: wall.end,
             }
           : {
+              parentId: wall.id,
               zoneId: resolution.zoneId,
               zoneCandidateIds: resolution.candidateIds,
               zoneAssignment: 'auto',

@@ -86,6 +86,10 @@ export {
   glnWallPanelNodeDefinition,
 } from './wall-panel-definition'
 export { buildGlnWallPanelFloorplan } from './wall-panel-floorplan'
+export {
+  resolveWallPanelPlanTarget,
+  wallPanelFloorplanMoveTarget,
+} from './wall-panel-floorplan-move'
 export { buildGlnWallPanelGeometry } from './wall-panel-geometry'
 export { buildWallPanelHostPatch, resolveWallPanelTarget } from './wall-panel-installation'
 export { getGlnWallPanelPorts, localGlnWallPanelPorts } from './wall-panel-ports'

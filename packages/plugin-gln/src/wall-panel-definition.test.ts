@@ -29,6 +29,7 @@ const panel = GlnWallPanelNode.parse({
 describe('GLN wall-panel node definition', () => {
   test('is a normal editable wall-hosted terminal', () => {
     expect(glnWallPanelDefinition.kind).toBe('gln:wall-panel')
+    expect(glnWallPanelDefinition.floorplanTool).toBeTypeOf('function')
     expect(glnWallPanelDefinition.capabilities).toMatchObject({
       hostable: { parents: ['wall'], align: 'center' },
       selectable: { hitVolume: 'bbox' },
@@ -37,6 +38,7 @@ describe('GLN wall-panel node definition', () => {
     })
     expect(glnWallPanelDefinition.distributionRole).toBe('terminal')
     expect(glnWallPanelDefinition.affordanceTools?.move).toBeFunction()
+    expect(glnWallPanelDefinition.floorplanMoveTarget).toBeFunction()
     expect(glnWallPanelDefinition.relations).toEqual({
       references: {
         systemId: ['gln:system'],
@@ -80,8 +82,8 @@ describe('GLN wall-panel node definition', () => {
   test('resolves persisted ports without importing a live scene store', () => {
     const ports = glnWallPanelDefinition.ports?.(panel)
     expect(ports?.map((port) => port.id)).toEqual(['supply', 'return'])
-    expect(ports?.[0]?.position[0]).toBeGreaterThan(
-      ports?.[1]?.position[0] ?? Number.POSITIVE_INFINITY,
+    expect(ports?.[0]?.position[0]).toBeLessThan(
+      ports?.[1]?.position[0] ?? Number.NEGATIVE_INFINITY,
     )
   })
 

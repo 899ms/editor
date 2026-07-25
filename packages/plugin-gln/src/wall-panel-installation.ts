@@ -49,7 +49,7 @@ export function buildWallPanelHostPatch(
   }
 }
 
-function childFaceRect(node: AnyNode) {
+function childFaceRect(node: AnyNode, side: GlnWallPanelSide) {
   if (node.type === 'door' || node.type === 'window') {
     const child = node as AnyNode & {
       position: [number, number, number]
@@ -65,6 +65,7 @@ function childFaceRect(node: AnyNode) {
   }
   if ((node as { type: string }).type === 'gln:wall-panel') {
     const child = node as unknown as GlnWallPanelNode
+    if (child.side !== side) return null
     return {
       left: child.position[0] - child.width / 2,
       right: child.position[0] + child.width / 2,
@@ -120,7 +121,7 @@ export function resolveWallPanelTarget(args: {
     if (childId === ignoreId) return false
     const child = nodes[childId as AnyNodeId]
     if (!child) return false
-    const rect = childFaceRect(child)
+    const rect = childFaceRect(child, side)
     return (
       rect !== null &&
       candidate.left < rect.right &&

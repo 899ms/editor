@@ -1,4 +1,4 @@
-import { type APIRequestContext, expect, test } from '@playwright/test'
+import { type APIRequestContext, expect, type Page, test } from '@playwright/test'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 
@@ -13,6 +13,19 @@ type StoredScene = {
 
 async function fetchScene(request: APIRequestContext, sceneId: string) {
   return (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as StoredScene
+}
+
+async function planPointToClient(page: Page, point: [number, number]) {
+  return page.locator('[data-floorplan-scene]').evaluate((scene, [x, y]) => {
+    const svg = (scene as SVGGElement).ownerSVGElement
+    const matrix = (scene as SVGGElement).getScreenCTM()
+    if (!(svg && matrix)) throw new Error('Floor-plan transform is unavailable')
+    const svgPoint = svg.createSVGPoint()
+    svgPoint.x = x
+    svgPoint.y = y
+    const clientPoint = svgPoint.matrixTransform(matrix)
+    return { x: clientPoint.x, y: clientPoint.y }
+  }, point)
 }
 
 test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone ownership', async ({
@@ -185,6 +198,14 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
   await widthInput.fill('1.00')
   await widthInput.press('Enter')
 
+  await page.getByText('2.50', { exact: true }).click()
+  const heightInput = page.getByRole('textbox', { name: '面板高度' })
+  await heightInput.fill('4.00')
+  await heightInput.press('Enter')
+  await expect
+    .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[panel.id])
+    .toMatchObject({ height: 2.5 })
+
   await page.getByRole('button', { name: '光冷暖设备' }).click()
   await expect(page.getByText('请选择面板所属空间')).toBeVisible()
   await page.getByRole('button', { name: '卧室 A' }).click()
@@ -208,6 +229,21 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
       zoneId: backZone.id,
     })
 
+  await page.getByRole('button', { name: '移动', exact: true }).first().click()
+  const rehostPoint = await planPointToClient(page, [5.8, 2])
+  await page.mouse.move(rehostPoint.x - 80, rehostPoint.y)
+  await page.mouse.move(rehostPoint.x, rehostPoint.y, { steps: 6 })
+  await page.mouse.click(rehostPoint.x, rehostPoint.y)
+  await expect
+    .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[panel.id])
+    .toMatchObject({
+      parentId: wallB.id,
+      side: 'front',
+      wallId: wallB.id,
+      zoneAssignment: 'auto',
+      zoneId: rehostZone.id,
+    })
+
   await page.locator('button[aria-label="删除"]').click()
   await expect
     .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[panel.id])
@@ -215,7 +251,7 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
   await page.keyboard.press('Control+z')
   await expect
     .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[panel.id])
-    .toMatchObject({ width: 1, wallId: wallA.id, zoneId: backZone.id })
+    .toMatchObject({ width: 1, wallId: wallB.id, zoneId: rehostZone.id })
 
   await page.reload()
   await page.getByRole('button', { name: '2D' }).click()
@@ -223,9 +259,35 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
     page.locator(`.floorplan-registry-entry[data-node-id="${panel.id}"]`).first(),
   ).toBeVisible()
   expect((await fetchScene(request, sceneId)).graph.nodes[panel.id]).toMatchObject({
-    parentId: wallA.id,
-    wallId: wallA.id,
+    parentId: wallB.id,
+    wallId: wallB.id,
     width: 1,
-    zoneId: backZone.id,
+    zoneId: rehostZone.id,
   })
+
+  await page.getByRole('button', { name: '光冷暖设备' }).click()
+  const placePanelButton = page.getByRole('button', {
+    name: '放置室内面板 贴墙安装，顶部局部左供右回',
+  })
+  await placePanelButton.click()
+  await expect(placePanelButton).toHaveAttribute('aria-busy', 'false')
+  const placementPoint = await planPointToClient(page, [2, 0.2])
+  await page.mouse.move(placementPoint.x - 80, placementPoint.y)
+  await page.mouse.move(placementPoint.x, placementPoint.y, { steps: 6 })
+  await page.mouse.click(placementPoint.x, placementPoint.y)
+  await expect
+    .poll(async () =>
+      Object.values((await fetchScene(request, sceneId)).graph.nodes).filter(
+        (node) => node.type === 'gln:wall-panel',
+      ),
+    )
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          height: 2.5,
+          wallId: wallA.id,
+          width: 0.9,
+        }),
+      ]),
+    )
 })

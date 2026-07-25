@@ -1,5 +1,6 @@
 import type { AnyNodeDefinition, NodeDefinition } from '@pascal-app/core/registry'
 import { buildGlnWallPanelFloorplan } from './wall-panel-floorplan'
+import { wallPanelFloorplanMoveTarget } from './wall-panel-floorplan-move'
 import { buildGlnWallPanelGeometry } from './wall-panel-geometry'
 import { glnWallPanelParametrics } from './wall-panel-parametrics'
 import { getGlnWallPanelPorts } from './wall-panel-ports'
@@ -61,9 +62,11 @@ export const glnWallPanelDefinition: GlnWallPanelDefinition = {
     ]),
   ports: getGlnWallPanelPorts,
   floorplan: buildGlnWallPanelFloorplan,
+  floorplanMoveTarget: wallPanelFloorplanMoveTarget,
   quickActions: wallPanelQuickActions,
   system: { module: () => import('./wall-panel-zone-system') },
   tool: () => import('./wall-panel-tool'),
+  floorplanTool: () => import('./wall-panel-floorplan-tool'),
   affordanceTools: { move: () => import('./wall-panel-move-tool') },
   toolHints: [
     { key: 'Mouse', label: '在有效墙面放置' },

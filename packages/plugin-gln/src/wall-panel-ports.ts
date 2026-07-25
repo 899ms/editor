@@ -6,13 +6,14 @@ export function localGlnWallPanelPorts(node: GlnWallPanelNode) {
   return [
     {
       id: 'supply',
-      localX: node.width / 2,
-      system: 'gln:supply-water' as const,
+      // Observed from the occupied side of the wall, supply is on the left.
+      localX: -node.width / 2 + 0.08,
+      system: 'gln:load-supply' as const,
     },
     {
       id: 'return',
-      localX: -node.width / 2,
-      system: 'gln:return-water' as const,
+      localX: node.width / 2 - 0.08,
+      system: 'gln:load-return' as const,
     },
   ]
 }
@@ -27,9 +28,13 @@ export function getGlnWallPanelPorts(node: GlnWallPanelNode, wall?: WallNode): N
   const dir = new Vector3(dx / length, 0, dz / length)
   const normal = new Vector3(-dir.z, 0, dir.x).multiplyScalar(node.side === 'front' ? 1 : -1)
   const center = new Vector3(
-    wallStart[0] + dir.x * node.position[0] + normal.x * Math.abs(node.position[2]),
+    wallStart[0] +
+      dir.x * node.position[0] +
+      normal.x * (Math.abs(node.position[2]) + node.depth / 2 + 0.04),
     node.position[1],
-    wallStart[1] + dir.z * node.position[0] + normal.z * Math.abs(node.position[2]),
+    wallStart[1] +
+      dir.z * node.position[0] +
+      normal.z * (Math.abs(node.position[2]) + node.depth / 2 + 0.04),
   )
   const localLeft = dir.clone().multiplyScalar(node.side === 'front' ? 1 : -1)
 

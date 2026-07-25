@@ -61,9 +61,12 @@ import { getSceneTheme, useViewer } from '@pascal-app/viewer'
 import { Command, Ruler } from 'lucide-react'
 import {
   type ComponentProps,
+  type ComponentType,
+  lazy,
   memo,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -148,6 +151,7 @@ import {
   polygonsIntersect as marqueePolygonsIntersect,
   segmentIntersectsPolygon as marqueeSegmentIntersectsPolygon,
 } from '../tools/select/marquee-geometry'
+
 import {
   createScreenRectangleSelectionElement,
   hideScreenRectangleSelectionElement,
@@ -194,6 +198,27 @@ import { resolveFloorplanBackgroundSelection } from './floorplan-background-sele
 import { useFloorplanBackgroundPlacement } from './use-floorplan-background-placement'
 import { useFloorplanHitTesting } from './use-floorplan-hit-testing'
 import { useFloorplanSceneData } from './use-floorplan-scene-data'
+
+type FloorplanToolContribution = {
+  floorplanTool?: () => Promise<{ default: ComponentType }>
+}
+
+const lazyFloorplanToolCache = new WeakMap<
+  NonNullable<FloorplanToolContribution['floorplanTool']>,
+  ComponentType
+>()
+
+function getRegistryFloorplanTool(tool: string | null): ComponentType | null {
+  if (!tool) return null
+  const contribution = nodeRegistry.get(tool) as FloorplanToolContribution | undefined
+  const floorplanTool = contribution?.floorplanTool
+  if (!floorplanTool) return null
+  const cached = lazyFloorplanToolCache.get(floorplanTool)
+  if (cached) return cached
+  const component = lazy(floorplanTool)
+  lazyFloorplanToolCache.set(floorplanTool, component)
+  return component
+}
 
 const FALLBACK_VIEW_SIZE = 12
 const FLOORPLAN_PADDING = 2
@@ -5289,6 +5314,12 @@ export function FloorplanPanel({
   const setStructureLayer = useEditor((state) => state.setStructureLayer)
   const setTool = useEditor((state) => state.setTool)
   const tool = useEditor((state) => state.tool)
+  const viewMode = useEditor((state) => state.viewMode)
+  const RegistryFloorplanTool = useMemo(
+    () => (mode === 'build' && viewMode === '2d' ? getRegistryFloorplanTool(tool) : null),
+    [mode, tool, viewMode],
+  )
+  const isRegistryFloorplanToolBuildActive = RegistryFloorplanTool !== null
   const deleteNode = useScene((state) => state.deleteNode)
   const updateNode = useScene((state) => state.updateNode)
   const {
@@ -8953,6 +8984,26 @@ export function FloorplanPanel({
     },
     [buildingPosition, buildingRotationY, floorplanGridLocalY, floorplanGridWorldY],
   )
+  const handleRegistryFloorplanToolCommitCapture = useCallback(
+    (event: ReactPointerEvent<SVGSVGElement>) => {
+      if (!isRegistryFloorplanToolBuildActive) return
+      if (event.button !== 0 || isPanning || isRotatingFloorplan) return
+      const planPoint = getPlanPointFromClientPoint(event.clientX, event.clientY)
+      if (!planPoint) return
+      event.preventDefault()
+      event.stopPropagation()
+      emitFloorplanGridEvent('click', getSnappedFloorplanPoint(planPoint), event)
+      setCursorPoint(getSnappedFloorplanPoint(planPoint))
+    },
+    [
+      emitFloorplanGridEvent,
+      getPlanPointFromClientPoint,
+      isRegistryFloorplanToolBuildActive,
+      isPanning,
+      isRotatingFloorplan,
+      setCursorPoint,
+    ],
+  )
 
   // Build a synthetic `CeilingEvent` from a 2D plan point so the placement
   // coordinator's existing ceiling handlers (which expect the same payload
@@ -11062,6 +11113,11 @@ export function FloorplanPanel({
       }}
       ref={containerRef}
     >
+      {RegistryFloorplanTool && (
+        <Suspense fallback={null}>
+          <RegistryFloorplanTool />
+        </Suspense>
+      )}
       <FloorplanSiteKeyHandler onRestoreGroundLevel={restoreGroundLevelStructureSelection} />
       <div className="relative min-h-0 flex-1" ref={viewportHostRef}>
         <FloorplanCursorIndicator
@@ -11262,6 +11318,9 @@ export function FloorplanPanel({
             onPointerLeave={handleSvgPointerLeave}
             onPointerMove={handleSvgPointerMove}
             onPointerUp={endFloorplanNavigation}
+            onPointerUpCapture={
+              isMarqueeSelectionToolActive ? undefined : handleRegistryFloorplanToolCommitCapture
+            }
             ref={svgRef}
             style={{
               cursor:

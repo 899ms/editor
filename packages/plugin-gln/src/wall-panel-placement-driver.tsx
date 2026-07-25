@@ -3,10 +3,14 @@
 import {
   type AnyNode,
   type AnyNodeId,
+  collectLevelWallSegments,
   emitter,
+  type GridEvent,
+  nearestWallSegment,
   sceneRegistry,
   useLiveNodeOverrides,
   useScene,
+  WALL_SNAP_DISTANCE_M,
   type WallEvent,
 } from '@pascal-app/core'
 import {
@@ -17,6 +21,7 @@ import {
   triggerSFX,
   useEditor,
   useInteractionScope,
+  usePlacementPreview,
   useViewer,
 } from '@pascal-app/editor'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -67,6 +72,7 @@ export default function GlnWallPanelPlacementDriver({
   const setReadyKind = useGlnEquipmentStore((state) => state.setReadyKind)
   const groupRef = useRef<Group>(null)
   const lastEventRef = useRef<WallEvent | null>(null)
+  const lastGridEventRef = useRef<GridEvent | null>(null)
   const sideFlippedRef = useRef(false)
   const [pose, setPose] = useState<PreviewPose | null>(null)
 
@@ -122,6 +128,28 @@ export default function GlnWallPanelPlacementDriver({
       })
     }
 
+    const resolvePlanTarget = (event: GridEvent) => {
+      const nodes = useScene.getState().nodes
+      const closest = nearestWallSegment(
+        collectLevelWallSegments(nodes, levelId as AnyNodeId),
+        event.localPosition[0],
+        event.localPosition[2],
+        WALL_SNAP_DISTANCE_M,
+      )
+      if (!closest) return null
+      const hitSide: GlnWallPanelSide = closest.perp >= 0 ? 'front' : 'back'
+      const side = sideFlippedRef.current ? oppositeSide(hitSide) : hitSide
+      return resolveWallPanelTarget({
+        wall: closest.segment.wall,
+        nodes,
+        localX: closest.along,
+        side,
+        width: panel.width,
+        height: panel.height,
+        depth: panel.depth,
+      })
+    }
+
     const showTarget = (event: WallEvent) => {
       lastEventRef.current = event
       const target = resolveTarget(event)
@@ -144,11 +172,24 @@ export default function GlnWallPanelPlacementDriver({
       return target
     }
 
-    const commitTarget = (event: WallEvent) => {
-      if (useViewer.getState().cameraDragging) return
-      const target = showTarget(event)
-      if (!target?.valid) return
+    const showPlanTarget = (event: GridEvent) => {
+      lastGridEventRef.current = event
+      setPose(null)
+      const target = resolvePlanTarget(event)
+      if (!target) {
+        usePlacementPreview.getState().clear()
+        return null
+      }
+      const preview = GlnWallPanelNode.parse({
+        ...panel,
+        ...buildWallPanelHostPatch(target, useScene.getState().nodes),
+        visible: true,
+      })
+      usePlacementPreview.getState().set(preview as unknown as AnyNode, target.wall)
+      return target
+    }
 
+    const commitResolvedTarget = (target: WallPanelTarget, stopPropagation: () => void) => {
       const data = buildWallPanelHostPatch(target, useScene.getState().nodes)
 
       if (movingNode) {
@@ -167,7 +208,21 @@ export default function GlnWallPanelPlacementDriver({
         useEditor.getState().setTool(null)
       }
       triggerSFX('sfx:item-place')
-      event.stopPropagation()
+      usePlacementPreview.getState().clear()
+      stopPropagation()
+    }
+
+    const commitTarget = (event: WallEvent) => {
+      if (useViewer.getState().cameraDragging) return
+      const target = showTarget(event)
+      if (!target?.valid) return
+      commitResolvedTarget(target, event.stopPropagation)
+    }
+
+    const commitPlanTarget = (event: GridEvent) => {
+      const target = showPlanTarget(event)
+      if (!target?.valid) return
+      commitResolvedTarget(target, () => event.nativeEvent.stopPropagation())
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -184,17 +239,28 @@ export default function GlnWallPanelPlacementDriver({
       sideFlippedRef.current = !sideFlippedRef.current
       const last = lastEventRef.current
       if (last) showTarget(last)
+      const lastGrid = lastGridEventRef.current
+      if (lastGrid) showPlanTarget(lastGrid)
       triggerSFX('sfx:item-rotate')
     }
 
     emitter.on('wall:move', showTarget)
     emitter.on('wall:click', commitTarget)
+    if (!movingNode) {
+      emitter.on('grid:move', showPlanTarget)
+      emitter.on('grid:click', commitPlanTarget)
+    }
     window.addEventListener('keydown', onKeyDown, true)
     return () => {
       emitter.off('wall:move', showTarget)
       emitter.off('wall:click', commitTarget)
+      if (!movingNode) {
+        emitter.off('grid:move', showPlanTarget)
+        emitter.off('grid:click', commitPlanTarget)
+      }
       window.removeEventListener('keydown', onKeyDown, true)
       useLiveNodeOverrides.getState().clear(panel.id as AnyNodeId)
+      usePlacementPreview.getState().clear()
       useInteractionScope
         .getState()
         .endIf((scope) => scope.kind === 'placing' && scope.nodeId === panel.id)
@@ -219,14 +285,14 @@ export default function GlnWallPanelPlacementDriver({
         <meshStandardMaterial color={color} opacity={0.55} transparent />
       </mesh>
       <mesh
-        position={[panel.width / 2 - 0.08, panel.height / 2, panel.depth / 2 + 0.04]}
+        position={[-panel.width / 2 + 0.08, panel.height / 2, panel.depth / 2 + 0.04]}
         rotation={[Math.PI / 2, 0, 0]}
       >
         <cylinderGeometry args={[0.035, 0.035, 0.1, 16]} />
         <meshStandardMaterial color="#15939d" />
       </mesh>
       <mesh
-        position={[-panel.width / 2 + 0.08, panel.height / 2, panel.depth / 2 + 0.04]}
+        position={[panel.width / 2 - 0.08, panel.height / 2, panel.depth / 2 + 0.04]}
         rotation={[Math.PI / 2, 0, 0]}
       >
         <cylinderGeometry args={[0.035, 0.035, 0.1, 16]} />

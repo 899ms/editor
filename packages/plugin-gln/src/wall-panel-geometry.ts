@@ -14,8 +14,8 @@ export function buildGlnWallPanelGeometry(node: GlnWallPanelNode, _ctx?: Geometr
   const connectorGeometry = new CylinderGeometry(0.035, 0.035, 0.1, 16)
   connectorGeometry.rotateX(Math.PI / 2)
   for (const [x, color] of [
-    [node.width / 2 - 0.08, '#15939d'],
-    [-node.width / 2 + 0.08, '#ef6b50'],
+    [-node.width / 2 + 0.08, '#15939d'],
+    [node.width / 2 - 0.08, '#ef6b50'],
   ] as const) {
     const connector = new Mesh(
       connectorGeometry.clone(),
