@@ -31,6 +31,16 @@
       "import": "./dist/store/use-scene.js",
       "default": "./dist/store/use-scene.js"
     },
+    "./live-node-overrides": {
+      "types": "./dist/store/use-live-node-overrides.d.ts",
+      "import": "./dist/store/use-live-node-overrides.js",
+      "default": "./dist/store/use-live-node-overrides.js"
+    },
+    "./wall-distance": {
+      "types": "./dist/lib/wall-distance.d.ts",
+      "import": "./dist/lib/wall-distance.js",
+      "default": "./dist/lib/wall-distance.js"
+    },
     "./material-library": {
       "types": "./dist/material-library.d.ts",
       "import": "./dist/material-library.js",

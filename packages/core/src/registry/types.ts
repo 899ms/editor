@@ -2057,6 +2057,17 @@ export type ParametricDescriptor<N> = {
   groups: ParamGroup<N>[]
   invariants?: ReadonlyArray<(n: N) => Issue[]>
   /**
+   * Final, scene-aware guard for edits to this node. Runs in the shared
+   * mutation path as well as the inspector, so imports, MCP actions and UI
+   * edits all preserve host-dependent constraints.
+   */
+  normalize?: (
+    prev: N,
+    next: N,
+    patch: Partial<N>,
+    nodes: Readonly<Record<AnyNodeId, AnyNode>>,
+  ) => Partial<N> | undefined
+  /**
    * Co-update hook for fields that must stay consistent when edited
    * from the inspector. Called with the node AFTER `patch` is merged
    * plus the patch itself (so the hook can tell which field the user

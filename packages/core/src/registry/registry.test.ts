@@ -463,6 +463,30 @@ describe('safeParseRegisteredNode', () => {
     ).toBe(false)
   })
 
+  test('allows an empty registered reference when the node schema explicitly allows null', () => {
+    registerNode(
+      makeDefinition('test:optional-reference', {
+        relations: { references: { zoneId: ['zone'] } },
+        schema: z.object({
+          id: z.string(),
+          type: z.literal('test:optional-reference'),
+          zoneId: z.string().nullable(),
+        }) as any,
+      }),
+    )
+    const node = {
+      id: 'test_optional_reference',
+      type: 'test:optional-reference',
+      zoneId: null,
+    }
+
+    expect(
+      safeParseRegisteredNode(node, {
+        nodes: { [node.id]: node },
+      }).success,
+    ).toBe(true)
+  })
+
   test('rejects an unknown child reference even when graph context is provided', () => {
     const nodes = {
       level_1: {

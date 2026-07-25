@@ -6,7 +6,7 @@ type LocalHydronicPort = {
   id: 'supply' | 'return'
   position: Vector3
   direction: Vector3
-  system: 'gln:supply' | 'gln:return'
+  system: 'gln:source-supply' | 'gln:source-return'
 }
 
 const UP = new Vector3(0, 1, 0)
@@ -22,13 +22,13 @@ export function localGlnOutdoorUnitPorts(node: GlnOutdoorUnitNode): LocalHydroni
       id: 'supply',
       position: new Vector3(node.width / 2, node.height * 0.58, node.depth * 0.18),
       direction: new Vector3(1, 0, 0),
-      system: 'gln:supply',
+      system: 'gln:source-supply',
     },
     {
       id: 'return',
       position: new Vector3(node.width / 2, node.height * 0.32, -node.depth * 0.18),
       direction: new Vector3(1, 0, 0),
-      system: 'gln:return',
+      system: 'gln:source-return',
     },
   ]
 }

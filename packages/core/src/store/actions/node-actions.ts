@@ -520,6 +520,23 @@ function parseUpdatedNode(currentNode: AnyNode, data: Partial<AnyNode>): AnyNode
   return { ...currentNode, ...(sanitized.value as Partial<AnyNode>) } as AnyNode
 }
 
+function normalizeRegisteredNodeUpdate(
+  currentNode: AnyNode,
+  data: Partial<AnyNode>,
+  nodes: Readonly<Record<AnyNodeId, AnyNode>>,
+) {
+  let updatedNode = parseUpdatedNode(currentNode, data)
+  const parametrics = nodeRegistry.get(currentNode.type)?.parametrics
+  const normalization = parametrics?.normalize?.(currentNode, updatedNode, data, nodes)
+  if (normalization && Object.keys(normalization).length > 0) {
+    updatedNode = parseUpdatedNode(updatedNode, normalization as Partial<AnyNode>)
+  }
+  return {
+    updatedNode,
+    effectiveData: normalization ? { ...data, ...normalization } : data,
+  }
+}
+
 function shouldRefreshDefaultRidgeVents(data: Partial<AnyNode>) {
   return Object.keys(data).some((key) => DEFAULT_RIDGE_VENT_REFRESH_FIELDS.has(key))
 }
@@ -845,9 +862,13 @@ export const applyNodeChangesAction = (
     for (const { id, data } of updateOps) {
       const currentNode = nextNodes[id]
       if (!currentNode) continue
-      const updatedNode = parseUpdatedNode(currentNode, data)
+      const { updatedNode, effectiveData } = normalizeRegisteredNodeUpdate(
+        currentNode,
+        data,
+        nextNodes,
+      )
 
-      if (data.parentId !== undefined && data.parentId !== currentNode.parentId) {
+      if (effectiveData.parentId !== undefined && effectiveData.parentId !== currentNode.parentId) {
         const oldParentId = currentNode.parentId as AnyNodeId | null
         if (oldParentId && nextNodes[oldParentId]) {
           const oldParent = nextNodes[oldParentId] as AnyContainerNode
@@ -858,7 +879,7 @@ export const applyNodeChangesAction = (
           parentsToMarkDirty.add(oldParent.id)
         }
 
-        const newParentId = data.parentId as AnyNodeId | null
+        const newParentId = effectiveData.parentId as AnyNodeId | null
         if (newParentId && nextNodes[newParentId]) {
           const newParent = nextNodes[newParentId] as AnyContainerNode
           nextNodes[newParent.id] = {
@@ -980,10 +1001,14 @@ export const updateNodesAction = (
     for (const { id, data } of updates) {
       const currentNode = nextNodes[id]
       if (!currentNode) continue
-      const updatedNode = parseUpdatedNode(currentNode, data)
+      const { updatedNode, effectiveData } = normalizeRegisteredNodeUpdate(
+        currentNode,
+        data,
+        nextNodes,
+      )
 
       // Handle Reparenting Logic
-      if (data.parentId !== undefined && data.parentId !== currentNode.parentId) {
+      if (effectiveData.parentId !== undefined && effectiveData.parentId !== currentNode.parentId) {
         // 1. Remove from old parent
         const oldParentId = currentNode.parentId as AnyNodeId | null
         if (oldParentId && nextNodes[oldParentId]) {
@@ -1004,7 +1029,7 @@ export const updateNodesAction = (
         // and a spread of `undefined` here throws and aborts the entire
         // `set` callback. Initialising to `[]` matches what the schema's
         // default would have produced.
-        const newParentId = data.parentId as AnyNodeId | null
+        const newParentId = effectiveData.parentId as AnyNodeId | null
         if (newParentId && nextNodes[newParentId]) {
           const newParent = nextNodes[newParentId] as AnyContainerNode
           const newChildren = Array.isArray((newParent as { children?: unknown }).children)

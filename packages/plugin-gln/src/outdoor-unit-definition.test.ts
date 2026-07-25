@@ -29,7 +29,7 @@ describe('GLN outdoor-unit domain definition', () => {
         position: [2.5, 0.564, 3.09],
         direction: [1, 0, 0],
         diameter: 1.25,
-        system: 'gln:supply',
+        system: 'gln:source-supply',
         shape: 'round',
       },
       {
@@ -37,7 +37,7 @@ describe('GLN outdoor-unit domain definition', () => {
         position: [2.5, 0.356, 2.91],
         direction: [1, 0, 0],
         diameter: 1.25,
-        system: 'gln:return',
+        system: 'gln:source-return',
         shape: 'round',
       },
     ])
