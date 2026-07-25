@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
     '@pascal-app/core',
     '@pascal-app/editor',
     '@pascal-app/mcp',
+    '@pascal-app/plugin-gln',
     '@pascal-app/plugin-trees',
     '@dgreenheck/ez-tree',
   ],

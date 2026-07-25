@@ -33,9 +33,9 @@ describe('load_scene', () => {
   test('loads a stored scene and returns its SceneMeta', async () => {
     const graph = {
       nodes: {
-        root_a: { id: 'root_a', type: 'site', parentId: null, children: [] },
+        site_root_a: { id: 'site_root_a', type: 'site', parentId: null, children: [] },
       },
-      rootNodeIds: ['root_a'],
+      rootNodeIds: ['site_root_a'],
     } as unknown as SceneGraph
     const meta = await store.save({ id: 'scene-one', name: 'One', graph })
 
@@ -49,7 +49,7 @@ describe('load_scene', () => {
     expect(parsed.id).toBe('scene-one')
     expect(parsed.name).toBe('One')
     expect(parsed.version).toBe(meta.version)
-    expect(bridge.getRootNodeIds()).toContain('root_a')
+    expect(bridge.getRootNodeIds()).toContain('site_root_a')
   })
 
   test('throws scene_not_found when id is unknown', async () => {

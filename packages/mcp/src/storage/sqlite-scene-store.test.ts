@@ -4,6 +4,7 @@ import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import type { SceneGraph } from '@pascal-app/core/clone-scene-graph'
+import { nodeRegistry, registerPlugin } from '@pascal-app/core/registry'
 import {
   resolveDefaultDatabasePath,
   SqliteSceneStore,
@@ -88,6 +89,7 @@ describe('SqliteSceneStore', () => {
 
   afterEach(async () => {
     store.close()
+    nodeRegistry._reset()
     await rmrf(rootDir)
   })
 
@@ -111,6 +113,42 @@ describe('SqliteSceneStore', () => {
     expect(loaded).not.toBeNull()
     expect(loaded!.graph).toEqual(graph)
     expect(loaded!.name).toBe('Kitchen')
+  })
+
+  test('round-trips installed plugin state', async () => {
+    const graph = makeGraph({ installedPlugins: ['pascal:trees', 'pascal:gln'] })
+    await store.save({ id: 'plugin-state', name: 'Plugin state', graph })
+
+    store.close()
+    store = createStore(rootDir)
+
+    const loaded = await store.load('plugin-state')
+    expect(loaded?.graph.installedPlugins).toEqual(['pascal:trees', 'pascal:gln'])
+  })
+
+  test('persists host-mandatory plugins even when a direct save omits them', async () => {
+    registerPlugin(
+      {
+        id: 'pascal:gln',
+        name: 'GLN',
+        version: '1.0.0',
+        apiVersion: 1,
+        nodes: [],
+      },
+      { mandatory: true },
+    )
+
+    await store.save({
+      id: 'mandatory-plugin',
+      name: 'Mandatory plugin',
+      graph: makeGraph({ installedPlugins: [] }),
+    })
+
+    store.close()
+    store = createStore(rootDir)
+
+    const loaded = await store.load('mandatory-plugin')
+    expect(loaded?.graph.installedPlugins).toEqual(['pascal:gln'])
   })
 
   test('stores optional metadata verbatim', async () => {

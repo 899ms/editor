@@ -35,6 +35,11 @@
       "types": "./dist/bridge/index.d.ts",
       "import": "./dist/bridge/index.js",
       "default": "./dist/bridge/index.js"
+    },
+    "./cli": {
+      "types": "./dist/bin/run-pascal-mcp.d.ts",
+      "import": "./dist/bin/run-pascal-mcp.js",
+      "default": "./dist/bin/run-pascal-mcp.js"
     }
   },
   "bin": {

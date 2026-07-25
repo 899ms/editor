@@ -1,3 +1,4 @@
+import { nodeRegistry, safeParseRegisteredNode } from '../registry/registry'
 import { AnyNode, type AnyNodeType } from '../schema/types'
 import { healSceneNodes } from '../utils/heal-scene-graph'
 
@@ -40,7 +41,7 @@ export type ValidateBuildJsonResult = {
   schemaIssueCount: number
 }
 
-const KNOWN_TYPES = new Set<string>(
+const BUILTIN_TYPES = new Set<string>(
   AnyNode.options.map((o) => o.shape.type.parse(undefined) as string),
 )
 
@@ -202,11 +203,11 @@ export function validateBuildJson(input: unknown): ValidateBuildJsonResult {
       continue
     }
 
-    if (KNOWN_TYPES.has(type)) {
-      const t = type as AnyNodeType
-      stats.byType[t] = (stats.byType[t] ?? 0) + 1
+    if (BUILTIN_TYPES.has(type) || nodeRegistry.has(type)) {
+      const byType = stats.byType as Record<string, number | undefined>
+      byType[type] = (byType[type] ?? 0) + 1
 
-      const parseResult = AnyNode.safeParse(value)
+      const parseResult = safeParseRegisteredNode(value)
       if (!parseResult.success) {
         schemaFailureCount += 1
         const issue = parseResult.error.issues[0]

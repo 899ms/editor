@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import type { SceneGraph } from '@pascal-app/core/clone-scene-graph'
+import { resolveInstalledPluginIds } from '@pascal-app/core/registry'
 import { z } from 'zod'
 import { generateSlug, isValidSlug, sanitizeSlug } from './slug'
 import { openSqliteDatabase, type SqliteDatabase } from './sqlite-driver'
@@ -74,6 +75,7 @@ const GraphSchema = z.object({
   nodes: z.record(z.string(), z.unknown()),
   rootNodeIds: z.array(z.string()),
   collections: z.record(z.string(), z.unknown()).optional(),
+  installedPlugins: z.array(z.string().min(1)).optional(),
 })
 
 /**
@@ -351,7 +353,12 @@ export class SqliteSceneStore implements SceneStore {
         }
       }
 
-      const graphJson = serializeGraph(opts.graph)
+      const installedPlugins = resolveInstalledPluginIds(opts.graph.installedPlugins)
+      const graph: SceneGraph = {
+        ...opts.graph,
+        ...(installedPlugins === undefined ? {} : { installedPlugins }),
+      }
+      const graphJson = serializeGraph(graph)
       const sizeBytes = Buffer.byteLength(graphJson, 'utf8')
       if (sizeBytes > this.maxSceneBytes) {
         throw new SceneTooLargeError(
@@ -362,7 +369,7 @@ export class SqliteSceneStore implements SceneStore {
       const now = new Date().toISOString()
       const version = (existing?.version ?? 0) + 1
       const createdAt = existing?.created_at ?? placeholder?.createdAt ?? now
-      const nodeCount = Object.keys(opts.graph.nodes ?? {}).length
+      const nodeCount = Object.keys(graph.nodes ?? {}).length
       const projectId = opts.projectId ?? existing?.project_id ?? (placeholder ? id : null)
       const ownerId = opts.ownerId ?? existing?.owner_id ?? placeholder?.ownerId ?? null
       const thumbnailUrl =

@@ -1,4 +1,4 @@
-import { nodeRegistry } from '../../registry/registry'
+import { nodeRegistry, safeParseRegisteredNode } from '../../registry/registry'
 import {
   type AnyNode,
   type AnyNodeId,
@@ -172,6 +172,10 @@ function schemaAllowsValue(schema: ZodSchemaLike | null | undefined, value: unkn
 }
 
 function getNodeSchemaForType(type: unknown): ZodSchemaLike | null {
+  if (typeof type === 'string') {
+    const registered = nodeRegistry.get(type)?.schema
+    if (registered) return registered as unknown as ZodSchemaLike
+  }
   const schema = AnyNodeSchema as unknown as ZodSchemaLike
   const options = getSchemaDef(schema)?.options
   if (!options) return null
@@ -483,8 +487,8 @@ function warnSanitizedNodeMutation(
 
 function parseCreatedNode(node: AnyNode, parentId: AnyNodeId | null): AnyNode {
   const candidate = { ...node, parentId }
-  const parsed = AnyNodeSchema.safeParse(candidate)
-  if (parsed.success) return parsed.data
+  const parsed = safeParseRegisteredNode(candidate)
+  if (parsed.success) return parsed.data as AnyNode
 
   const schema = getNodeSchemaForType(candidate.type)
   const sanitized = sanitizeNumericValue(schema, candidate, undefined, [])
@@ -500,8 +504,8 @@ function parseCreatedNode(node: AnyNode, parentId: AnyNodeId | null): AnyNode {
 
 function parseUpdatedNode(currentNode: AnyNode, data: Partial<AnyNode>): AnyNode {
   const candidate = { ...currentNode, ...data }
-  const parsed = AnyNodeSchema.safeParse(candidate)
-  if (parsed.success) return parsed.data
+  const parsed = safeParseRegisteredNode(candidate)
+  if (parsed.success) return parsed.data as AnyNode
 
   const schema = getNodeSchemaForType(candidate.type)
   const sanitized = sanitizeNumericValue(schema, data, currentNode, [])

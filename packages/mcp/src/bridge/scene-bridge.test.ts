@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
+import { nodeRegistry, registerNode } from '@pascal-app/core/registry'
 import {
   BuildingNode,
   DoorNode,
@@ -8,6 +9,7 @@ import {
   WallNode,
   ZoneNode,
 } from '@pascal-app/core/schema'
+import { z } from 'zod'
 import { SceneBridge } from './scene-bridge'
 
 function tick() {
@@ -54,6 +56,55 @@ describe('SceneBridge', () => {
     test('getNode returns null for unknown id', () => {
       expect(bridge.getNode('wall_does_not_exist')).toBeNull()
     })
+  })
+
+  test('imports and validates a registered plugin node with the shared schema', () => {
+    registerNode({
+      kind: 'test:mcp-system',
+      schemaVersion: 1,
+      schema: z.object({
+        object: z.literal('node'),
+        id: z.string(),
+        type: z.literal('test:mcp-system'),
+        parentId: z.null(),
+        visible: z.boolean(),
+        metadata: z.record(z.string(), z.unknown()),
+        name: z.string(),
+        mode: z.enum(['cooling', 'heating', 'standby']),
+      }),
+      category: 'utility',
+      defaults: () => ({
+        object: 'node',
+        parentId: null,
+        visible: false,
+        metadata: {},
+        name: 'System',
+        mode: 'standby',
+      }),
+      capabilities: {},
+    } as never)
+
+    try {
+      bridge.loadJSON({
+        nodes: {
+          test_mcp_system: {
+            object: 'node',
+            id: 'test_mcp_system',
+            type: 'test:mcp-system',
+            parentId: null,
+            visible: false,
+            metadata: {},
+            name: 'System',
+            mode: 'heating',
+          } as never,
+        },
+        rootNodeIds: ['test_mcp_system'] as never,
+      })
+
+      expect(bridge.validateScene()).toEqual({ valid: true, errors: [] })
+    } finally {
+      nodeRegistry._reset()
+    }
   })
 
   describe('createNode', () => {

@@ -986,6 +986,7 @@
     "Adds a new tool panel to the editor.": "Adds a new tool panel to the editor.",
     "Install": "Install",
     "Installed": "Installed",
+    "Required": "Required",
     "Not installed": "Not installed",
     "Uninstall": "Uninstall",
     "Add material": "Add material",

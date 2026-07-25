@@ -384,17 +384,26 @@ function hasUsableSceneGraph(sceneGraph?: SceneGraph | null): sceneGraph is Scen
 
 export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
   const defaultInstalledPlugins = editorHostPanelRegistry.getDefaultInstalledPluginIds()
+  const mandatoryPluginIds = editorHostPanelRegistry.getMandatoryPluginIds()
   if (hasUsableSceneGraph(sceneGraph)) {
     const { nodes, rootNodeIds, collections, materials, installedPlugins } = sceneGraph
+    const resolvedInstalledPlugins = Array.from(
+      new Set([...(installedPlugins ?? defaultInstalledPlugins), ...mandatoryPluginIds]),
+    )
     useScene.getState().setScene(nodes as any, rootNodeIds as any, {
       collections: collections as any,
       materials: materials as any,
-      installedPlugins: installedPlugins ?? defaultInstalledPlugins,
+      installedPlugins: resolvedInstalledPlugins,
       hasExplicitPluginInstallState: installedPlugins !== undefined,
     })
   } else {
     useScene.getState().clearScene()
-    useScene.getState().setInstalledPlugins(defaultInstalledPlugins, { explicit: false })
+    useScene
+      .getState()
+      .setInstalledPlugins(
+        Array.from(new Set([...defaultInstalledPlugins, ...mandatoryPluginIds])),
+        { explicit: false },
+      )
   }
 
   // The loaded scene is the undo floor. Loading records history entries of

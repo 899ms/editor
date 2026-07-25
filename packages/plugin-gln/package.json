@@ -1,0 +1,37 @@
+{
+  "name": "@pascal-app/plugin-gln",
+  "version": "0.1.0",
+  "description": "Mandatory GLN hydronic system plugin for the isolated GLN Editor.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "peerDependencies": {
+    "@pascal-app/core": ">=0.9.2 <1",
+    "lucide-react": "^1",
+    "react": "^18 || ^19",
+    "zustand": "^5",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@pascal-app/core": "0.9.2",
+    "@pascal/typescript-config": "*",
+    "@types/react": "19.2.2",
+    "lucide-react": "^1",
+    "react": "^19",
+    "typescript": "6.0.3",
+    "zustand": "^5",
+    "zod": "^4"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

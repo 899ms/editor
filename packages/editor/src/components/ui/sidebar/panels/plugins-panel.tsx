@@ -64,6 +64,7 @@ export function PluginsPanel() {
   if (selectedPlugin) {
     const [pluginId, panel] = selectedPlugin
     const installed = installedPlugins.includes(pluginId)
+    const mandatory = panel.mandatory === true
 
     return (
       <div className="flex h-full flex-col overflow-y-auto p-4">
@@ -140,8 +141,9 @@ export function PluginsPanel() {
 
           <Button
             className="mt-5 rounded-full"
-            disabled={readOnly}
+            disabled={readOnly || mandatory}
             onClick={() => {
+              if (mandatory) return
               const next = installed
                 ? installedPlugins.filter((id) => id !== pluginId)
                 : [...installedPlugins, pluginId]
@@ -149,7 +151,7 @@ export function PluginsPanel() {
             }}
             variant={installed ? 'outline' : 'default'}
           >
-            {ui(installed ? 'Uninstall' : 'Install')}
+            {ui(mandatory ? 'Required' : installed ? 'Uninstall' : 'Install')}
           </Button>
         </div>
 

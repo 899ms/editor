@@ -986,6 +986,7 @@
     "Adds a new tool panel to the editor.": "为编辑器添加新的工具面板。",
     "Install": "安装",
     "Installed": "已安装",
+    "Required": "必需",
     "Not installed": "未安装",
     "Uninstall": "卸载",
     "Add material": "添加材质",

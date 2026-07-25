@@ -1,11 +1,11 @@
-import { AnyNode } from '@pascal-app/core/schema'
+import { safeParseRegisteredNode } from '@pascal-app/core/registry'
 import { z } from 'zod'
 
 /**
  * Validates a SceneGraph at an untrusted API boundary. Re-runs
- * `AnyNode.safeParse` on every node, which enforces the `AssetUrl`
- * allowlist in core (closes the Phase 3 SSRF / arbitrary-URL risk on
- * scan/guide/item/material fields).
+ * `safeParseRegisteredNode` on every node, which uses a registered plugin
+ * schema when available and otherwise falls back to the built-in `AnyNode`
+ * union. The built-in path retains the core `AssetUrl` allowlist.
  *
  * Shared between `POST /api/scenes` and `PUT /api/scenes/[id]` so neither
  * route can silently accept malicious URLs via the `graph` payload.
@@ -21,7 +21,7 @@ export const apiGraphSchema = z
   })
   .superRefine((value, ctx) => {
     for (const [nodeId, node] of Object.entries(value.nodes)) {
-      const res = AnyNode.safeParse(node)
+      const res = safeParseRegisteredNode(node)
       if (!res.success) {
         for (const issue of res.error.issues) {
           ctx.addIssue({
