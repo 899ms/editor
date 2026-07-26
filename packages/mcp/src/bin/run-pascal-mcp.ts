@@ -3,7 +3,9 @@ import '../bridge/node-shims'
 
 import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { SceneBridge } from '../bridge/scene-bridge'
+import { createSceneOperations, type SceneOperations } from '../operations'
 import { createPascalMcpServer } from '../server'
 import { createSceneStore } from '../storage'
 import { connectHttp } from '../transports/http'
@@ -15,6 +17,11 @@ export type PascalMcpRuntimeOptions = {
   commandName?: string
   /** Register host-specific plugins before constructing the scene bridge. */
   prepare?: () => void | Promise<void>
+  /** Add product-specific tools without changing the shared Pascal tool set. */
+  configureServer?: (context: {
+    server: McpServer
+    operations: SceneOperations
+  }) => void | Promise<void>
 }
 
 export async function runPascalMcp(
@@ -74,7 +81,9 @@ OPTIONS:
   }
 
   const store = await createSceneStore()
-  const server = createPascalMcpServer({ bridge, store })
+  const operations = createSceneOperations({ bridge, store })
+  const server = createPascalMcpServer({ bridge, store, operations })
+  await options.configureServer?.({ server, operations })
 
   if (values.http) {
     const portNum = Number.parseInt(values.port ?? '3917', 10)
