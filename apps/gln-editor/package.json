@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@number-flow/react": "^0.6.0",
     "@pascal-app/core": "*",
     "@pascal-app/editor": "*",

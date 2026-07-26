@@ -2,7 +2,7 @@
 
 import type { SceneGraph } from '@pascal-app/core/clone-scene-graph'
 import type { ScenePlan, ScenePlanDiff, ScenePlanIssue } from '@pascal-app/core/scene-plan'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type PreparedResponse = {
   ok: boolean
@@ -29,6 +29,7 @@ const DIFF_STYLES: Record<ScenePlanDiff['kind'], string> = {
   update: 'border-amber-500/60 bg-amber-500/15',
   delete: 'border-rose-500/60 bg-rose-500/15',
 }
+const PENDING_PLAN_KEY = 'pascal:gln:pending-scene-plan'
 
 function currentSceneId() {
   const match = window.location.pathname.match(/^\/scene\/([^/]+)/)
@@ -47,6 +48,30 @@ export default function GlnScenePlanPanel() {
       return null
     }
   }, [source])
+
+  useEffect(() => {
+    const acceptPlan = (plan: ScenePlan) => {
+      setSource(JSON.stringify(plan, null, 2))
+      setPrepared(null)
+      setMessage('已接收本地 Codex 生成的场景计划。')
+      window.sessionStorage.removeItem(PENDING_PLAN_KEY)
+    }
+    const receivePlan = (event: Event) => {
+      const plan = (event as CustomEvent<{ plan?: ScenePlan }>).detail?.plan
+      if (!plan) return
+      acceptPlan(plan)
+    }
+    const pending = window.sessionStorage.getItem(PENDING_PLAN_KEY)
+    if (pending) {
+      try {
+        acceptPlan(JSON.parse(pending) as ScenePlan)
+      } catch {
+        window.sessionStorage.removeItem(PENDING_PLAN_KEY)
+      }
+    }
+    window.addEventListener('pascal:codex-scene-plan-ready', receivePlan)
+    return () => window.removeEventListener('pascal:codex-scene-plan-ready', receivePlan)
+  }, [])
 
   const run = async (action: 'prepare' | 'commit') => {
     const sceneId = currentSceneId()

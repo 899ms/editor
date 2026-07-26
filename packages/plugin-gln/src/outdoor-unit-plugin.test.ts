@@ -23,10 +23,12 @@ describe('GLN equipment plugin contribution', () => {
     ).toHaveLength(4)
   })
 
-  test('contributes separate system, equipment and residential import panels to the GLN app', () => {
+  test('contributes GLN system, equipment, AI, plan and residential import panels', () => {
     expect(glnHostPanels.map((panel) => panel.id)).toEqual([
       'gln:systems',
       'gln:equipment',
+      'gln:codex-tasks',
+      'gln:scene-plans',
       'gln:ifc-imports',
     ])
     expect(glnHostPanels.find((panel) => panel.id === 'gln:equipment')).toMatchObject({

@@ -88,9 +88,23 @@ export const glnScenePlanHostPanel: GlnHostPanel = {
   mandatory: true,
 }
 
+export const glnCodexTaskHostPanel: GlnHostPanel = {
+  id: 'gln:codex-tasks',
+  label: 'AI 场景任务',
+  icon: { kind: 'iconify', name: 'lucide:sparkles' },
+  component: () => import('./codex-task-panel'),
+  kinds: [],
+  pluginId: GLN_PLUGIN_ID,
+  description: '通过受限的本机 Codex 桥接生成可校验的场景变更计划。',
+  creator: { name: 'GLN' },
+  defaultInstalled: true,
+  mandatory: true,
+}
+
 export const glnHostPanels = [
   glnSystemHostPanel,
   glnEquipmentHostPanel,
+  glnCodexTaskHostPanel,
   glnScenePlanHostPanel,
   glnIfcImportHostPanel,
 ] as const
