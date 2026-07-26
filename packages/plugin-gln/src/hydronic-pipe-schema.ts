@@ -4,6 +4,26 @@ import { z } from 'zod'
 export const GlnHydronicCircuit = z.enum(['supply', 'return'])
 export type GlnHydronicCircuit = z.infer<typeof GlnHydronicCircuit>
 
+export const GlnHydronicRouteStrategy = z.enum(['manual', 'ceiling', 'ceiling-riser'])
+export type GlnHydronicRouteStrategy = z.infer<typeof GlnHydronicRouteStrategy>
+
+export const GlnHydronicRouteState = z.enum(['routed', 'needs-review'])
+export type GlnHydronicRouteState = z.infer<typeof GlnHydronicRouteState>
+
+export const GlnHydronicRouteReviewReason = z.enum([
+  'missing-endpoint',
+  'missing-riser',
+  'obstructed',
+])
+export type GlnHydronicRouteReviewReason = z.infer<typeof GlnHydronicRouteReviewReason>
+
+export const GlnHydronicRoute = z.object({
+  strategy: GlnHydronicRouteStrategy.default('manual'),
+  state: GlnHydronicRouteState.default('routed'),
+  reviewReason: GlnHydronicRouteReviewReason.nullable().default(null),
+})
+export type GlnHydronicRoute = z.infer<typeof GlnHydronicRoute>
+
 const GlnPipeEndpoint = z.object({
   nodeId: z.string().min(1),
   portId: z.string().min(1),
@@ -28,6 +48,11 @@ export const GlnHydronicPipeNode = BaseNode.extend({
   start: GlnPipeEndpoint.nullable().default(null),
   end: GlnPipeEndpoint.nullable().default(null),
   concealed: z.boolean().default(true),
+  routing: GlnHydronicRoute.default({
+    strategy: 'manual',
+    state: 'routed',
+    reviewReason: null,
+  }),
 })
 
 export type GlnHydronicPipeNode = z.infer<typeof GlnHydronicPipeNode>

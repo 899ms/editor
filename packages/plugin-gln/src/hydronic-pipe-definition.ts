@@ -25,6 +25,7 @@ export const glnHydronicPipeDefinition: NodeDefinition<typeof GlnHydronicPipeNod
     start: null,
     end: null,
     concealed: true,
+    routing: { strategy: 'manual', state: 'routed', reviewReason: null },
   }),
   capabilities: {
     selectable: { hitVolume: 'bbox' },
@@ -33,6 +34,7 @@ export const glnHydronicPipeDefinition: NodeDefinition<typeof GlnHydronicPipeNod
   },
   relations: { references: { systemId: ['gln:system'] } },
   geometry: buildGlnHydronicPipeGeometry,
+  renderer: { kind: 'parametric', module: () => import('./hydronic-pipe-renderer') },
   geometryKey: (node) => JSON.stringify([node.path, node.circuit, node.diameterIn, node.concealed]),
   ports: getGlnHydronicPipePorts,
   tool: () => import('./hydronic-pipe-tool'),
