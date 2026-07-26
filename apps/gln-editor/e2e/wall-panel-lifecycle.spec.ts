@@ -34,8 +34,17 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
 }) => {
   test.setTimeout(300_000)
   await page.goto(`${baseUrl}/scenes`)
+  await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
+  )
   await page.getByRole('button', { name: '新建场景' }).first().click()
-  await expect(page).toHaveURL(/\/scene\/[^/]+$/)
+  const createResponse = await createResponsePromise
+  if (createResponse.status() !== 201) {
+    throw new Error(`GLN scene creation failed: ${await createResponse.text()}`)
+  }
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 15_000 })
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)
   expect(sceneId).toBeTruthy()
   if (!sceneId) return
@@ -56,6 +65,15 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
     type: 'gln:system',
     name: '面板测试系统',
     mode: 'heating',
+    zoneSettings: {
+      zone_panel_a: {
+        enabled: true,
+        targetHumidity: null,
+        targetHumiditySource: 'unset',
+        targetTemperature: 25,
+        targetTemperatureSource: 'template',
+      },
+    },
   }
   const wallA = {
     id: 'wall_panel_a',
@@ -218,6 +236,31 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
       zoneId: ambiguousA.id,
     })
 
+  await page.getByRole('button', { name: '光冷暖系统' }).click()
+  const zoneControl = page.locator(`[data-gln-zone-control="${ambiguousA.id}"]`)
+  await expect(zoneControl).toBeVisible()
+  await expect(zoneControl.getByText('模板建议')).toBeVisible()
+  await zoneControl.getByRole('textbox', { name: '卧室 A目标温度' }).fill('26')
+  await zoneControl.getByRole('textbox', { name: '卧室 A目标温度' }).press('Enter')
+  await zoneControl.getByRole('textbox', { name: '卧室 A目标湿度' }).fill('55')
+  await zoneControl.getByRole('textbox', { name: '卧室 A目标湿度' }).press('Enter')
+  await zoneControl.getByRole('checkbox', { name: '卧室 A分区启用' }).click()
+  await expect
+    .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[system.id])
+    .toMatchObject({
+      zoneSettings: {
+        [ambiguousA.id]: {
+          enabled: false,
+          targetHumidity: 55,
+          targetHumiditySource: 'user',
+          targetTemperature: 26,
+          targetTemperatureSource: 'user',
+        },
+      },
+    })
+
+  await page.getByRole('button', { name: '光冷暖设备' }).click()
+
   await panelEntry.locator('rect').click({ position: { x: 4, y: 4 } })
   await page.getByRole('button', { name: '翻转到墙体另一侧并重新判断服务空间' }).click()
   await expect
@@ -264,6 +307,16 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
     width: 1,
     zoneId: rehostZone.id,
   })
+  await page.getByRole('button', { name: '光冷暖系统' }).click()
+  await expect(page.locator(`[data-gln-zone-control="${ambiguousA.id}"]`)).toBeVisible()
+  await expect(
+    page
+      .locator(`[data-gln-zone-control="${ambiguousA.id}"]`)
+      .getByRole('textbox', { name: '卧室 A目标温度' }),
+  ).toBeDisabled()
+  await expect(
+    page.locator(`[data-gln-zone-control="${ambiguousA.id}"]`).getByRole('checkbox'),
+  ).toBeDisabled()
 
   await page.getByRole('button', { name: '光冷暖设备' }).click()
   const placePanelButton = page.getByRole('button', {
