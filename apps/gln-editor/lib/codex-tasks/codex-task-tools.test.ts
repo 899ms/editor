@@ -5,12 +5,12 @@ import * as path from 'node:path'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { SiteNode } from '@pascal-app/core/schema'
 import { createSceneOperations } from '@pascal-app/mcp/operations'
 import { SqliteSceneStore } from '@pascal-app/mcp/storage'
 import { createCodexTaskManager } from './codex-task-manager'
 import { registerGlnCodexTaskTools } from './codex-task-tools'
 import { createDeterministicCodexAdapter } from './deterministic-adapter'
+import { createResidentialTestGraph } from './residential-test-fixtures'
 
 let root = ''
 let store: SqliteSceneStore | null = null
@@ -25,11 +25,11 @@ afterEach(async () => {
 test('MCP submits and reads the same validated task workflow without an online model', async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), 'gln-codex-mcp-'))
   store = new SqliteSceneStore({ databasePath: path.join(root, 'tasks.db') })
-  const site = SiteNode.parse({ id: 'site_codex_mcp', children: [] })
+  const residential = createResidentialTestGraph('codex_mcp')
   const meta = await store.save({
     id: 'scene-codex-mcp',
     name: '住宅',
-    graph: { nodes: { [site.id]: site }, rootNodeIds: [site.id] },
+    graph: residential.graph,
   })
   const operations = createSceneOperations({ store })
   const manager = createCodexTaskManager({
@@ -38,7 +38,7 @@ test('MCP submits and reads the same validated task workflow without an online m
       id: 'mcp-codex-plan',
       sceneId: meta.id,
       baseVersion: meta.version,
-      operations: [{ op: 'update', id: site.id, data: { name: 'MCP 重建' } }],
+      operations: [{ op: 'update', id: residential.wallId, data: { name: 'MCP 重建外墙' } }],
     }),
     createId: () => 'task-mcp-codex',
   })
@@ -66,6 +66,7 @@ test('MCP submits and reads the same validated task workflow without an online m
   const payload = parseToolText(status.content as never)
   expect(payload.status).toBe('succeeded')
   expect(payload.plan.id).toBe('mcp-codex-plan')
+  expect(payload.residentialReport.status).toBe('draft-ready')
   expect((await operations.loadStoredScene(meta.id))?.version).toBe(1)
 })
 

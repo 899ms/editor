@@ -72,4 +72,7 @@ test('launches only the fixed local Codex command in an isolated read-only works
   expect(invocation?.env.OPENAI_API_KEY).toBeUndefined()
   expect(invocation?.cwd).not.toContain('pascal-editor')
   expect(invocation?.stdin).toContain('只返回符合给定 JSON Schema 的 ScenePlan')
+  expect(invocation?.stdin).toContain('metadata.confidence')
+  expect(invocation?.stdin).toContain('frontSide/backSide')
+  expect(invocation?.stdin).toContain('不能确定的几何或语义不得猜测')
 })

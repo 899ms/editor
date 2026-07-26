@@ -2,7 +2,6 @@ import { afterEach, expect, test } from 'bun:test'
 import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
-import { SiteNode } from '@pascal-app/core/schema'
 import { createSceneOperations } from '@pascal-app/mcp/operations'
 import { SqliteSceneStore } from '@pascal-app/mcp/storage'
 import type { NextRequest } from 'next/server'
@@ -14,6 +13,7 @@ import { POST as postTask } from '../../app/api/scenes/[id]/codex-tasks/route'
 import { createCodexTaskManager } from './codex-task-manager'
 import { __setCodexTaskManagerForTests } from './codex-task-server'
 import { createDeterministicCodexAdapter } from './deterministic-adapter'
+import { createResidentialTestGraph } from './residential-test-fixtures'
 
 const roots: string[] = []
 const stores: SqliteSceneStore[] = []
@@ -30,11 +30,11 @@ test('the HTTP seam accepts only structured tasks and exposes safe progress payl
   roots.push(root)
   const store = new SqliteSceneStore({ databasePath: path.join(root, 'tasks.db') })
   stores.push(store)
-  const site = SiteNode.parse({ id: 'site_codex_route', children: [] })
+  const residential = createResidentialTestGraph('codex_route')
   await store.save({
     id: sceneId,
     name: '住宅',
-    graph: { nodes: { [site.id]: site }, rootNodeIds: [site.id] },
+    graph: residential.graph,
   })
   const manager = createCodexTaskManager({
     operations: createSceneOperations({ store }),
@@ -42,7 +42,7 @@ test('the HTTP seam accepts only structured tasks and exposes safe progress payl
       id: 'route-plan',
       sceneId,
       baseVersion: 1,
-      operations: [{ op: 'update', id: site.id, data: { name: '路线住宅' } }],
+      operations: [{ op: 'update', id: residential.wallId, data: { name: '路线住宅外墙' } }],
     }),
     createId: () => 'task-route',
   })
@@ -79,8 +79,12 @@ test('the HTTP seam accepts only structured tasks and exposes safe progress payl
     status: string
     plan: unknown
     preview: { diffs: Array<Record<string, unknown>> } & Record<string, unknown>
+    residentialReport: { status: string; reviewItems: unknown[] }
   }
   expect(payload.status).toBe('succeeded')
+  expect(payload.residentialReport).toEqual(
+    expect.objectContaining({ status: 'draft-ready', reviewItems: [] }),
+  )
   expect(payload.plan).toBeTruthy()
   expect(payload.preview.before).toBeUndefined()
   expect(payload.preview.after).toBeUndefined()
