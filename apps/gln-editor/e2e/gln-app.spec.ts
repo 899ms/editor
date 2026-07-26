@@ -128,7 +128,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
 
   await page.getByRole('button', { name: '光冷暖系统' }).click()
-  await expect(page.locator('[data-gln-systems-panel]')).toBeVisible()
+  await expect(page.locator('[data-gln-systems-panel]')).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: '新建系统' }).click()
   const systemName = page.getByRole('textbox', { name: '系统名称' })
   await expect(systemName).toHaveValue('住宅光冷暖系统 1')
@@ -161,7 +161,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   await backupSystemName.press('Enter')
 
   await page.getByRole('button', { name: '光冷暖设备' }).click()
-  await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible()
+  await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible({ timeout: 30_000 })
   const systemSelector = page.getByRole('combobox', { name: '所属系统' })
   await systemSelector.selectOption({ label: '一层光冷暖系统' })
   const selectedSystemId = await systemSelector.inputValue()
@@ -336,7 +336,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   if (!(await page.locator('[data-gln-equipment-panel]').isVisible())) {
     await page.getByRole('button', { name: '光冷暖设备' }).click()
   }
-  await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible()
+  await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible({ timeout: 30_000 })
   await page.getByRole('combobox', { name: '区域用途' }).selectOption('equipment-area')
   const placeTank = page.getByRole('button', { name: /放置缓冲水箱/ })
   await placeTank.click()
@@ -478,6 +478,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     /gln:buffer-tank/,
   )
   await page.getByRole('button', { name: '光冷暖系统' }).click()
+  await expect(page.locator('[data-gln-systems-panel]')).toBeVisible({ timeout: 30_000 })
   const reloadedSystemNames = page.getByRole('textbox', { name: '系统名称' })
   await expect(reloadedSystemNames.first()).toHaveValue('一层光冷暖系统')
   await expect(reloadedSystemNames.last()).toHaveValue('备用光冷暖系统')

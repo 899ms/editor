@@ -170,6 +170,27 @@ export type {
   FloorPlacedFootprintsResolver,
 } from './registry'
 export * from './registry'
+export {
+  getScenePlanValidators,
+  type PreparedScenePlan,
+  prepareScenePlan,
+  registerScenePlanValidator,
+  resetScenePlanValidatorsForTests,
+  type ScenePlan,
+  type ScenePlanCreateOperation,
+  type ScenePlanDeleteOperation,
+  type ScenePlanDiff,
+  type ScenePlanDiffKind,
+  type ScenePlanIssue,
+  type ScenePlanOperation,
+  ScenePlanOperationSchema,
+  ScenePlanSchema,
+  type ScenePlanSnapshot,
+  type ScenePlanUpdateOperation,
+  type ScenePlanValidationContext,
+  type ScenePlanValidator,
+  type ScenePlanValidatorDefinition,
+} from './scene-plan'
 export * from './schema'
 export * from './services'
 export { isMovable, movePlanToward, moveToward, resolveMovable } from './services/movement'

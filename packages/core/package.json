@@ -26,6 +26,11 @@
       "import": "./dist/schema/index.js",
       "default": "./dist/schema/index.js"
     },
+    "./scene-plan": {
+      "types": "./dist/scene-plan/index.d.ts",
+      "import": "./dist/scene-plan/index.js",
+      "default": "./dist/scene-plan/index.js"
+    },
     "./store": {
       "types": "./dist/store/use-scene.d.ts",
       "import": "./dist/store/use-scene.js",
