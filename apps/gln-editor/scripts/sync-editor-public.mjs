@@ -1,4 +1,4 @@
-import { cp, lstat, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises'
+import { cp, copyFile, lstat, readFile, readlink, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -6,6 +6,15 @@ const appDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), 
 const sourceDirectory = path.resolve(appDirectory, '..', 'editor', 'public')
 const targetDirectory = path.resolve(appDirectory, 'public')
 const copyMarker = path.join(targetDirectory, '.gln-editor-managed-copy')
+const webIfcDirectory = path.resolve(
+  appDirectory,
+  '..',
+  '..',
+  'packages',
+  'ifc-converter',
+  'node_modules',
+  'web-ifc',
+)
 
 async function targetAlreadySharesSource() {
   try {
@@ -26,26 +35,27 @@ async function targetIsManagedCopy() {
   }
 }
 
-if (!(await targetAlreadySharesSource())) {
+const sharesSource = await targetAlreadySharesSource()
+if (sharesSource) {
+  await rm(targetDirectory, { force: true, recursive: true })
+} else {
   try {
     await lstat(targetDirectory)
     if (!(await targetIsManagedCopy())) {
       throw new Error(`Refusing to replace unmanaged asset directory: ${targetDirectory}`)
     }
-    await rm(targetDirectory, { recursive: true })
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error
   }
+}
 
-  try {
-    await symlink(sourceDirectory, targetDirectory, process.platform === 'win32' ? 'junction' : 'dir')
-  } catch (error) {
-    if (!['EACCES', 'EPERM', 'UNKNOWN'].includes(error?.code)) throw error
-    await cp(sourceDirectory, targetDirectory, {
-      errorOnExist: false,
-      force: true,
-      recursive: true,
-    })
-    await writeFile(copyMarker, `${sourceDirectory}\n`, 'utf8')
-  }
+await cp(sourceDirectory, targetDirectory, {
+  errorOnExist: false,
+  force: true,
+  recursive: true,
+})
+await writeFile(copyMarker, `${sourceDirectory}\n`, 'utf8')
+
+for (const name of ['web-ifc.wasm', 'web-ifc-mt.wasm', 'web-ifc-node.wasm']) {
+  await copyFile(path.join(webIfcDirectory, name), path.join(targetDirectory, name))
 }

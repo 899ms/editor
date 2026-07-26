@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 import { glnBufferTankNodeDefinition } from './buffer-tank-definition'
 import { GLN_PLUGIN_ID } from './constants'
 import { glnHydronicPipeNodeDefinition } from './hydronic-pipe-definition'
+import { glnIfcImportNodeDefinition } from './ifc-import-definition'
 import { glnOutdoorUnitNodeDefinition } from './outdoor-unit-definition'
 import { glnSystemNodeDefinition } from './system-definition'
 import { glnWallPanelNodeDefinition } from './wall-panel-definition'
@@ -29,6 +30,7 @@ export const glnPlugin: Plugin = {
     glnBufferTankNodeDefinition,
     glnWallPanelNodeDefinition,
     glnHydronicPipeNodeDefinition,
+    glnIfcImportNodeDefinition,
   ],
 }
 
@@ -58,7 +60,24 @@ export const glnEquipmentHostPanel: GlnHostPanel = {
   mandatory: true,
 }
 
-export const glnHostPanels = [glnSystemHostPanel, glnEquipmentHostPanel] as const
+export const glnIfcImportHostPanel: GlnHostPanel = {
+  id: 'gln:ifc-imports',
+  label: '住宅导入',
+  icon: { kind: 'iconify', name: 'lucide:file-box' },
+  component: () => import('./ifc-import-panel'),
+  kinds: ['gln:ifc-import'],
+  pluginId: GLN_PLUGIN_ID,
+  description: '在本地解析 IFC，并重建为可编辑住宅节点。原文件不写入场景。',
+  creator: { name: 'GLN' },
+  defaultInstalled: true,
+  mandatory: true,
+}
+
+export const glnHostPanels = [
+  glnSystemHostPanel,
+  glnEquipmentHostPanel,
+  glnIfcImportHostPanel,
+] as const
 export const glnHostPanel = glnSystemHostPanel
 
 export {
@@ -115,6 +134,21 @@ export {
   resolveGlnNodeLevelId,
 } from './hydronic-routing'
 export { getGlnHydronicTopologyIssues, hasGlnHydronicClosedLoop } from './hydronic-topology'
+export {
+  buildIfcReportScene,
+  buildIfcResidentialReplacement,
+  createGlnIfcImportRecord,
+  glnIfcImportId,
+} from './ifc-import-application'
+export {
+  glnIfcImportDefinition,
+  glnIfcImportNodeDefinition,
+} from './ifc-import-definition'
+export {
+  GlnIfcConversionReport,
+  GlnIfcImportNode,
+  GlnIfcReviewReason,
+} from './ifc-import-schema'
 export {
   glnOutdoorUnitDefinition,
   glnOutdoorUnitNodeDefinition,

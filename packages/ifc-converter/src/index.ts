@@ -17,11 +17,27 @@ import {
 import { customAlphabet } from 'nanoid'
 import * as WebIFC from 'web-ifc'
 import { type IfcConversionSimplificationOptions, simplifyConvertedSceneGraph } from './cleanup'
+import {
+  hashIfcSource,
+  type IfcResidentialReconstruction,
+  type IfcSourceIdentity,
+  reconstructIfcResidential,
+} from './residential-reconstruction'
 
 export type {
   IfcConversionSimplificationOptions,
   IfcConversionSimplificationStats,
 } from './cleanup'
+export {
+  hashIfcSource,
+  type IfcResidentialConversionReport,
+  type IfcResidentialReconstruction,
+  type IfcResidentialReviewItem,
+  type IfcResidentialReviewReason,
+  type IfcResidentialSourceGraph,
+  type IfcSourceIdentity,
+  reconstructIfcResidential,
+} from './residential-reconstruction'
 
 export type PascalNode = AnyNode
 
@@ -643,6 +659,7 @@ export interface ConversionOptions {
   extrusionDepthIsHeight?: boolean
   swapProfileDimensions?: boolean
   simplify?: boolean | IfcConversionSimplificationOptions
+  wasmPath?: string
   label?: string
 }
 
@@ -685,7 +702,7 @@ export async function convertIfcToPascal(
 
   progress('Initializing IFC parser...', 0)
   const ifcApi = new WebIFC.IfcAPI()
-  ifcApi.SetWasmPath('/', true)
+  ifcApi.SetWasmPath(options?.wasmPath ?? '/', true)
 
   await ifcApi.Init()
   progress('Opening IFC model...', 10)
@@ -2099,4 +2116,22 @@ export async function convertIfcToPascal(
     nodes,
     rootNodeIds: rootNodeIds as AnyNodeId[],
   }
+}
+
+export async function convertIfcToResidential(
+  ifcData: Uint8Array,
+  sourcePath: string,
+  onProgress?: (message: string, percent: number) => void,
+  options?: ConversionOptions,
+): Promise<IfcResidentialReconstruction> {
+  const [graph, sha256] = await Promise.all([
+    convertIfcToPascal(ifcData, onProgress, options),
+    hashIfcSource(ifcData),
+  ])
+  const source: IfcSourceIdentity = {
+    path: sourcePath,
+    sha256,
+    sizeBytes: ifcData.byteLength,
+  }
+  return reconstructIfcResidential(graph, source)
 }
