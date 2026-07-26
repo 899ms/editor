@@ -80,7 +80,12 @@ export {
   GlnOutdoorUnitNode,
 } from './outdoor-unit-schema'
 export { glnSystemDefinition, glnSystemNodeDefinition } from './system-definition'
-export { GlnSystemMode, GlnSystemNode } from './system-schema'
+export {
+  GlnSystemMode,
+  GlnSystemNode,
+  GlnZoneSettingSource,
+  GlnZoneSettings,
+} from './system-schema'
 export {
   glnWallPanelDefinition,
   glnWallPanelNodeDefinition,
@@ -99,3 +104,4 @@ export {
   GlnWallPanelZoneAssignment,
 } from './wall-panel-schema'
 export { resolveWallPanelZone } from './wall-panel-zone'
+export { getGlnZoneControls } from './zone-settings'

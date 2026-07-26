@@ -10,6 +10,7 @@ describe('GlnSystemNode', () => {
     expect(system.visible).toBe(false)
     expect(system.parentId).toBeNull()
     expect(system.mode).toBe('standby')
+    expect(system.zoneSettings).toEqual({})
   })
 
   test('limits runtime mode to cooling, heating, or standby', () => {
@@ -24,5 +25,27 @@ describe('GlnSystemNode', () => {
 
   test('requires a non-empty editable name', () => {
     expect(GlnSystemNode.safeParse({ name: '  ' }).success).toBe(false)
+  })
+
+  test('keeps nullable zone targets and their explicit source on the logical system', () => {
+    const system = GlnSystemNode.parse({
+      name: '住宅光冷暖系统',
+      zoneSettings: {
+        zone_living: {
+          targetTemperature: 26,
+          targetTemperatureSource: 'template',
+          targetHumidity: null,
+          targetHumiditySource: 'unset',
+          enabled: true,
+        },
+      },
+    })
+
+    expect(system.zoneSettings.zone_living).toMatchObject({
+      targetTemperature: 26,
+      targetTemperatureSource: 'template',
+      targetHumidity: null,
+      targetHumiditySource: 'unset',
+    })
   })
 })

@@ -17,17 +17,18 @@ export const glnSystemDefinition: GlnSystemDefinition = {
     metadata: {},
     name: '住宅光冷暖系统',
     mode: 'standby',
+    zoneSettings: {},
   }),
   capabilities: {},
   presentation: {
     label: '光冷暖系统',
-    description: '管理一套光冷暖水系统的名称与运行模式。',
+    description: '管理一套光冷暖水系统的名称、运行模式和分区目标设置。',
     icon: { kind: 'iconify', name: 'lucide:thermometer-sun' },
     hidden: true,
   },
   mcp: {
     description:
-      'Logical GLN hydronic system. Runtime mode is stored only here as cooling, heating, or standby.',
+      'Logical GLN hydronic system. Runtime mode and zone target settings are stored here; targets are not measurements.',
   },
 }
 
