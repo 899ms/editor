@@ -6,6 +6,7 @@ import {
   isGlnHydronicPortCompatible,
 } from './hydronic-pipe-ports'
 import { GlnHydronicPipeNode } from './hydronic-pipe-schema'
+import { planGlnConcealedRoute } from './hydronic-routing'
 import { getGlnHydronicTopologyIssues, hasGlnHydronicClosedLoop } from './hydronic-topology'
 
 describe('GLN hydronic pipe', () => {
@@ -122,5 +123,58 @@ describe('GLN hydronic pipe', () => {
       expect.arrayContaining([expect.objectContaining({ code: 'incompatible-link' })]),
     )
     expect(hasGlnHydronicClosedLoop(nodes, systemId)).toBe(false)
+  })
+
+  test('creates a same-level ceiling route with a concealed wall descent at each endpoint', () => {
+    const plan = planGlnConcealedRoute({
+      start: [0, 1.8, 0],
+      end: [4, 1.6, 3],
+      startLevelId: 'level_1',
+      endLevelId: 'level_1',
+      serviceHeight: 2.3,
+    })
+
+    expect(plan.routing).toEqual({ strategy: 'ceiling', state: 'routed', reviewReason: null })
+    expect(plan.path[1]).toEqual([0, 2.3, 0])
+    expect(plan.path.at(-2)).toEqual([4, 2.3, 3])
+    expect(plan.path.at(-1)).toEqual([4, 1.6, 3])
+  })
+
+  test('uses a reviewed shaft before an equipment-wall riser for cross-level routing', () => {
+    const plan = planGlnConcealedRoute({
+      start: [0, 1.5, 0],
+      end: [4, 4.3, 3],
+      startLevelId: 'level_1',
+      endLevelId: 'level_2',
+      risers: [
+        { id: 'equipment-wall', kind: 'equipment-wall', point: [1, 2.3, 1] },
+        { id: 'shaft', kind: 'shaft', point: [2, 2.3, 2] },
+      ],
+    })
+
+    expect(plan.routing).toEqual({ strategy: 'ceiling-riser', state: 'routed', reviewReason: null })
+    expect(plan.path).toContainEqual([2, 2.3, 2])
+  })
+
+  test('leaves an obstructed or unapproved cross-level route for manual review', () => {
+    const blocked = planGlnConcealedRoute({
+      start: [0, 1.8, 0],
+      end: [4, 1.8, 3],
+      startLevelId: 'level_1',
+      endLevelId: 'level_1',
+      obstacles: [{ id: 'column_a', kind: 'column', min: [-1, 2.2, -1], max: [5, 2.4, 4] }],
+    })
+    const missingRiser = planGlnConcealedRoute({
+      start: [0, 1.8, 0],
+      end: [4, 4.3, 3],
+      startLevelId: 'level_1',
+      endLevelId: 'level_2',
+    })
+
+    expect(blocked.routing).toMatchObject({ state: 'needs-review', reviewReason: 'obstructed' })
+    expect(missingRiser.routing).toMatchObject({
+      state: 'needs-review',
+      reviewReason: 'missing-riser',
+    })
   })
 })

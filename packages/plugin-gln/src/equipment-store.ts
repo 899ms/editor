@@ -9,6 +9,8 @@ type GlnEquipmentState = {
   setSystemId: (systemId: string | null) => void
   hydronicCircuit: GlnHydronicCircuit
   setHydronicCircuit: (circuit: GlnHydronicCircuit) => void
+  showConcealedRoutes: boolean
+  setShowConcealedRoutes: (show: boolean) => void
 }
 
 export const useGlnEquipmentStore = create<GlnEquipmentState>((set) => ({
@@ -18,4 +20,6 @@ export const useGlnEquipmentStore = create<GlnEquipmentState>((set) => ({
   setSystemId: (systemId) => set({ systemId }),
   hydronicCircuit: 'supply',
   setHydronicCircuit: (hydronicCircuit) => set({ hydronicCircuit }),
+  showConcealedRoutes: false,
+  setShowConcealedRoutes: (showConcealedRoutes) => set({ showConcealedRoutes }),
 }))

@@ -2,13 +2,19 @@
 
 import { type AnyNodeId, useScene } from '@pascal-app/core'
 import { useEditor, useViewer } from '@pascal-app/editor'
-import { Cylinder, Fan, GitBranch, MapPin, PanelTop } from 'lucide-react'
+import { Cylinder, Eye, EyeOff, Fan, GitBranch, MapPin, PanelTop, Route } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useGlnEquipmentStore } from './equipment-store'
+import { getGlnPort } from './hydronic-pipe-ports'
 import {
   type GlnHydronicPipeNode as GlnHydronicPipe,
   GlnHydronicPipeNode,
 } from './hydronic-pipe-schema'
+import {
+  collectGlnRoutingObstacles,
+  planGlnConcealedRoute,
+  resolveGlnNodeLevelId,
+} from './hydronic-routing'
 import { getGlnHydronicTopologyIssues } from './hydronic-topology'
 
 const OUTDOOR_UNIT_KIND = 'gln:outdoor-unit'
@@ -150,6 +156,78 @@ function SelectedPipeEditor({ pipe, readOnly }: { pipe: GlnHydronicPipe; readOnl
   )
 }
 
+function routeReviewLabel(reason: NonNullable<GlnHydronicPipe['routing']['reviewReason']>) {
+  if (reason === 'missing-riser') return '跨层连接未找到已确认的竖井或设备墙，请人工确定立管位置。'
+  if (reason === 'obstructed') return '吊顶候选路径碰到门窗、立柱或设备，请手动调整路径点。'
+  return '管线端点不完整，无法生成隐蔽路径。'
+}
+
+function SelectedPipeRouting({ pipe, readOnly }: { pipe: GlnHydronicPipe; readOnly: boolean }) {
+  const nodes = useScene((state) => state.nodes)
+  const route = () => {
+    if (!pipe.start || !pipe.end) {
+      useScene.getState().updateNode(
+        pipe.id as AnyNodeId,
+        {
+          routing: { strategy: 'manual', state: 'needs-review', reviewReason: 'missing-endpoint' },
+        } as never,
+      )
+      return
+    }
+    const startNode = nodes[pipe.start.nodeId as never] as { id: string; type: string } | undefined
+    const endNode = nodes[pipe.end.nodeId as never] as { id: string; type: string } | undefined
+    if (!startNode || !endNode) return
+    const start = getGlnPort(startNode, pipe.start)
+    const end = getGlnPort(endNode, pipe.end)
+    if (!start || !end) {
+      useScene.getState().updateNode(
+        pipe.id as AnyNodeId,
+        {
+          routing: { strategy: 'manual', state: 'needs-review', reviewReason: 'missing-endpoint' },
+        } as never,
+      )
+      return
+    }
+    const plan = planGlnConcealedRoute({
+      start: start.position as [number, number, number],
+      end: end.position as [number, number, number],
+      startNodeId: startNode.id,
+      endNodeId: endNode.id,
+      startLevelId: resolveGlnNodeLevelId(nodes as never, startNode.id),
+      endLevelId: resolveGlnNodeLevelId(nodes as never, endNode.id),
+      obstacles: collectGlnRoutingObstacles(nodes as never),
+    })
+    useScene.getState().updateNode(pipe.id as AnyNodeId, plan as never)
+  }
+
+  return (
+    <section className="rounded-lg border border-sidebar-border p-3" data-gln-concealed-routing>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-medium text-sidebar-foreground text-sm">隐蔽路径复核</p>
+          <p className="mt-1 text-sidebar-foreground/55 text-xs">
+            同层沿吊顶走线，面板前在墙内下行；跨层未确认立管时只提示人工复核。
+          </p>
+        </div>
+        <Route className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-foreground/60" />
+      </div>
+      <button
+        className="mt-3 flex h-9 w-full items-center justify-center rounded-md border border-sidebar-border text-sm hover:border-sidebar-ring disabled:opacity-45"
+        disabled={readOnly}
+        onClick={route}
+        type="button"
+      >
+        按吊顶规则整理路径
+      </button>
+      {pipe.routing.state === 'needs-review' && pipe.routing.reviewReason && (
+        <p className="mt-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2 text-sidebar-foreground/75 text-xs">
+          待人工复核：{routeReviewLabel(pipe.routing.reviewReason)}
+        </p>
+      )}
+    </section>
+  )
+}
+
 export default function GlnEquipmentPanel() {
   const nodes = useScene((state) => state.nodes)
   const systemIds = useMemo(
@@ -202,6 +280,8 @@ export default function GlnEquipmentPanel() {
   const setSystemId = useGlnEquipmentStore((state) => state.setSystemId)
   const hydronicCircuit = useGlnEquipmentStore((state) => state.hydronicCircuit)
   const setHydronicCircuit = useGlnEquipmentStore((state) => state.setHydronicCircuit)
+  const showConcealedRoutes = useGlnEquipmentStore((state) => state.showConcealedRoutes)
+  const setShowConcealedRoutes = useGlnEquipmentStore((state) => state.setShowConcealedRoutes)
 
   useEffect(() => {
     if (systemId && systemIds.includes(systemId)) return
@@ -328,9 +408,19 @@ export default function GlnEquipmentPanel() {
         >
           {hydronicCircuit === 'supply' ? '绘制供水路径' : '绘制回水路径'}
         </button>
+        <button
+          aria-pressed={showConcealedRoutes}
+          className="mt-2 flex h-9 w-full items-center justify-center gap-2 rounded-md border border-sidebar-border text-sidebar-foreground text-sm hover:border-sidebar-ring"
+          onClick={() => setShowConcealedRoutes(!showConcealedRoutes)}
+          type="button"
+        >
+          {showConcealedRoutes ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          {showConcealedRoutes ? '关闭隐蔽路径检查' : '检查隐蔽路径'}
+        </button>
       </section>
 
       {selectedPipe && <SelectedPipeEditor pipe={selectedPipe} readOnly={readOnly} />}
+      {selectedPipe && <SelectedPipeRouting pipe={selectedPipe} readOnly={readOnly} />}
 
       {systemId && topologyIssues.length > 0 && (
         <section

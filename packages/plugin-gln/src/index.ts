@@ -84,7 +84,22 @@ export type { GlnPipeEndpoint } from './hydronic-pipe-schema'
 export {
   GlnHydronicCircuit,
   GlnHydronicPipeNode,
+  GlnHydronicRoute,
+  GlnHydronicRouteReviewReason,
+  GlnHydronicRouteState,
+  GlnHydronicRouteStrategy,
 } from './hydronic-pipe-schema'
+export type {
+  GlnHydronicRoutePlan,
+  GlnRiserCandidate,
+  GlnRouteObstacle,
+  GlnRoutePoint,
+} from './hydronic-routing'
+export {
+  collectGlnRoutingObstacles,
+  planGlnConcealedRoute,
+  resolveGlnNodeLevelId,
+} from './hydronic-routing'
 export { getGlnHydronicTopologyIssues, hasGlnHydronicClosedLoop } from './hydronic-topology'
 export {
   glnOutdoorUnitDefinition,
