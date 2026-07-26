@@ -2,6 +2,7 @@ import type { Plugin } from '@pascal-app/core/registry'
 import type { ComponentType } from 'react'
 import { glnBufferTankNodeDefinition } from './buffer-tank-definition'
 import { GLN_PLUGIN_ID } from './constants'
+import { glnGlbImportNodeDefinition } from './glb-import-definition'
 import { glnHydronicPipeNodeDefinition } from './hydronic-pipe-definition'
 import { glnIfcImportNodeDefinition } from './ifc-import-definition'
 import { glnOutdoorUnitNodeDefinition } from './outdoor-unit-definition'
@@ -31,6 +32,7 @@ export const glnPlugin: Plugin = {
     glnWallPanelNodeDefinition,
     glnHydronicPipeNodeDefinition,
     glnIfcImportNodeDefinition,
+    glnGlbImportNodeDefinition,
   ],
 }
 
@@ -64,10 +66,10 @@ export const glnIfcImportHostPanel: GlnHostPanel = {
   id: 'gln:ifc-imports',
   label: '住宅导入',
   icon: { kind: 'iconify', name: 'lucide:file-box' },
-  component: () => import('./ifc-import-panel'),
-  kinds: ['gln:ifc-import'],
+  component: () => import('./residential-import-panel'),
+  kinds: ['gln:ifc-import', 'gln:glb-import'],
   pluginId: GLN_PLUGIN_ID,
-  description: '在本地解析 IFC，并重建为可编辑住宅节点。原文件不写入场景。',
+  description: '在本地解析 IFC 或 GLB，并重建为可编辑住宅节点。原文件不写入场景。',
   creator: { name: 'GLN' },
   defaultInstalled: true,
   mandatory: true,
@@ -103,6 +105,30 @@ export {
   GLN_OUTDOOR_UNIT_PRESETS,
   GLN_WALL_PANEL_PRESETS,
 } from './equipment-presets'
+export {
+  buildGlbReportScene,
+  buildGlbResidentialReplacement,
+  createGlnGlbImportRecord,
+  glnGlbImportId,
+} from './glb-import-application'
+export {
+  glnGlbImportDefinition,
+  glnGlbImportNodeDefinition,
+} from './glb-import-definition'
+export {
+  GlnGlbConversionReport,
+  GlnGlbImportNode,
+  GlnGlbReviewReason,
+} from './glb-import-schema'
+export type {
+  GlbAnalyzedMesh,
+  GlbResidentialConversionReport,
+  GlbResidentialReconstruction,
+  GlbResidentialReviewItem,
+  GlbResidentialReviewReason,
+  GlbResidentialSourceGraph,
+  GlbSourceIdentity,
+} from './glb-residential-reconstruction'
 export {
   glnHydronicPipeDefinition,
   glnHydronicPipeNodeDefinition,

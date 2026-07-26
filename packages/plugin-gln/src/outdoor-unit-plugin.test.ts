@@ -10,6 +10,7 @@ describe('GLN equipment plugin contribution', () => {
       'gln:wall-panel',
       'gln:hydronic-pipe',
       'gln:ifc-import',
+      'gln:glb-import',
     ])
     expect(
       glnPlugin.nodes
@@ -36,7 +37,7 @@ describe('GLN equipment plugin contribution', () => {
     })
     expect(glnHostPanels.find((panel) => panel.id === 'gln:ifc-imports')).toMatchObject({
       label: '住宅导入',
-      kinds: ['gln:ifc-import'],
+      kinds: ['gln:ifc-import', 'gln:glb-import'],
       pluginId: 'pascal:gln',
       mandatory: true,
     })
