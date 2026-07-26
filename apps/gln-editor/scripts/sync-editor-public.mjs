@@ -15,6 +15,16 @@ const webIfcDirectory = path.resolve(
   'node_modules',
   'web-ifc',
 )
+const dracoDirectory = path.resolve(
+  appDirectory,
+  'node_modules',
+  'three',
+  'examples',
+  'jsm',
+  'libs',
+  'draco',
+  'gltf',
+)
 
 async function targetAlreadySharesSource() {
   try {
@@ -59,3 +69,9 @@ await writeFile(copyMarker, `${sourceDirectory}\n`, 'utf8')
 for (const name of ['web-ifc.wasm', 'web-ifc-mt.wasm', 'web-ifc-node.wasm']) {
   await copyFile(path.join(webIfcDirectory, name), path.join(targetDirectory, name))
 }
+
+await cp(dracoDirectory, path.join(targetDirectory, 'draco'), {
+  errorOnExist: false,
+  force: true,
+  recursive: true,
+})
