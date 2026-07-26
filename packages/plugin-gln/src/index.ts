@@ -2,6 +2,7 @@ import type { Plugin } from '@pascal-app/core/registry'
 import type { ComponentType } from 'react'
 import { glnBufferTankNodeDefinition } from './buffer-tank-definition'
 import { GLN_PLUGIN_ID } from './constants'
+import { glnHydronicPipeNodeDefinition } from './hydronic-pipe-definition'
 import { glnOutdoorUnitNodeDefinition } from './outdoor-unit-definition'
 import { glnSystemNodeDefinition } from './system-definition'
 import { glnWallPanelNodeDefinition } from './wall-panel-definition'
@@ -27,6 +28,7 @@ export const glnPlugin: Plugin = {
     glnOutdoorUnitNodeDefinition,
     glnBufferTankNodeDefinition,
     glnWallPanelNodeDefinition,
+    glnHydronicPipeNodeDefinition,
   ],
 }
 
@@ -48,7 +50,7 @@ export const glnEquipmentHostPanel: GlnHostPanel = {
   label: '光冷暖设备',
   icon: { kind: 'iconify', name: 'lucide:fan' },
   component: () => import('./equipment-panel'),
-  kinds: ['gln:outdoor-unit', 'gln:buffer-tank', 'gln:wall-panel'],
+  kinds: ['gln:outdoor-unit', 'gln:buffer-tank', 'gln:wall-panel', 'gln:hydronic-pipe'],
   pluginId: GLN_PLUGIN_ID,
   description: '放置和编辑光冷暖系统的物理设备。',
   creator: { name: 'GLN' },
@@ -68,6 +70,22 @@ export { buildGlnBufferTankGeometry } from './buffer-tank-geometry'
 export { getGlnBufferTankPorts } from './buffer-tank-ports'
 export { GlnBufferTankFinish, GlnBufferTankNode } from './buffer-tank-schema'
 export { GLN_PLUGIN_ID } from './constants'
+export {
+  glnHydronicPipeDefinition,
+  glnHydronicPipeNodeDefinition,
+} from './hydronic-pipe-definition'
+export { buildGlnHydronicPipeGeometry } from './hydronic-pipe-geometry'
+export {
+  areGlnHydronicEndpointsCompatible,
+  getGlnHydronicPipePorts,
+  isGlnHydronicPortCompatible,
+} from './hydronic-pipe-ports'
+export type { GlnPipeEndpoint } from './hydronic-pipe-schema'
+export {
+  GlnHydronicCircuit,
+  GlnHydronicPipeNode,
+} from './hydronic-pipe-schema'
+export { getGlnHydronicTopologyIssues, hasGlnHydronicClosedLoop } from './hydronic-topology'
 export {
   glnOutdoorUnitDefinition,
   glnOutdoorUnitNodeDefinition,

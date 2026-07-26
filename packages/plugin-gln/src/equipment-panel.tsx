@@ -2,19 +2,152 @@
 
 import { type AnyNodeId, useScene } from '@pascal-app/core'
 import { useEditor, useViewer } from '@pascal-app/editor'
-import { Cylinder, Fan, MapPin, PanelTop } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { Cylinder, Fan, GitBranch, MapPin, PanelTop } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useGlnEquipmentStore } from './equipment-store'
+import {
+  type GlnHydronicPipeNode as GlnHydronicPipe,
+  GlnHydronicPipeNode,
+} from './hydronic-pipe-schema'
+import { getGlnHydronicTopologyIssues } from './hydronic-topology'
 
 const OUTDOOR_UNIT_KIND = 'gln:outdoor-unit'
 const BUFFER_TANK_KIND = 'gln:buffer-tank'
 const WALL_PANEL_KIND = 'gln:wall-panel'
+const HYDRONIC_PIPE_KIND = 'gln:hydronic-pipe'
 
 function SystemOption({ systemId }: { systemId: string }) {
   const name = useScene(
     (state) => (state.nodes[systemId as never] as { name?: string } | undefined)?.name,
   )
   return <option value={systemId}>{name ?? '未命名系统'}</option>
+}
+
+function PipeCoordinateInput({
+  axis,
+  disabled,
+  onCommit,
+  pointIndex,
+  value,
+}: {
+  axis: 'X' | 'Y' | 'Z'
+  disabled: boolean
+  onCommit: (value: number) => void
+  pointIndex: number
+  value: number
+}) {
+  const [draft, setDraft] = useState(String(value))
+  useEffect(() => setDraft(String(value)), [value])
+  const commit = () => {
+    const next = Number(draft)
+    if (!Number.isFinite(next)) {
+      setDraft(String(value))
+      return
+    }
+    onCommit(next)
+  }
+  return (
+    <input
+      aria-label={`路径点 ${pointIndex + 1} ${axis}`}
+      className="h-8 w-full rounded border border-sidebar-border bg-sidebar px-1.5 text-xs"
+      disabled={disabled}
+      onBlur={commit}
+      onChange={(event) => setDraft(event.target.value)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur()
+      }}
+      step="0.05"
+      type="number"
+      value={draft}
+    />
+  )
+}
+
+function SelectedPipeEditor({ pipe, readOnly }: { pipe: GlnHydronicPipe; readOnly: boolean }) {
+  const updatePath = (path: GlnHydronicPipe['path']) =>
+    useScene.getState().updateNode(pipe.id as AnyNodeId, { path } as never)
+  const addPoint = () => {
+    const endIndex = pipe.path.length - 1
+    const previous = pipe.path[endIndex - 1]!
+    const end = pipe.path[endIndex]!
+    updatePath([
+      ...pipe.path.slice(0, endIndex),
+      [(previous[0] + end[0]) / 2, (previous[1] + end[1]) / 2, (previous[2] + end[2]) / 2],
+      end,
+    ])
+  }
+  const updateCoordinate = (pointIndex: number, coordinate: 0 | 1 | 2, next: number) => {
+    updatePath(
+      pipe.path.map((point, index) =>
+        index === pointIndex
+          ? ([
+              coordinate === 0 ? next : point[0],
+              coordinate === 1 ? next : point[1],
+              coordinate === 2 ? next : point[2],
+            ] as [number, number, number])
+          : point,
+      ),
+    )
+  }
+  const deletePoint = (pointIndex: number) =>
+    updatePath(pipe.path.filter((_, index) => index !== pointIndex))
+
+  return (
+    <section className="rounded-lg border border-sidebar-border p-3" data-gln-pipe-editor>
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="font-medium text-sidebar-foreground text-sm">
+            {pipe.circuit === 'supply' ? '供水路径' : '回水路径'}
+          </p>
+          <p className="text-sidebar-foreground/55 text-xs">端点固定连接，允许编辑中间路径点。</p>
+        </div>
+        <button
+          className="rounded-md border border-sidebar-border px-2 py-1 text-xs hover:border-sidebar-ring disabled:opacity-45"
+          disabled={readOnly}
+          onClick={addPoint}
+          type="button"
+        >
+          新增路径点
+        </button>
+      </div>
+      <div className="mt-3 space-y-2">
+        {pipe.path.map((point, index) => {
+          const isEndpoint = index === 0 || index === pipe.path.length - 1
+          return (
+            <div
+              className="grid grid-cols-[auto_1fr_1fr_1fr_auto] items-center gap-1.5"
+              key={`path-point-${index}`}
+            >
+              <span className="text-sidebar-foreground/55 text-xs">
+                {isEndpoint ? '端点' : `点 ${index}`}
+              </span>
+              {(['X', 'Y', 'Z'] as const).map((axis, coordinate) => (
+                <PipeCoordinateInput
+                  axis={axis}
+                  disabled={readOnly || isEndpoint}
+                  key={axis}
+                  onCommit={(next) => updateCoordinate(index, coordinate as 0 | 1 | 2, next)}
+                  pointIndex={index}
+                  value={point[coordinate]!}
+                />
+              ))}
+              {!isEndpoint && (
+                <button
+                  aria-label={`删除路径点 ${index + 1}`}
+                  className="text-sidebar-foreground/60 text-xs hover:text-destructive disabled:opacity-45"
+                  disabled={readOnly}
+                  onClick={() => deletePoint(index)}
+                  type="button"
+                >
+                  删除
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
 }
 
 export default function GlnEquipmentPanel() {
@@ -32,7 +165,8 @@ export default function GlnEquipmentPanel() {
         (node) =>
           (node as { type: string }).type === OUTDOOR_UNIT_KIND ||
           (node as { type: string }).type === BUFFER_TANK_KIND ||
-          (node as { type: string }).type === WALL_PANEL_KIND,
+          (node as { type: string }).type === WALL_PANEL_KIND ||
+          (node as { type: string }).type === HYDRONIC_PIPE_KIND,
       ).length,
     [nodes],
   )
@@ -47,6 +181,12 @@ export default function GlnEquipmentPanel() {
       zoneCandidateIds: string[]
     }
   }, [nodes, selectedIds])
+  const selectedPipe = useMemo(() => {
+    const selected = selectedIds.length === 1 ? nodes[selectedIds[0] as never] : undefined
+    return (selected as { type?: string } | undefined)?.type === HYDRONIC_PIPE_KIND
+      ? (GlnHydronicPipeNode.safeParse(selected).data ?? null)
+      : null
+  }, [nodes, selectedIds])
   const ambiguousZones = useMemo(
     () =>
       (selectedPanel?.zoneCandidateIds ?? []).map((id) => ({
@@ -60,6 +200,8 @@ export default function GlnEquipmentPanel() {
   const setReadyKind = useGlnEquipmentStore((state) => state.setReadyKind)
   const systemId = useGlnEquipmentStore((state) => state.systemId)
   const setSystemId = useGlnEquipmentStore((state) => state.setSystemId)
+  const hydronicCircuit = useGlnEquipmentStore((state) => state.hydronicCircuit)
+  const setHydronicCircuit = useGlnEquipmentStore((state) => state.setHydronicCircuit)
 
   useEffect(() => {
     if (systemId && systemIds.includes(systemId)) return
@@ -67,17 +209,26 @@ export default function GlnEquipmentPanel() {
   }, [systemId, systemIds, setSystemId])
 
   const canPlace = !readOnly && !!levelId && !!systemId
+  const topologyIssues = useMemo(
+    () => (systemId ? getGlnHydronicTopologyIssues(nodes as never, systemId) : []),
+    [nodes, systemId],
+  )
 
   useEffect(() => {
     void Promise.all([
       import('./outdoor-unit-tool'),
       import('./buffer-tank-tool'),
+      import('./hydronic-pipe-tool'),
       import('./wall-panel-tool'),
     ])
   }, [])
 
   const activate = (
-    kind: typeof OUTDOOR_UNIT_KIND | typeof BUFFER_TANK_KIND | typeof WALL_PANEL_KIND,
+    kind:
+      | typeof OUTDOOR_UNIT_KIND
+      | typeof BUFFER_TANK_KIND
+      | typeof WALL_PANEL_KIND
+      | typeof HYDRONIC_PIPE_KIND,
   ) => {
     if (!canPlace) return
     setReadyKind(null)
@@ -138,6 +289,62 @@ export default function GlnEquipmentPanel() {
           </span>
         </span>
       </button>
+
+      <section className="rounded-lg border border-sidebar-border p-3">
+        <div className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-background">
+            <GitBranch className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-medium text-sidebar-foreground text-sm">绘制供回水管</p>
+            <p className="text-sidebar-foreground/55 text-xs">
+              点击添加路径点，Enter 完成并连接端口
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="管路类型">
+          {(['supply', 'return'] as const).map((circuit) => (
+            <button
+              aria-pressed={hydronicCircuit === circuit}
+              className={`rounded-md border px-3 py-2 text-sm ${
+                hydronicCircuit === circuit
+                  ? 'border-sidebar-ring bg-sidebar-accent'
+                  : 'border-sidebar-border hover:border-sidebar-ring/60'
+              }`}
+              key={circuit}
+              onClick={() => setHydronicCircuit(circuit)}
+              type="button"
+            >
+              {circuit === 'supply' ? '供水' : '回水'}
+            </button>
+          ))}
+        </div>
+        <button
+          aria-pressed={activeTool === HYDRONIC_PIPE_KIND}
+          className="mt-2 flex h-10 w-full items-center justify-center rounded-md bg-sidebar-accent font-medium text-sidebar-foreground text-sm hover:bg-sidebar-accent/75 disabled:cursor-not-allowed disabled:opacity-45"
+          disabled={!canPlace}
+          onClick={() => activate(HYDRONIC_PIPE_KIND)}
+          type="button"
+        >
+          {hydronicCircuit === 'supply' ? '绘制供水路径' : '绘制回水路径'}
+        </button>
+      </section>
+
+      {selectedPipe && <SelectedPipeEditor pipe={selectedPipe} readOnly={readOnly} />}
+
+      {systemId && topologyIssues.length > 0 && (
+        <section
+          className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3"
+          data-gln-topology-issues
+        >
+          <p className="font-medium text-sidebar-foreground text-sm">水路待完成</p>
+          <ul className="mt-1 space-y-1 text-sidebar-foreground/65 text-xs">
+            {topologyIssues.slice(0, 4).map((issue) => (
+              <li key={`${issue.code}-${issue.pipeId ?? issue.message}`}>{issue.message}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <button
         aria-busy={activeTool === WALL_PANEL_KIND && readyKind !== WALL_PANEL_KIND}
