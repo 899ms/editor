@@ -14,7 +14,8 @@ import type { GlnHydronicPipeNode } from './hydronic-pipe-schema'
  */
 export default function GlnHydronicPipeRenderer({ node }: { node: GlnHydronicPipeNode }) {
   const showConcealedRoutes = useGlnEquipmentStore((state) => state.showConcealedRoutes)
-  if (node.concealed && !showConcealedRoutes) return null
+  const displayMode = useGlnEquipmentStore((state) => state.displayMode)
+  if (node.concealed && !showConcealedRoutes && displayMode === 'edit') return null
   return <MountedGlnHydronicPipe node={node} />
 }
 
