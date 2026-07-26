@@ -1,4 +1,5 @@
 import type { AnyNode, AnyNodeId, ParametricDescriptor, WallNode } from '@pascal-app/core'
+import { GLN_WALL_PANEL_PRESETS } from './equipment-presets'
 import { resolveWallPanelTarget } from './wall-panel-installation'
 import type { GlnWallPanelNode } from './wall-panel-schema'
 
@@ -45,7 +46,24 @@ function normalizeWallPanelEdit(
 
 export const glnWallPanelParametrics: ParametricDescriptor<GlnWallPanelNode> = {
   normalize: normalizeWallPanelEdit,
+  derive: (next, patch) => ('presetId' in patch ? GLN_WALL_PANEL_PRESETS[next.presetId] : {}),
   groups: [
+    {
+      label: '参数预设',
+      fields: [
+        {
+          key: 'presetId',
+          kind: 'enum',
+          label: '通用尺寸预设',
+          options: Object.keys(GLN_WALL_PANEL_PRESETS),
+          optionLabels: {
+            'generic-narrow': '通用窄幅',
+            'generic-standard': '通用标准',
+            'generic-wide': '通用宽幅',
+          },
+        },
+      ],
+    },
     {
       label: '尺寸',
       fields: [
@@ -93,6 +111,56 @@ export const glnWallPanelParametrics: ParametricDescriptor<GlnWallPanelNode> = {
           min: 0.25,
           max: 1.5,
           step: 0.25,
+        },
+      ],
+    },
+    {
+      label: '检修净空（请按资料手工填写）',
+      fields: [
+        {
+          key: 'clearanceFront',
+          kind: 'number',
+          label: '前方',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceBack',
+          kind: 'number',
+          label: '后方',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceLeft',
+          kind: 'number',
+          label: '左侧',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceRight',
+          kind: 'number',
+          label: '右侧',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceTop',
+          kind: 'number',
+          label: '顶部',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
         },
       ],
     },

@@ -4,12 +4,19 @@ const glnBaseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 const editorBaseUrl = process.env.EDITOR_E2E_BASE_URL ?? 'http://localhost:32102'
 
 type SceneNode = {
+  autoFromWalls?: boolean
+  boundaryWallIds?: string[]
+  children?: string[]
+  color?: string
   diameter?: number
   end?: [number, number]
   finish?: string
   id: string
   mode?: string
+  metadata?: Record<string, unknown>
   name?: string
+  object?: string
+  parentId?: string | null
   position?: [number, number, number]
   rotation?: [number, number, number]
   start?: [number, number]
@@ -18,6 +25,7 @@ type SceneNode = {
   type: string
   visible?: boolean
   width?: number
+  polygon?: number[][]
 }
 
 type ScenePayload = {
@@ -26,6 +34,7 @@ type ScenePayload = {
     nodes: Record<string, SceneNode>
   }
   nodeCount: number
+  version: number
 }
 
 async function fetchScene(request: APIRequestContext, baseUrl: string, id: string) {
@@ -79,6 +88,45 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   expect(originalSceneResponse.status()).toBe(201)
   const originalScene = (await originalSceneResponse.json()) as { id: string }
 
+  const equipmentLevel = Object.values(initialScene.graph.nodes).find(
+    (node) => node.type === 'level',
+  )
+  if (!equipmentLevel) throw new Error('GLN default scene did not include a placement level')
+  const graphWithEquipmentArea = structuredClone(initialScene.graph)
+  const equipmentArea: SceneNode = {
+    id: 'zone_gln_equipment_area',
+    object: 'node',
+    type: 'zone',
+    name: '设备阳台',
+    parentId: equipmentLevel.id,
+    visible: false,
+    metadata: {},
+    polygon: [
+      [-20, -20],
+      [20, -20],
+      [20, 20],
+      [-20, 20],
+    ],
+    autoFromWalls: false,
+    boundaryWallIds: [],
+    color: '#3b82f6',
+  }
+  const seededLevel = graphWithEquipmentArea.nodes[equipmentLevel.id] as SceneNode
+  seededLevel.children = [...(seededLevel.children ?? []), equipmentArea.id]
+  graphWithEquipmentArea.nodes[equipmentArea.id] = equipmentArea
+  const seedResponse = await request.put(`${glnBaseUrl}/api/scenes/${sceneId}`, {
+    data: {
+      name: '光冷暖设备安装测试',
+      graph: graphWithEquipmentArea,
+      expectedVersion: initialScene.version,
+    },
+  })
+  if (!seedResponse.ok()) {
+    throw new Error(`GLN equipment-area seed failed: ${await seedResponse.text()}`)
+  }
+  await page.reload()
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+
   await page.getByRole('button', { name: '光冷暖系统' }).click()
   await expect(page.locator('[data-gln-systems-panel]')).toBeVisible()
   await page.getByRole('button', { name: '新建系统' }).click()
@@ -118,6 +166,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   await systemSelector.selectOption({ label: '一层光冷暖系统' })
   const selectedSystemId = await systemSelector.inputValue()
   expect(selectedSystemId).toMatch(/^gln-system_/)
+  await page.getByRole('combobox', { name: '安装空间' }).selectOption({ label: '设备阳台' })
+  await page.getByRole('combobox', { name: '区域用途' }).selectOption('outdoor-equipment-area')
   await page.getByRole('button', { name: /放置外机/ }).click()
   const canvas = page.locator('[data-pascal-viewer-3d] canvas')
   await expect(canvas).toBeVisible()
@@ -272,6 +322,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     await page.getByRole('button', { name: '光冷暖设备' }).click()
   }
   await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible()
+  await page.getByRole('combobox', { name: '区域用途' }).selectOption('equipment-area')
   const placeTank = page.getByRole('button', { name: /放置缓冲水箱/ })
   await placeTank.click()
   await expect(placeTank).toHaveAttribute('aria-pressed', 'true')

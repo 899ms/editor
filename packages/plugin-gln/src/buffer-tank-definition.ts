@@ -25,6 +25,15 @@ export const glnBufferTankDefinition: GlnBufferTankDefinition = {
     rotation: [0, 0, 0],
     diameter: 0.65,
     height: 1.5,
+    presetId: 'generic-standard',
+    specificationSource: 'generic-placeholder',
+    installationAreaZoneId: null,
+    installationAreaKind: 'unassigned',
+    clearanceFront: 0,
+    clearanceBack: 0,
+    clearanceLeft: 0,
+    clearanceRight: 0,
+    clearanceTop: 0,
     insulationThickness: 0.05,
     finish: 'light',
     jacketColor: '#dfe5e8',
@@ -49,12 +58,12 @@ export const glnBufferTankDefinition: GlnBufferTankDefinition = {
           rotation: tank.rotation,
         }
       },
-      collides: false,
+      collides: true,
     },
   },
 
   relations: {
-    references: { systemId: ['gln:system'] },
+    references: { systemId: ['gln:system'], installationAreaZoneId: ['zone'] },
   },
 
   parametrics: glnBufferTankParametrics,
@@ -63,6 +72,12 @@ export const glnBufferTankDefinition: GlnBufferTankDefinition = {
     JSON.stringify([
       node.diameter,
       node.height,
+      node.presetId,
+      node.clearanceFront,
+      node.clearanceBack,
+      node.clearanceLeft,
+      node.clearanceRight,
+      node.clearanceTop,
       node.insulationThickness,
       node.finish,
       node.jacketColor,

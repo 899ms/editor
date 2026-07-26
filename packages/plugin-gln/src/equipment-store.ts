@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { GlnEquipmentInstallationAreaKind } from './equipment-installation-schema'
 
 export type GlnHydronicCircuit = 'supply' | 'return'
 
@@ -11,6 +12,10 @@ type GlnEquipmentState = {
   setHydronicCircuit: (circuit: GlnHydronicCircuit) => void
   showConcealedRoutes: boolean
   setShowConcealedRoutes: (show: boolean) => void
+  installationAreaZoneId: string | null
+  setInstallationAreaZoneId: (zoneId: string | null) => void
+  installationAreaKind: GlnEquipmentInstallationAreaKind
+  setInstallationAreaKind: (kind: GlnEquipmentInstallationAreaKind) => void
 }
 
 export const useGlnEquipmentStore = create<GlnEquipmentState>((set) => ({
@@ -22,4 +27,8 @@ export const useGlnEquipmentStore = create<GlnEquipmentState>((set) => ({
   setHydronicCircuit: (hydronicCircuit) => set({ hydronicCircuit }),
   showConcealedRoutes: false,
   setShowConcealedRoutes: (showConcealedRoutes) => set({ showConcealedRoutes }),
+  installationAreaZoneId: null,
+  setInstallationAreaZoneId: (installationAreaZoneId) => set({ installationAreaZoneId }),
+  installationAreaKind: 'unassigned',
+  setInstallationAreaKind: (installationAreaKind) => set({ installationAreaKind }),
 }))

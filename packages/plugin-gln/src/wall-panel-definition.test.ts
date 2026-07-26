@@ -44,6 +44,7 @@ describe('GLN wall-panel node definition', () => {
         systemId: ['gln:system'],
         wallId: ['wall'],
         zoneId: ['zone'],
+        installationAreaZoneId: ['zone'],
       },
     })
     expect(GlnWallPanelNode.safeParse(glnWallPanelDefinition.defaults()).success).toBe(true)

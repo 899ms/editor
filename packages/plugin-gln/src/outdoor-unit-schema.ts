@@ -1,5 +1,7 @@
 import { BaseNode, nodeType, objectId } from '@pascal-app/core/schema'
 import { z } from 'zod'
+import { GlnEquipmentInstallationFields } from './equipment-installation-schema'
+import { GLN_OUTDOOR_UNIT_PRESETS } from './equipment-presets'
 
 const HexColor = z.string().regex(/^#[0-9a-f]{6}$/i, 'Expected a six-digit hex color')
 
@@ -21,6 +23,15 @@ export const GlnOutdoorUnitNode = BaseNode.extend({
   width: z.number().min(0.45).max(2.5).default(0.9),
   depth: z.number().min(0.25).max(0.9).default(0.42),
   height: z.number().min(0.45).max(2.2).default(0.75),
+  presetId: z
+    .enum(
+      Object.keys(GLN_OUTDOOR_UNIT_PRESETS) as [
+        keyof typeof GLN_OUTDOOR_UNIT_PRESETS,
+        ...Array<keyof typeof GLN_OUTDOOR_UNIT_PRESETS>,
+      ],
+    )
+    .default('generic-standard'),
+  ...GlnEquipmentInstallationFields,
   finish: GlnOutdoorUnitFinish.default('light'),
   bodyColor: HexColor.default('#e8ecef'),
   grilleColor: HexColor.default('#333a40'),

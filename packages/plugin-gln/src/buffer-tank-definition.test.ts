@@ -128,7 +128,7 @@ describe('GLN buffer-tank domain definition', () => {
     expect(glnBufferTankDefinition.ports).toBe(getGlnBufferTankPorts)
     expect(glnBufferTankDefinition.floorplan).toBe(buildGlnBufferTankFloorplan)
     expect(glnBufferTankDefinition.relations).toEqual({
-      references: { systemId: ['gln:system'] },
+      references: { systemId: ['gln:system'], installationAreaZoneId: ['zone'] },
     })
     expect(GlnBufferTankNode.safeParse(glnBufferTankDefinition.defaults()).success).toBe(true)
   })

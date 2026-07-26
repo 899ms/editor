@@ -15,6 +15,8 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { getGlnInstallationIssues } from './equipment-installation'
+import type { GlnEquipmentInstallationAreaKind } from './equipment-installation-schema'
 import { useGlnEquipmentStore } from './equipment-store'
 import { getGlnPort } from './hydronic-pipe-ports'
 import {
@@ -32,6 +34,24 @@ const OUTDOOR_UNIT_KIND = 'gln:outdoor-unit'
 const BUFFER_TANK_KIND = 'gln:buffer-tank'
 const WALL_PANEL_KIND = 'gln:wall-panel'
 const HYDRONIC_PIPE_KIND = 'gln:hydronic-pipe'
+
+const OUTDOOR_AREA_KINDS: GlnEquipmentInstallationAreaKind[] = ['outdoor-equipment-area']
+const TANK_AREA_KINDS: GlnEquipmentInstallationAreaKind[] = [
+  'equipment-room',
+  'mechanical-room',
+  'equipment-area',
+]
+const INSTALLATION_AREA_KINDS: GlnEquipmentInstallationAreaKind[] = [
+  ...OUTDOOR_AREA_KINDS,
+  ...TANK_AREA_KINDS,
+]
+const AREA_KIND_LABELS: Record<GlnEquipmentInstallationAreaKind, string> = {
+  unassigned: '未确认',
+  'outdoor-equipment-area': '室外设备区',
+  'equipment-room': '设备间',
+  'mechanical-room': '机房',
+  'equipment-area': '设备区',
+}
 
 function SystemOption({ systemId }: { systemId: string }) {
   const name = useScene(
@@ -286,6 +306,13 @@ export default function GlnEquipmentPanel() {
       ? (selected as { id: string; type: string; systemId?: string })
       : null
   }, [nodes, selectedIds])
+  const selectedEquipmentAsset = useMemo(() => {
+    const selected = selectedIds.length === 1 ? nodes[selectedIds[0] as never] : undefined
+    const type = (selected as { type?: string } | undefined)?.type
+    return type === OUTDOOR_UNIT_KIND || type === BUFFER_TANK_KIND || type === WALL_PANEL_KIND
+      ? (selected as { id: string; type: string })
+      : null
+  }, [nodes, selectedIds])
   const ambiguousZones = useMemo(
     () =>
       (selectedPanel?.zoneCandidateIds ?? []).map((id) => ({
@@ -303,6 +330,10 @@ export default function GlnEquipmentPanel() {
   const setHydronicCircuit = useGlnEquipmentStore((state) => state.setHydronicCircuit)
   const showConcealedRoutes = useGlnEquipmentStore((state) => state.showConcealedRoutes)
   const setShowConcealedRoutes = useGlnEquipmentStore((state) => state.setShowConcealedRoutes)
+  const installationAreaZoneId = useGlnEquipmentStore((state) => state.installationAreaZoneId)
+  const setInstallationAreaZoneId = useGlnEquipmentStore((state) => state.setInstallationAreaZoneId)
+  const installationAreaKind = useGlnEquipmentStore((state) => state.installationAreaKind)
+  const setInstallationAreaKind = useGlnEquipmentStore((state) => state.setInstallationAreaKind)
   const [deletePreviewOpen, setDeletePreviewOpen] = useState(false)
 
   useEffect(() => {
@@ -311,10 +342,25 @@ export default function GlnEquipmentPanel() {
   }, [systemId, systemIds, setSystemId])
 
   const canPlace = !readOnly && !!levelId && !!systemId
+  const installationZones = useMemo(
+    () =>
+      Object.values(nodes)
+        .filter((node) => node.type === 'zone' && node.parentId === levelId)
+        .map((node) => {
+          const zone = node as unknown as { id: string; name?: string }
+          return { id: zone.id, name: zone.name?.trim() || '未命名空间' }
+        }),
+    [levelId, nodes],
+  )
+  const outdoorInstallationReady =
+    !!installationAreaZoneId && installationAreaKind === 'outdoor-equipment-area'
+  const tankInstallationReady =
+    !!installationAreaZoneId && TANK_AREA_KINDS.includes(installationAreaKind)
   const topologyIssues = useMemo(
     () => (systemId ? getGlnHydronicTopologyIssues(nodes as never, systemId) : []),
     [nodes, systemId],
   )
+  const installationIssues = useMemo(() => getGlnInstallationIssues(nodes as never), [nodes])
   const deleteImpact = useMemo(
     () =>
       selectedPhysicalNode && systemId && selectedPhysicalNode.systemId === systemId
@@ -340,6 +386,8 @@ export default function GlnEquipmentPanel() {
       | typeof HYDRONIC_PIPE_KIND,
   ) => {
     if (!canPlace) return
+    if (kind === OUTDOOR_UNIT_KIND && !outdoorInstallationReady) return
+    if (kind === BUFFER_TANK_KIND && !tankInstallationReady) return
     setReadyKind(null)
     const editor = useEditor.getState()
     ;(editor.setTool as (tool: string) => void)(kind)
@@ -376,6 +424,49 @@ export default function GlnEquipmentPanel() {
         </select>
       </label>
 
+      <section className="rounded-lg border border-sidebar-border p-3" data-gln-installation-area>
+        <p className="font-medium text-sidebar-foreground text-sm">确认安装区域</p>
+        <p className="mt-1 text-sidebar-foreground/55 text-xs">
+          外机仅限室外设备区；水箱仅限设备间、机房或设备区。该选择会写入新设备。
+        </p>
+        <label className="mt-3 flex flex-col gap-1.5 text-sidebar-foreground text-xs">
+          安装空间
+          <select
+            aria-label="安装空间"
+            className="h-9 rounded-md border border-sidebar-border bg-sidebar px-2 text-sm outline-none focus:border-sidebar-ring"
+            disabled={readOnly || !levelId}
+            onChange={(event) => setInstallationAreaZoneId(event.target.value || null)}
+            value={installationAreaZoneId ?? ''}
+          >
+            <option value="">请选择空间</option>
+            {installationZones.map((zone) => (
+              <option key={zone.id} value={zone.id}>
+                {zone.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="mt-3 flex flex-col gap-1.5 text-sidebar-foreground text-xs">
+          区域用途
+          <select
+            aria-label="区域用途"
+            className="h-9 rounded-md border border-sidebar-border bg-sidebar px-2 text-sm outline-none focus:border-sidebar-ring"
+            disabled={readOnly}
+            onChange={(event) =>
+              setInstallationAreaKind(event.target.value as GlnEquipmentInstallationAreaKind)
+            }
+            value={installationAreaKind}
+          >
+            <option value="unassigned">未确认</option>
+            {INSTALLATION_AREA_KINDS.map((kind) => (
+              <option key={kind} value={kind}>
+                {AREA_KIND_LABELS[kind]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </section>
+
       <button
         aria-busy={activeTool === OUTDOOR_UNIT_KIND && readyKind !== OUTDOOR_UNIT_KIND}
         aria-pressed={activeTool === OUTDOOR_UNIT_KIND}
@@ -384,7 +475,7 @@ export default function GlnEquipmentPanel() {
             ? 'border-sidebar-ring bg-sidebar-accent'
             : 'border-sidebar-border hover:border-sidebar-ring/60 hover:bg-sidebar-accent/50'
         } disabled:cursor-not-allowed disabled:opacity-45`}
-        disabled={!canPlace}
+        disabled={!canPlace || !outdoorInstallationReady}
         onClick={() => activate(OUTDOOR_UNIT_KIND)}
         type="button"
       >
@@ -451,6 +542,18 @@ export default function GlnEquipmentPanel() {
       {selectedPipe && <SelectedPipeEditor pipe={selectedPipe} readOnly={readOnly} />}
       {selectedPipe && <SelectedPipeRouting pipe={selectedPipe} readOnly={readOnly} />}
 
+      {selectedEquipmentAsset && (
+        <section
+          className="rounded-md border border-sidebar-border bg-sidebar-accent/35 p-3"
+          data-gln-generic-specification
+        >
+          <p className="font-medium text-sidebar-foreground text-sm">产品资料</p>
+          <p className="mt-1 text-sidebar-foreground/65 text-xs">
+            通用占位尺寸预设，型号未指定。当前仅保存可编辑外形与手工填写的检修净空，不代表厂家品牌、容量、性能或检修要求。
+          </p>
+        </section>
+      )}
+
       {systemId && topologyIssues.length > 0 && (
         <section
           className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3"
@@ -470,6 +573,33 @@ export default function GlnEquipmentPanel() {
                     if (target)
                       useViewer.getState().setSelection({ selectedIds: [target as never] })
                   }}
+                  type="button"
+                >
+                  {issue.message}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {installationIssues.length > 0 && (
+        <section
+          className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3"
+          data-gln-installation-issues
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <p className="font-medium text-sidebar-foreground text-sm">安装待复核</p>
+          </div>
+          <ul className="mt-1 space-y-1 text-sidebar-foreground/65 text-xs">
+            {installationIssues.map((issue) => (
+              <li key={`${issue.code}-${issue.nodeIds.join('-')}`}>
+                <button
+                  className="text-left underline-offset-2 hover:text-sidebar-foreground hover:underline"
+                  onClick={() =>
+                    useViewer.getState().setSelection({ selectedIds: [issue.nodeIds[0] as never] })
+                  }
                   type="button"
                 >
                   {issue.message}
@@ -595,7 +725,7 @@ export default function GlnEquipmentPanel() {
             ? 'border-sidebar-ring bg-sidebar-accent'
             : 'border-sidebar-border hover:border-sidebar-ring/60 hover:bg-sidebar-accent/50'
         } disabled:cursor-not-allowed disabled:opacity-45`}
-        disabled={!canPlace}
+        disabled={!canPlace || !tankInstallationReady}
         onClick={() => activate(BUFFER_TANK_KIND)}
         type="button"
       >

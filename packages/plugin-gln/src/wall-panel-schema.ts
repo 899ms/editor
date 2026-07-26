@@ -1,5 +1,7 @@
 import { BaseNode, nodeType, objectId } from '@pascal-app/core/schema'
 import { z } from 'zod'
+import { GlnEquipmentInstallationFields } from './equipment-installation-schema'
+import { GLN_WALL_PANEL_PRESETS } from './equipment-presets'
 
 const HexColor = z.string().regex(/^#[0-9a-f]{6}$/i, 'Expected a six-digit hex color')
 
@@ -23,6 +25,15 @@ export const GlnWallPanelNode = BaseNode.extend({
   width: z.number().min(0.3).max(3).default(0.9),
   height: z.number().min(0.6).max(4).default(2.5),
   depth: z.number().min(0.05).max(0.4).default(0.12),
+  presetId: z
+    .enum(
+      Object.keys(GLN_WALL_PANEL_PRESETS) as [
+        keyof typeof GLN_WALL_PANEL_PRESETS,
+        ...Array<keyof typeof GLN_WALL_PANEL_PRESETS>,
+      ],
+    )
+    .default('generic-standard'),
+  ...GlnEquipmentInstallationFields,
   finishColor: HexColor.default('#e8ddd0'),
   connectionDiameterIn: z.number().min(0.25).max(1.5).default(0.5),
 })

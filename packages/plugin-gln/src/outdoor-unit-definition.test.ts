@@ -136,7 +136,7 @@ describe('GLN outdoor-unit domain definition', () => {
     expect(glnOutdoorUnitDefinition.ports).toBe(getGlnOutdoorUnitPorts)
     expect(glnOutdoorUnitDefinition.floorplan).toBe(buildGlnOutdoorUnitFloorplan)
     expect(glnOutdoorUnitDefinition.relations).toEqual({
-      references: { systemId: ['gln:system'] },
+      references: { systemId: ['gln:system'], installationAreaZoneId: ['zone'] },
     })
     expect(GlnOutdoorUnitNode.safeParse(glnOutdoorUnitDefinition.defaults()).success).toBe(true)
   })

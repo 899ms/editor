@@ -7,6 +7,7 @@ import {
   TorusGeometry,
   Vector3,
 } from 'three'
+import { addGlnEquipmentClearance } from './equipment-clearance-geometry'
 import { localGlnOutdoorUnitPorts } from './outdoor-unit-ports'
 import type { GlnOutdoorUnitNode } from './outdoor-unit-schema'
 
@@ -122,6 +123,17 @@ export function buildGlnOutdoorUnitGeometry(node: GlnOutdoorUnitNode): Group {
     connector.position.copy(port.position).addScaledVector(port.direction, connectorLength / 2)
     group.add(connector)
   }
+
+  addGlnEquipmentClearance(group, {
+    width: node.width,
+    height: node.height,
+    depth: node.depth,
+    clearanceFront: node.clearanceFront,
+    clearanceBack: node.clearanceBack,
+    clearanceLeft: node.clearanceLeft,
+    clearanceRight: node.clearanceRight,
+    clearanceTop: node.clearanceTop,
+  })
 
   return group
 }
