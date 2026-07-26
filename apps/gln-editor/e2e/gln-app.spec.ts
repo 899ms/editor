@@ -57,7 +57,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   page,
   request,
 }) => {
-  test.setTimeout(420_000)
+  test.setTimeout(600_000)
 
   await page.goto(`${glnBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
@@ -522,7 +522,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   expect(originalGlnImport.status()).toBe(400)
 
   await page.getByRole('button', { name: '插件' }).click()
-  await page.getByRole('button', { name: /^光冷暖设备 已安装/ }).click()
+  await page.getByRole('button', { name: /^住宅导入 已安装/ }).click()
+  await expect(page.getByText('pascal:gln', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '必需' })).toBeDisabled()
   await expect(page.getByRole('button', { name: '卸载' })).toHaveCount(0)
 

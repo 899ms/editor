@@ -328,6 +328,9 @@
     "packages/plugin-gln": {
       "name": "@pascal-app/plugin-gln",
       "version": "0.1.0",
+      "dependencies": {
+        "@pascal-app/ifc-converter": "workspace:*",
+      },
       "devDependencies": {
         "@pascal-app/core": "0.9.2",
         "@pascal-app/editor": "0.9.2",
