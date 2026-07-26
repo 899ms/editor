@@ -382,7 +382,10 @@ function hasUsableSceneGraph(sceneGraph?: SceneGraph | null): sceneGraph is Scen
   )
 }
 
-export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
+export function applySceneGraphToEditor(
+  sceneGraph?: SceneGraph | null,
+  options: { preserveHistory?: boolean } = {},
+) {
   const defaultInstalledPlugins = editorHostPanelRegistry.getDefaultInstalledPluginIds()
   const mandatoryPluginIds = editorHostPanelRegistry.getMandatoryPluginIds()
   if (hasUsableSceneGraph(sceneGraph)) {
@@ -410,7 +413,7 @@ export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
   // its own (`unloadScene` + `setScene`/`clearScene` are tracked writes), so
   // without this reset a few Ctrl+Z presses could step past the load into the
   // pre-load — often empty — state and wipe the whole project.
-  clearSceneHistory()
+  if (!options.preserveHistory) clearSceneHistory()
 
   syncEditorSelectionFromCurrentScene()
 }

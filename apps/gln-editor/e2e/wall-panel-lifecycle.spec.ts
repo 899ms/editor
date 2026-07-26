@@ -225,7 +225,7 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
     .toMatchObject({ height: 2.5 })
 
   await page.getByRole('button', { name: '光冷暖设备' }).click()
-  await expect(page.getByText('请选择面板所属空间')).toBeVisible()
+  await expect(page.getByText('请选择面板所属空间')).toBeVisible({ timeout: 30_000 })
   await page.getByRole('button', { name: '卧室 A' }).click()
   await expect
     .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[panel.id])

@@ -1,5 +1,6 @@
 'use client'
 
+import { useScene } from '@pascal-app/core'
 // Node registry bootstrap is loaded once at the root via
 // `<ClientBootstrap>` in `app/layout.tsx` — no per-page side-effect
 // import here.
@@ -49,6 +50,12 @@ interface LiveSceneEvent {
   graph: SceneGraphWithCollections
 }
 
+interface ScenePlanCommittedEventDetail {
+  sceneId: string
+  version: number
+  graph: SceneGraphWithCollections
+}
+
 type SaveError = { type: 'connectionClosed' } | { type: 'saveFailed'; status?: number }
 
 function EmptySceneTab() {
@@ -64,12 +71,21 @@ function sceneGraphSignature(graph: SceneGraphWithCollections): string {
   })
 }
 
+function currentSceneGraphSignature(): string {
+  const { nodes, rootNodeIds, collections, installedPlugins } = useScene.getState()
+  return sceneGraphSignature({
+    nodes,
+    rootNodeIds,
+    collections,
+    installedPlugins,
+  })
+}
+
 export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
   const { t } = usePascalTranslation('editor')
   const router = useRouter()
   const versionRef = useRef(meta.version)
   const lastRemoteGraphJsonRef = useRef<string | null>(null)
-  const suppressRemoteSaveUntilRef = useRef(0)
   const [conflict, setConflict] = useState(false)
   const [saveError, setSaveError] = useState<SaveError | null>(null)
 
@@ -116,13 +132,10 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
   const handleSave = useCallback(
     async (graph: SceneGraph, options?: { keepalive?: boolean }) => {
       const graphJson = sceneGraphSignature(graph)
-      const isRecentRemoteApply = Date.now() < suppressRemoteSaveUntilRef.current
       if (lastRemoteGraphJsonRef.current === graphJson) {
         lastRemoteGraphJsonRef.current = null
-        suppressRemoteSaveUntilRef.current = 0
         return
       }
-      if (isRecentRemoteApply) return
 
       try {
         const response = await fetch(`/api/scenes/${meta.id}`, {
@@ -173,9 +186,10 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
       if (payload.version <= versionRef.current) return
 
       versionRef.current = payload.version
-      lastRemoteGraphJsonRef.current = sceneGraphSignature(payload.graph)
-      suppressRemoteSaveUntilRef.current = Date.now() + 2500
-      applySceneGraphToEditor(payload.graph)
+      applySceneGraphToEditor(payload.graph, {
+        preserveHistory: payload.kind.startsWith('scene-plan:'),
+      })
+      lastRemoteGraphJsonRef.current = currentSceneGraphSignature()
       setConflict(false)
       setSaveError(null)
     })
@@ -187,6 +201,20 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
     })
 
     return () => source.close()
+  }, [meta.id])
+
+  useEffect(() => {
+    const applyCommittedPlan = (event: Event) => {
+      const payload = (event as CustomEvent<ScenePlanCommittedEventDetail>).detail
+      if (!(payload && payload.sceneId === meta.id && payload.version > versionRef.current)) return
+      versionRef.current = payload.version
+      applySceneGraphToEditor(payload.graph, { preserveHistory: true })
+      lastRemoteGraphJsonRef.current = currentSceneGraphSignature()
+      setConflict(false)
+      setSaveError(null)
+    }
+    window.addEventListener('pascal:scene-plan-committed', applyCommittedPlan)
+    return () => window.removeEventListener('pascal:scene-plan-committed', applyCommittedPlan)
   }, [meta.id])
 
   const handleThumb = useCallback(

@@ -4,10 +4,12 @@ import {
   registerPlugin,
   requirePlugin,
 } from '@pascal-app/core/registry'
-import { GLN_PLUGIN_ID, glnPlugin } from '@pascal-app/plugin-gln'
+import { registerScenePlanValidator } from '@pascal-app/core/scene-plan'
+import { GLN_PLUGIN_ID, glnPlugin, glnScenePlanValidator } from '@pascal-app/plugin-gln'
 
 /** Register GLN schemas synchronously in both browser and server runtimes. */
 export function ensureGlnPluginRegistered(): void {
+  registerScenePlanValidator(glnScenePlanValidator)
   const kinds = glnPlugin.nodes?.map((definition) => definition.kind) ?? []
   const registeredKinds = kinds.filter((kind) => nodeRegistry.has(kind))
   if (registeredKinds.length > 0) {

@@ -4,8 +4,14 @@ const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 
 test('places a buffer tank from the 2D floor plan', async ({ page, request }) => {
   await page.goto(`${baseUrl}/scenes`)
+  await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
+  )
   await page.getByRole('button', { name: '新建场景' }).first().click()
-  await expect(page).toHaveURL(/\/scene\/[^/]+$/)
+  expect((await createResponsePromise).status()).toBe(201)
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 15_000 })
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)
   expect(sceneId).toBeTruthy()
 

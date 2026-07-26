@@ -1,4 +1,9 @@
 import type { SceneGraph } from '@pascal-app/core/clone-scene-graph'
+import {
+  type PreparedScenePlan,
+  prepareScenePlan as prepareScenePlanAgainstSnapshot,
+  type ScenePlan,
+} from '@pascal-app/core/scene-plan'
 import type { AnyNode, AnyNodeId, AnyNodeType } from '@pascal-app/core/schema'
 import type { ActiveSceneMeta, Patch, SceneBridge, ValidationResult } from '../bridge/scene-bridge'
 import type {
@@ -18,6 +23,15 @@ import type {
 export type CreateSceneOperationsOptions = {
   bridge?: SceneBridge
   store?: SceneStore
+}
+
+export type ScenePlanCommitResult = {
+  prepared: PreparedScenePlan
+  committed: boolean
+  meta: SceneMeta | null
+  preCheckpointVersion: number | null
+  postCheckpointVersion: number | null
+  eventPublished: boolean
 }
 
 export interface SceneOperations {
@@ -68,6 +82,9 @@ export interface SceneOperations {
   getProjectStatus(id: string): Promise<ProjectStatus | null>
   saveScene(options: SceneSaveOptions): Promise<SceneMeta>
   loadStoredScene(id: string): Promise<SceneWithGraph | null>
+  loadSceneRevision(id: string, version: number): Promise<SceneWithGraph | null>
+  prepareScenePlan(plan: ScenePlan): Promise<PreparedScenePlan>
+  commitScenePlan(plan: ScenePlan): Promise<ScenePlanCommitResult>
   listScenes(options?: SceneListOptions): Promise<SceneMeta[]>
   deleteStoredScene(id: string, options?: SceneMutateOptions): Promise<boolean>
   renameStoredScene(id: string, newName: string, options?: SceneMutateOptions): Promise<SceneMeta>
@@ -278,6 +295,92 @@ class SceneOperationsFacade implements SceneOperations {
 
   async loadStoredScene(id: string): Promise<SceneWithGraph | null> {
     return this.requireStore().load(id)
+  }
+
+  async loadSceneRevision(id: string, version: number): Promise<SceneWithGraph | null> {
+    const loadRevision = this.requireStore().loadRevision
+    if (!loadRevision) throw new Error('scene_revisions_unavailable')
+    return loadRevision.call(this.requireStore(), id, version)
+  }
+
+  async prepareScenePlan(plan: ScenePlan): Promise<PreparedScenePlan> {
+    const scene = await this.requireStore().load(plan.sceneId)
+    if (!scene) throw new Error(`scene_not_found: ${plan.sceneId}`)
+    return prepareScenePlanAgainstSnapshot(plan, {
+      sceneId: scene.id,
+      version: scene.version,
+      graph: scene.graph,
+    })
+  }
+
+  async commitScenePlan(plan: ScenePlan): Promise<ScenePlanCommitResult> {
+    const store = this.requireStore()
+    const current = await store.load(plan.sceneId)
+    if (!current) throw new Error(`scene_not_found: ${plan.sceneId}`)
+    const prepared = await prepareScenePlanAgainstSnapshot(plan, {
+      sceneId: current.id,
+      version: current.version,
+      graph: current.graph,
+    })
+    if (!(prepared.ok && prepared.after)) {
+      return {
+        prepared,
+        committed: false,
+        meta: null,
+        preCheckpointVersion: null,
+        postCheckpointVersion: null,
+        eventPublished: false,
+      }
+    }
+
+    const meta = await store.save({
+      id: current.id,
+      name: current.name,
+      projectId: current.projectId,
+      ownerId: current.ownerId,
+      thumbnailUrl: current.thumbnailUrl,
+      graph: prepared.after.graph,
+      expectedVersion: plan.baseVersion,
+      saveMode: 'checkpoint',
+      publish: true,
+      operation: `scene-plan:${plan.id}`,
+    })
+
+    if (this.#bridge) {
+      const active = this.#bridge.getActiveScene()
+      if (active?.id === current.id) {
+        this.#bridge.setScene(
+          prepared.after.graph.nodes as Record<AnyNodeId, AnyNode>,
+          prepared.after.graph.rootNodeIds as AnyNodeId[],
+        )
+        this.#bridge.setActiveScene(meta)
+      }
+    }
+
+    let eventPublished = false
+    if (store.appendSceneEvent) {
+      try {
+        await store.appendSceneEvent({
+          sceneId: meta.id,
+          version: meta.version,
+          kind: `scene-plan:${plan.id}`,
+          graph: prepared.after.graph,
+        })
+        eventPublished = true
+      } catch {
+        // The versioned scene commit and both recovery revisions already
+        // succeeded. A subscriber can reload the head when notification fails.
+      }
+    }
+
+    return {
+      prepared,
+      committed: true,
+      meta,
+      preCheckpointVersion: current.version,
+      postCheckpointVersion: meta.version,
+      eventPublished,
+    }
   }
 
   async listScenes(options?: SceneListOptions): Promise<SceneMeta[]> {

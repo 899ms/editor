@@ -75,9 +75,23 @@ export const glnIfcImportHostPanel: GlnHostPanel = {
   mandatory: true,
 }
 
+export const glnScenePlanHostPanel: GlnHostPanel = {
+  id: 'gln:scene-plans',
+  label: '变更计划',
+  icon: { kind: 'iconify', name: 'lucide:list-checks' },
+  component: () => import('./scene-plan-panel'),
+  kinds: [],
+  pluginId: GLN_PLUGIN_ID,
+  description: '校验、预览并原子提交版本绑定的场景变更计划。',
+  creator: { name: 'GLN' },
+  defaultInstalled: true,
+  mandatory: true,
+}
+
 export const glnHostPanels = [
   glnSystemHostPanel,
   glnEquipmentHostPanel,
+  glnScenePlanHostPanel,
   glnIfcImportHostPanel,
 ] as const
 export const glnHostPanel = glnSystemHostPanel
@@ -188,6 +202,10 @@ export {
 } from './outdoor-unit-schema'
 export type { GlnRunPreviewModel } from './run-preview'
 export { deriveGlnRunPreview } from './run-preview'
+export {
+  glnScenePlanValidator,
+  validateGlnScenePlan,
+} from './scene-plan-validator'
 export { glnSystemDefinition, glnSystemNodeDefinition } from './system-definition'
 export {
   GlnSystemMode,

@@ -124,6 +124,8 @@ export interface SceneStore {
   getProjectStatus?(id: SceneId): Promise<ProjectStatus | null>
   save(opts: SceneSaveOptions): Promise<SceneMeta>
   load(id: SceneId): Promise<SceneWithGraph | null>
+  /** Load one immutable recovery revision without changing the scene head. */
+  loadRevision?(id: SceneId, version: number): Promise<SceneWithGraph | null>
   list(opts?: SceneListOptions): Promise<SceneMeta[]>
   delete(id: SceneId, opts?: SceneMutateOptions): Promise<boolean>
   rename(id: SceneId, newName: string, opts?: SceneMutateOptions): Promise<SceneMeta>

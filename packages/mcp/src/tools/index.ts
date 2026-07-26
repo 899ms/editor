@@ -20,6 +20,7 @@ import { registerPlaceItem } from './place-item'
 import { registerRedo } from './redo'
 import { registerRoomTools } from './room-tools'
 import { registerSceneLifecycleTools } from './scene-lifecycle'
+import { registerScenePlanTools } from './scene-plan'
 import { registerSceneQueryTools } from './scene-query'
 import { registerSetZone } from './set-zone'
 import { registerTemplateTools } from './templates'
@@ -61,6 +62,7 @@ export function registerTools(server: McpServer, operations: SceneOperations): v
   registerTemplateTools(server, operations)
   if (operations.hasStore) {
     registerSceneLifecycleTools(server, operations)
+    registerScenePlanTools(server, operations)
     registerVariantTools(server, operations)
     registerPhotoToSceneTool(server, operations)
   }

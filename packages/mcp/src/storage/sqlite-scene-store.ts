@@ -62,6 +62,15 @@ interface SceneEventRow {
   graph_json: string
 }
 
+interface SceneRevisionRow {
+  scene_id: string
+  version: number
+  graph_json: string
+  author_kind: string
+  author_id: string | null
+  created_at: string
+}
+
 interface ProjectPlaceholder {
   id: string
   name: string
@@ -455,6 +464,35 @@ export class SqliteSceneStore implements SceneStore {
     return {
       ...rowToMeta(row),
       graph: parseGraph(row.graph_json, row.id),
+    }
+  }
+
+  async loadRevision(id: string, version: number): Promise<SceneWithGraph | null> {
+    const db = await this.database()
+    const safeId = sanitizeSlug(id)
+    if (!Number.isInteger(version) || version < 1) {
+      throw new SceneInvalidError(`Invalid scene revision: ${version}`)
+    }
+    const head = this.getRow(db, safeId)
+    if (!head) return null
+    const revision = db
+      .query(
+        `SELECT scene_id, version, graph_json, author_kind, author_id, created_at
+           FROM scene_revisions
+          WHERE scene_id = ? AND version = ?`,
+      )
+      .get(safeId, version) as SceneRevisionRow | null
+    if (!revision) return null
+    const graph = parseGraph(revision.graph_json, `${safeId}@${version}`)
+    const graphJson = serializeGraph(graph)
+    return {
+      ...rowToMeta(head),
+      version,
+      graph,
+      graphHash: hashGraphJson(graphJson),
+      sizeBytes: Buffer.byteLength(graphJson, 'utf8'),
+      nodeCount: Object.keys(graph.nodes ?? {}).length,
+      updatedAt: revision.created_at,
     }
   }
 
