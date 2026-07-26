@@ -31,6 +31,8 @@ import {
 } from '@pascal-app/editor'
 import { type ComponentType, useEffect, useMemo, useRef, useState } from 'react'
 import type { Group } from 'three'
+import { getGlnNodeInstallationIssues } from './equipment-installation'
+import type { GlnEquipmentInstallationAreaKind } from './equipment-installation-schema'
 import { useGlnEquipmentStore } from './equipment-store'
 
 type Position3 = [number, number, number]
@@ -42,6 +44,8 @@ type GlnFloorEquipmentNode = {
   position: Position3
   rotation: Rotation3
   systemId: string
+  installationAreaZoneId: string | null
+  installationAreaKind: GlnEquipmentInstallationAreaKind
   type: string
 }
 
@@ -51,12 +55,16 @@ export type GlnFloorEquipmentSpec<Node extends GlnFloorEquipmentNode> = {
     position?: Position3
     rotation?: Rotation3
     systemId: string
+    installationAreaZoneId: string | null
+    installationAreaKind: GlnEquipmentInstallationAreaKind
   }): Node
   dimensions(node: Node): [number, number, number]
   Preview: ComponentType<{ node: Node; valid?: boolean }>
 }
 
 type Placement = {
+  floorValid: boolean
+  installationValid: boolean
   isValid: boolean
   position: Position3
   rawX: number
@@ -72,6 +80,8 @@ export default function GlnFloorEquipmentTool<Node extends GlnFloorEquipmentNode
 }) {
   const levelId = useViewer((state) => state.selection.levelId)
   const systemId = useGlnEquipmentStore((state) => state.systemId)
+  const installationAreaZoneId = useGlnEquipmentStore((state) => state.installationAreaZoneId)
+  const installationAreaKind = useGlnEquipmentStore((state) => state.installationAreaKind)
   const viewMode = useEditor((state) => state.viewMode)
   const cursorRef = useRef<Group>(null)
   const yawRef = useRef(0)
@@ -87,8 +97,10 @@ export default function GlnFloorEquipmentTool<Node extends GlnFloorEquipmentNode
       spec.create({
         parentId: levelId,
         systemId: systemId ?? 'gln-system_preview',
+        installationAreaZoneId,
+        installationAreaKind,
       }),
-    [levelId, spec, systemId],
+    [installationAreaKind, installationAreaZoneId, levelId, spec, systemId],
   )
 
   useEffect(() => {
@@ -129,12 +141,25 @@ export default function GlnFloorEquipmentTool<Node extends GlnFloorEquipmentNode
       useAlignmentGuides.getState().set(forcePlace ? [] : guides)
 
       const rotation: Rotation3 = [0, yawRef.current, 0]
-      const isValid = canPlaceOnFloor(
+      const floorValid = canPlaceOnFloor(
         levelId as LevelNode['id'],
         position,
         spec.dimensions(previewNode),
         rotation,
       ).valid
+      const candidate = {
+        ...previewNode,
+        position,
+        rotation,
+      } as unknown as AnyNode
+      const installationValid =
+        getGlnNodeInstallationIssues(
+          {
+            ...useScene.getState().nodes,
+            [candidate.id]: candidate,
+          },
+          candidate.id,
+        ).length === 0
       const stackedPosition = getFloorStackedPosition({
         node: previewNode as unknown as AnyNode,
         nodes: useScene.getState().nodes,
@@ -142,7 +167,16 @@ export default function GlnFloorEquipmentTool<Node extends GlnFloorEquipmentNode
         rotation,
         levelId,
       })
-      return { isValid, position, rawX, rawZ, rotation, stackedPosition }
+      return {
+        floorValid,
+        installationValid,
+        isValid: floorValid && installationValid,
+        position,
+        rawX,
+        rawZ,
+        rotation,
+        stackedPosition,
+      }
     }
 
     const showPlacement = (placement: Placement) => {
@@ -185,7 +219,7 @@ export default function GlnFloorEquipmentTool<Node extends GlnFloorEquipmentNode
         altHeldRef.current || !isGridSnapActive(),
       )
       const placement = lastPlacementRef.current ?? resolvePlacement(fallback[0], fallback[2])
-      if (!placement.isValid && !altHeldRef.current) {
+      if (!placement.installationValid || (!placement.floorValid && !altHeldRef.current)) {
         stopPlacementCommitPropagation(event)
         return
       }
@@ -193,6 +227,8 @@ export default function GlnFloorEquipmentTool<Node extends GlnFloorEquipmentNode
       const node = spec.create({
         parentId: levelId,
         systemId,
+        installationAreaZoneId,
+        installationAreaKind,
         position: placement.position,
         rotation: placement.rotation,
       })
@@ -256,7 +292,17 @@ export default function GlnFloorEquipmentTool<Node extends GlnFloorEquipmentNode
         setReadyKind(null)
       }
     }
-  }, [canPlaceOnFloor, levelId, previewNode, setReadyKind, spec, systemId, viewMode])
+  }, [
+    canPlaceOnFloor,
+    installationAreaKind,
+    installationAreaZoneId,
+    levelId,
+    previewNode,
+    setReadyKind,
+    spec,
+    systemId,
+    viewMode,
+  ])
 
   if (!(levelId && systemId)) return null
 

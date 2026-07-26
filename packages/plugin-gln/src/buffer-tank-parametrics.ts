@@ -1,12 +1,35 @@
 import type { ParametricDescriptor } from '@pascal-app/core'
 import type { GlnBufferTankNode } from './buffer-tank-schema'
+import { GLN_BUFFER_TANK_PRESETS } from './equipment-presets'
 
 export const glnBufferTankParametrics: ParametricDescriptor<GlnBufferTankNode> = {
   derive: (next, patch) => {
-    if (!('finish' in patch)) return {}
-    return next.finish === 'graphite' ? { jacketColor: '#4f575d' } : { jacketColor: '#dfe5e8' }
+    const presetPatch = 'presetId' in patch ? GLN_BUFFER_TANK_PRESETS[next.presetId] : {}
+    const finishPatch =
+      'finish' in patch
+        ? next.finish === 'graphite'
+          ? { jacketColor: '#4f575d' }
+          : { jacketColor: '#dfe5e8' }
+        : {}
+    return { ...presetPatch, ...finishPatch }
   },
   groups: [
+    {
+      label: '参数预设',
+      fields: [
+        {
+          key: 'presetId',
+          kind: 'enum',
+          label: '通用尺寸预设',
+          options: Object.keys(GLN_BUFFER_TANK_PRESETS),
+          optionLabels: {
+            'generic-compact': '通用紧凑',
+            'generic-standard': '通用标准',
+            'generic-tall': '通用加高',
+          },
+        },
+      ],
+    },
     {
       label: '尺寸',
       fields: [
@@ -65,6 +88,74 @@ export const glnBufferTankParametrics: ParametricDescriptor<GlnBufferTankNode> =
           min: 0.25,
           max: 2,
           step: 0.25,
+        },
+      ],
+    },
+    {
+      label: '确认安装区域',
+      fields: [
+        { key: 'installationAreaZoneId', kind: 'ref', label: '安装空间', refKind: 'zone' },
+        {
+          key: 'installationAreaKind',
+          kind: 'enum',
+          label: '区域用途',
+          options: ['unassigned', 'equipment-room', 'mechanical-room', 'equipment-area'],
+          optionLabels: {
+            unassigned: '未确认',
+            'equipment-room': '设备间',
+            'mechanical-room': '机房',
+            'equipment-area': '设备区',
+          },
+        },
+      ],
+    },
+    {
+      label: '检修净空（请按资料手工填写）',
+      fields: [
+        {
+          key: 'clearanceFront',
+          kind: 'number',
+          label: '前方',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceBack',
+          kind: 'number',
+          label: '后方',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceLeft',
+          kind: 'number',
+          label: '左侧',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceRight',
+          kind: 'number',
+          label: '右侧',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
+        },
+        {
+          key: 'clearanceTop',
+          kind: 'number',
+          label: '顶部',
+          unit: 'm',
+          min: 0,
+          max: 10,
+          step: 0.05,
         },
       ],
     },

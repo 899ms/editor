@@ -1,6 +1,7 @@
 import { CylinderGeometry, Group, Mesh, MeshStandardMaterial, SphereGeometry, Vector3 } from 'three'
 import { localGlnBufferTankPorts } from './buffer-tank-ports'
 import type { GlnBufferTankNode } from './buffer-tank-schema'
+import { addGlnEquipmentClearance } from './equipment-clearance-geometry'
 
 const METERS_PER_INCH = 0.0254
 const RADIAL_SEGMENTS = 40
@@ -92,6 +93,17 @@ export function buildGlnBufferTankGeometry(node: GlnBufferTankNode): Group {
   vent.name = 'gln-buffer-tank-vent'
   vent.position.y = node.height - radius * 0.055
   group.add(vent)
+
+  addGlnEquipmentClearance(group, {
+    width: node.diameter,
+    height: node.height,
+    depth: node.diameter,
+    clearanceFront: node.clearanceFront,
+    clearanceBack: node.clearanceBack,
+    clearanceLeft: node.clearanceLeft,
+    clearanceRight: node.clearanceRight,
+    clearanceTop: node.clearanceTop,
+  })
 
   return group
 }

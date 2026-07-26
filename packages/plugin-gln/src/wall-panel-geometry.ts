@@ -1,5 +1,6 @@
 import type { GeometryContext } from '@pascal-app/core'
 import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial } from 'three'
+import { addGlnEquipmentClearance } from './equipment-clearance-geometry'
 import type { GlnWallPanelNode } from './wall-panel-schema'
 
 export function buildGlnWallPanelGeometry(node: GlnWallPanelNode, _ctx?: GeometryContext) {
@@ -25,5 +26,15 @@ export function buildGlnWallPanelGeometry(node: GlnWallPanelNode, _ctx?: Geometr
     connector.position.set(x, node.height / 2, node.depth / 2 + 0.04)
     group.add(connector)
   }
+  addGlnEquipmentClearance(group, {
+    width: node.width,
+    height: node.height,
+    depth: node.depth,
+    clearanceFront: node.clearanceFront,
+    clearanceBack: node.clearanceBack,
+    clearanceLeft: node.clearanceLeft,
+    clearanceRight: node.clearanceRight,
+    clearanceTop: node.clearanceTop,
+  })
   return group
 }

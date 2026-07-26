@@ -1,5 +1,7 @@
 import { BaseNode, nodeType, objectId } from '@pascal-app/core/schema'
 import { z } from 'zod'
+import { GlnEquipmentInstallationFields } from './equipment-installation-schema'
+import { GLN_BUFFER_TANK_PRESETS } from './equipment-presets'
 
 const HexColor = z.string().regex(/^#[0-9a-f]{6}$/i, 'Expected a six-digit hex color')
 
@@ -20,6 +22,15 @@ export const GlnBufferTankNode = BaseNode.extend({
   rotation: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
   diameter: z.number().min(0.35).max(2).default(0.65),
   height: z.number().min(0.6).max(3).default(1.5),
+  presetId: z
+    .enum(
+      Object.keys(GLN_BUFFER_TANK_PRESETS) as [
+        keyof typeof GLN_BUFFER_TANK_PRESETS,
+        ...Array<keyof typeof GLN_BUFFER_TANK_PRESETS>,
+      ],
+    )
+    .default('generic-standard'),
+  ...GlnEquipmentInstallationFields,
   insulationThickness: z.number().min(0.01).max(0.2).default(0.05),
   finish: GlnBufferTankFinish.default('light'),
   jacketColor: HexColor.default('#dfe5e8'),
