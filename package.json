@@ -11,7 +11,7 @@
     "check": "biome check",
     "check:fix": "biome check --write",
     "check-types": "turbo run check-types",
-    "check:i18n": "bun test packages/i18n/src packages/nodes/src/i18n.test.ts && bun scripts/audit-i18n-full.ts",
+    "check:i18n": "bun run --cwd packages/i18n build && bun test packages/i18n/src packages/nodes/src/i18n.test.ts && bun scripts/audit-i18n-full.ts",
     "dev:e2e:editor": "bun apps/editor/node_modules/next/dist/bin/next dev apps/editor --port 32102",
     "dev:e2e:gln": "bun run --cwd apps/gln-editor prepare:assets && bun apps/gln-editor/node_modules/next/dist/bin/next dev apps/gln-editor --port 32103",
     "test:e2e:gln": "playwright test --config apps/gln-editor/playwright.config.ts",
