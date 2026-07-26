@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { GlnEquipmentInstallationAreaKind } from './equipment-installation-schema'
 
 export type GlnHydronicCircuit = 'supply' | 'return'
+export type GlnDisplayMode = 'edit' | 'run-preview'
 
 type GlnEquipmentState = {
   readyKind: string | null
@@ -16,6 +17,8 @@ type GlnEquipmentState = {
   setInstallationAreaZoneId: (zoneId: string | null) => void
   installationAreaKind: GlnEquipmentInstallationAreaKind
   setInstallationAreaKind: (kind: GlnEquipmentInstallationAreaKind) => void
+  displayMode: GlnDisplayMode
+  setDisplayMode: (mode: GlnDisplayMode) => void
 }
 
 export const useGlnEquipmentStore = create<GlnEquipmentState>((set) => ({
@@ -31,4 +34,6 @@ export const useGlnEquipmentStore = create<GlnEquipmentState>((set) => ({
   setInstallationAreaZoneId: (installationAreaZoneId) => set({ installationAreaZoneId }),
   installationAreaKind: 'unassigned',
   setInstallationAreaKind: (installationAreaKind) => set({ installationAreaKind }),
+  displayMode: 'edit',
+  setDisplayMode: (displayMode) => set({ displayMode }),
 }))

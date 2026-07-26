@@ -11,8 +11,10 @@ import {
   GitBranch,
   MapPin,
   PanelTop,
+  Play,
   Route,
   Trash2,
+  Wrench,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { getGlnInstallationIssues } from './equipment-installation'
@@ -29,6 +31,7 @@ import {
   resolveGlnNodeLevelId,
 } from './hydronic-routing'
 import { getGlnHydronicDeleteImpact, getGlnHydronicTopologyIssues } from './hydronic-topology'
+import { deriveGlnRunPreview } from './run-preview'
 
 const OUTDOOR_UNIT_KIND = 'gln:outdoor-unit'
 const BUFFER_TANK_KIND = 'gln:buffer-tank'
@@ -51,6 +54,42 @@ const AREA_KIND_LABELS: Record<GlnEquipmentInstallationAreaKind, string> = {
   'equipment-room': '设备间',
   'mechanical-room': '机房',
   'equipment-area': '设备区',
+}
+
+function GlnDisplayModeControl() {
+  const displayMode = useGlnEquipmentStore((state) => state.displayMode)
+  const setDisplayMode = useGlnEquipmentStore((state) => state.setDisplayMode)
+  return (
+    <div
+      className="mt-3 grid grid-cols-2 gap-1 rounded-md bg-sidebar-accent/60 p-1"
+      data-gln-display-mode={displayMode}
+    >
+      <button
+        aria-pressed={displayMode === 'edit'}
+        className={`flex h-9 items-center justify-center gap-2 rounded text-sm ${
+          displayMode === 'edit' ? 'bg-sidebar font-medium shadow-sm' : 'text-sidebar-foreground/65'
+        }`}
+        onClick={() => setDisplayMode('edit')}
+        type="button"
+      >
+        <Wrench className="h-4 w-4" />
+        编辑视图
+      </button>
+      <button
+        aria-pressed={displayMode === 'run-preview'}
+        className={`flex h-9 items-center justify-center gap-2 rounded text-sm ${
+          displayMode === 'run-preview'
+            ? 'bg-sidebar font-medium shadow-sm'
+            : 'text-sidebar-foreground/65'
+        }`}
+        onClick={() => setDisplayMode('run-preview')}
+        type="button"
+      >
+        <Play className="h-4 w-4" />
+        运行预览
+      </button>
+    </div>
+  )
 }
 
 function SystemOption({ systemId }: { systemId: string }) {
@@ -334,6 +373,7 @@ export default function GlnEquipmentPanel() {
   const setInstallationAreaZoneId = useGlnEquipmentStore((state) => state.setInstallationAreaZoneId)
   const installationAreaKind = useGlnEquipmentStore((state) => state.installationAreaKind)
   const setInstallationAreaKind = useGlnEquipmentStore((state) => state.setInstallationAreaKind)
+  const displayMode = useGlnEquipmentStore((state) => state.displayMode)
   const [deletePreviewOpen, setDeletePreviewOpen] = useState(false)
 
   useEffect(() => {
@@ -361,6 +401,7 @@ export default function GlnEquipmentPanel() {
     [nodes, systemId],
   )
   const installationIssues = useMemo(() => getGlnInstallationIssues(nodes as never), [nodes])
+  const runPreview = useMemo(() => deriveGlnRunPreview(nodes as never), [nodes])
   const deleteImpact = useMemo(
     () =>
       selectedPhysicalNode && systemId && selectedPhysicalNode.systemId === systemId
@@ -394,6 +435,62 @@ export default function GlnEquipmentPanel() {
     editor.setMode('build')
   }
 
+  if (displayMode === 'run-preview') {
+    return (
+      <div
+        className="flex h-full flex-col gap-4 overflow-y-auto p-4"
+        data-gln-equipment-panel
+        data-gln-run-preview
+      >
+        <header>
+          <h2 className="font-semibold text-lg text-sidebar-foreground">光冷暖运行预览</h2>
+          <p className="mt-1 text-sidebar-foreground/60 text-sm">
+            同一实时场景，仅显示拓扑方向和用户目标设置。
+          </p>
+          <GlnDisplayModeControl />
+        </header>
+        {runPreview.panels.length === 0 && (
+          <p className="rounded-md border border-dashed border-sidebar-border p-3 text-sidebar-foreground/60 text-xs">
+            暂无可预览的完整面板回路。请回到编辑视图检查供回水连接。
+          </p>
+        )}
+        {runPreview.panels.map((panel) => {
+          const zoneName =
+            (nodes[panel.zoneId as never] as { name?: string } | undefined)?.name ?? '未命名空间'
+          return (
+            <section
+              className="rounded-md border border-sidebar-border bg-sidebar-accent/35 p-3"
+              data-gln-preview-panel={panel.panelId}
+              key={panel.panelId}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-medium text-sidebar-foreground text-sm">{zoneName}</p>
+                <span className="text-sidebar-foreground/60 text-xs">
+                  {panel.energyDirection === 'space-to-panel'
+                    ? '夏季：空间 → 面板'
+                    : '冬季：面板 → 空间'}
+                </span>
+              </div>
+              <div className="mt-2 flex gap-3 text-sidebar-foreground/70 text-xs">
+                <span>
+                  目标温度：
+                  {panel.targetTemperature === null ? '未设置' : `${panel.targetTemperature}°C`}
+                </span>
+                <span>
+                  目标湿度：
+                  {panel.targetHumidity === null ? '未设置' : `${panel.targetHumidity}%`}
+                </span>
+              </div>
+            </section>
+          )
+        })}
+        <p className="text-sidebar-foreground/50 text-xs">
+          运行预览不表示实时温湿度、流量、负荷或设备性能。
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full flex-col gap-4 overflow-y-auto p-4" data-gln-equipment-panel>
       <header>
@@ -406,6 +503,7 @@ export default function GlnEquipmentPanel() {
         <p className="mt-1 text-sidebar-foreground/60 text-sm">
           选择所属系统，然后在场景中放置设备。
         </p>
+        <GlnDisplayModeControl />
       </header>
 
       <label className="flex flex-col gap-1.5 text-sidebar-foreground text-sm">
