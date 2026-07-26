@@ -35,6 +35,7 @@ export const glnHydronicPipeDefinition: NodeDefinition<typeof GlnHydronicPipeNod
   relations: { references: { systemId: ['gln:system'] } },
   geometry: buildGlnHydronicPipeGeometry,
   renderer: { kind: 'parametric', module: () => import('./hydronic-pipe-renderer') },
+  system: { module: () => import('./hydronic-topology-system'), priority: 6 },
   geometryKey: (node) => JSON.stringify([node.path, node.circuit, node.diameterIn, node.concealed]),
   ports: getGlnHydronicPipePorts,
   tool: () => import('./hydronic-pipe-tool'),

@@ -2,7 +2,18 @@
 
 import { type AnyNodeId, useScene } from '@pascal-app/core'
 import { useEditor, useViewer } from '@pascal-app/editor'
-import { Cylinder, Eye, EyeOff, Fan, GitBranch, MapPin, PanelTop, Route } from 'lucide-react'
+import {
+  AlertTriangle,
+  Cylinder,
+  Eye,
+  EyeOff,
+  Fan,
+  GitBranch,
+  MapPin,
+  PanelTop,
+  Route,
+  Trash2,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useGlnEquipmentStore } from './equipment-store'
 import { getGlnPort } from './hydronic-pipe-ports'
@@ -15,7 +26,7 @@ import {
   planGlnConcealedRoute,
   resolveGlnNodeLevelId,
 } from './hydronic-routing'
-import { getGlnHydronicTopologyIssues } from './hydronic-topology'
+import { getGlnHydronicDeleteImpact, getGlnHydronicTopologyIssues } from './hydronic-topology'
 
 const OUTDOOR_UNIT_KIND = 'gln:outdoor-unit'
 const BUFFER_TANK_KIND = 'gln:buffer-tank'
@@ -265,6 +276,16 @@ export default function GlnEquipmentPanel() {
       ? (GlnHydronicPipeNode.safeParse(selected).data ?? null)
       : null
   }, [nodes, selectedIds])
+  const selectedPhysicalNode = useMemo(() => {
+    const selected = selectedIds.length === 1 ? nodes[selectedIds[0] as never] : undefined
+    const type = (selected as { type?: string } | undefined)?.type
+    return type === OUTDOOR_UNIT_KIND ||
+      type === BUFFER_TANK_KIND ||
+      type === WALL_PANEL_KIND ||
+      type === HYDRONIC_PIPE_KIND
+      ? (selected as { id: string; type: string; systemId?: string })
+      : null
+  }, [nodes, selectedIds])
   const ambiguousZones = useMemo(
     () =>
       (selectedPanel?.zoneCandidateIds ?? []).map((id) => ({
@@ -282,6 +303,7 @@ export default function GlnEquipmentPanel() {
   const setHydronicCircuit = useGlnEquipmentStore((state) => state.setHydronicCircuit)
   const showConcealedRoutes = useGlnEquipmentStore((state) => state.showConcealedRoutes)
   const setShowConcealedRoutes = useGlnEquipmentStore((state) => state.setShowConcealedRoutes)
+  const [deletePreviewOpen, setDeletePreviewOpen] = useState(false)
 
   useEffect(() => {
     if (systemId && systemIds.includes(systemId)) return
@@ -292,6 +314,13 @@ export default function GlnEquipmentPanel() {
   const topologyIssues = useMemo(
     () => (systemId ? getGlnHydronicTopologyIssues(nodes as never, systemId) : []),
     [nodes, systemId],
+  )
+  const deleteImpact = useMemo(
+    () =>
+      selectedPhysicalNode && systemId && selectedPhysicalNode.systemId === systemId
+        ? getGlnHydronicDeleteImpact(nodes as never, systemId, [selectedPhysicalNode.id])
+        : null,
+    [nodes, selectedPhysicalNode, systemId],
   )
 
   useEffect(() => {
@@ -427,12 +456,79 @@ export default function GlnEquipmentPanel() {
           className="rounded-md border border-amber-500/50 bg-amber-500/10 p-3"
           data-gln-topology-issues
         >
-          <p className="font-medium text-sidebar-foreground text-sm">水路待完成</p>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <p className="font-medium text-sidebar-foreground text-sm">水路待修复</p>
+          </div>
           <ul className="mt-1 space-y-1 text-sidebar-foreground/65 text-xs">
-            {topologyIssues.slice(0, 4).map((issue) => (
-              <li key={`${issue.code}-${issue.pipeId ?? issue.message}`}>{issue.message}</li>
+            {topologyIssues.map((issue) => (
+              <li key={`${issue.code}-${issue.pipeId ?? issue.message}`}>
+                <button
+                  className="text-left underline-offset-2 hover:text-sidebar-foreground hover:underline"
+                  onClick={() => {
+                    const target = issue.pipeId ?? issue.nodeIds[0]
+                    if (target)
+                      useViewer.getState().setSelection({ selectedIds: [target as never] })
+                  }}
+                  type="button"
+                >
+                  {issue.message}
+                </button>
+              </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {selectedPhysicalNode && deleteImpact && (
+        <section className="rounded-lg border border-sidebar-border p-3" data-gln-delete-impact>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-medium text-sidebar-foreground text-sm">删除影响</p>
+              <p className="mt-1 text-sidebar-foreground/55 text-xs">
+                删除不会自动重连相邻设备，未受影响节点将保持不变。
+              </p>
+            </div>
+            <Trash2 className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-foreground/60" />
+          </div>
+          {!deletePreviewOpen ? (
+            <button
+              className="mt-3 flex h-9 w-full items-center justify-center rounded-md border border-sidebar-border text-sm hover:border-sidebar-ring disabled:opacity-45"
+              disabled={readOnly}
+              onClick={() => setDeletePreviewOpen(true)}
+              type="button"
+            >
+              查看删除影响
+            </button>
+          ) : (
+            <div className="mt-3 space-y-2">
+              <p className="text-sidebar-foreground/70 text-xs">
+                将影响 {deleteImpact.affectedPipeIds.length} 条管线，删除后有{' '}
+                {deleteImpact.issuesAfterDelete.length} 项待修复。
+              </p>
+              <div className="flex gap-2">
+                <button
+                  className="h-9 flex-1 rounded-md border border-sidebar-border text-sm hover:border-sidebar-ring"
+                  onClick={() => setDeletePreviewOpen(false)}
+                  type="button"
+                >
+                  取消
+                </button>
+                <button
+                  className="h-9 flex-1 rounded-md border border-destructive/60 bg-destructive/10 text-destructive text-sm hover:bg-destructive/20 disabled:opacity-45"
+                  disabled={readOnly}
+                  onClick={() => {
+                    useScene.getState().deleteNode(selectedPhysicalNode.id as AnyNodeId)
+                    useViewer.getState().setSelection({ selectedIds: [] })
+                    setDeletePreviewOpen(false)
+                  }}
+                  type="button"
+                >
+                  确认删除
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
