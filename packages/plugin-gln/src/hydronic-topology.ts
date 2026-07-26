@@ -3,9 +3,21 @@ import type { GlnHydronicPipeNode, GlnPipeEndpoint } from './hydronic-pipe-schem
 type HydronicOwner = { id: string; type: string; systemId?: string }
 
 export type GlnHydronicTopologyIssue = {
-  code: 'incompatible-link' | 'missing-link' | 'orphaned-endpoint' | 'wrong-system'
+  code:
+    | 'incompatible-link'
+    | 'isolated-pipe'
+    | 'missing-link'
+    | 'orphaned-endpoint'
+    | 'wrong-system'
   message: string
+  nodeIds: string[]
   pipeId?: string
+}
+
+export type GlnHydronicDeleteImpact = {
+  affectedPipeIds: string[]
+  affectedNodeIds: string[]
+  issuesAfterDelete: GlnHydronicTopologyIssue[]
 }
 
 type ExpectedLink = {
@@ -88,11 +100,21 @@ export function getGlnHydronicTopologyIssues(
   const issues: GlnHydronicTopologyIssue[] = []
 
   for (const pipe of pipes) {
+    if (!pipe.start && !pipe.end) {
+      issues.push({
+        code: 'isolated-pipe',
+        message: '孤立管线未连接任何设备接口。',
+        nodeIds: [pipe.id],
+        pipeId: pipe.id,
+      })
+      continue
+    }
     for (const endpoint of [pipe.start, pipe.end]) {
       if (!endpoint || !nodes[endpoint.nodeId]) {
         issues.push({
           code: 'orphaned-endpoint',
           message: '管线端点必须连接到一个存在的设备接口。',
+          nodeIds: [pipe.id, ...(endpoint ? [endpoint.nodeId] : [])],
           pipeId: pipe.id,
         })
         continue
@@ -101,6 +123,7 @@ export function getGlnHydronicTopologyIssues(
         issues.push({
           code: 'wrong-system',
           message: '管线端点只能连接同一套光冷暖系统中的设备。',
+          nodeIds: [pipe.id, endpoint.nodeId],
           pipeId: pipe.id,
         })
       }
@@ -109,6 +132,11 @@ export function getGlnHydronicTopologyIssues(
       issues.push({
         code: 'incompatible-link',
         message: '供水和回水只能连接到同一回路中的兼容接口。',
+        nodeIds: [
+          pipe.id,
+          ...(pipe.start ? [pipe.start.nodeId] : []),
+          ...(pipe.end ? [pipe.end.nodeId] : []),
+        ],
         pipeId: pipe.id,
       })
     }
@@ -116,11 +144,47 @@ export function getGlnHydronicTopologyIssues(
 
   for (const expected of REQUIRED_LOOP_LINKS) {
     if (!pipes.some((pipe) => matchesExpectedLink(pipe, nodes, expected))) {
-      issues.push({ code: 'missing-link', message: `尚未连接：${expected.label}。` })
+      issues.push({
+        code: 'missing-link',
+        message: `尚未连接：${expected.label}。`,
+        nodeIds: Object.values(nodes)
+          .filter((node) => node.systemId === systemId)
+          .filter((node) => expected.endpoints.some((endpoint) => endpoint.type === node.type))
+          .map((node) => node.id),
+      })
     }
   }
 
   return issues
+}
+
+/**
+ * Predicts the diagnostic state after a user-selected GLN deletion without
+ * mutating or reconnecting anything. The caller owns the confirmation UI.
+ */
+export function getGlnHydronicDeleteImpact(
+  nodes: Readonly<Record<string, HydronicOwner>>,
+  systemId: string,
+  deletedIds: readonly string[],
+): GlnHydronicDeleteImpact {
+  const deleted = new Set(deletedIds)
+  const affectedPipes = Object.values(nodes).flatMap((node) => {
+    if (node.type !== 'gln:hydronic-pipe') return []
+    const pipe = node as GlnHydronicPipeNode
+    return deleted.has(pipe.id) ||
+      deleted.has(pipe.start?.nodeId ?? '') ||
+      deleted.has(pipe.end?.nodeId ?? '')
+      ? [pipe.id]
+      : []
+  })
+  const remaining = Object.fromEntries(
+    Object.entries(nodes).filter(([id]) => !deleted.has(id)),
+  ) as Record<string, HydronicOwner>
+  return {
+    affectedPipeIds: affectedPipes,
+    affectedNodeIds: [...new Set([...deletedIds, ...affectedPipes])],
+    issuesAfterDelete: getGlnHydronicTopologyIssues(remaining, systemId),
+  }
 }
 
 export function hasGlnHydronicClosedLoop(

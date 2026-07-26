@@ -7,7 +7,11 @@ import {
 } from './hydronic-pipe-ports'
 import { GlnHydronicPipeNode } from './hydronic-pipe-schema'
 import { planGlnConcealedRoute } from './hydronic-routing'
-import { getGlnHydronicTopologyIssues, hasGlnHydronicClosedLoop } from './hydronic-topology'
+import {
+  getGlnHydronicDeleteImpact,
+  getGlnHydronicTopologyIssues,
+  hasGlnHydronicClosedLoop,
+} from './hydronic-topology'
 
 describe('GLN hydronic pipe', () => {
   test('stores a system-owned editable multi-point supply path with endpoint references', () => {
@@ -176,5 +180,33 @@ describe('GLN hydronic pipe', () => {
       state: 'needs-review',
       reviewReason: 'missing-riser',
     })
+  })
+
+  test('predicts affected pipe repairs before deleting equipment without reconnecting the loop', () => {
+    const systemId = 'gln-system_ground'
+    const nodes = {
+      outdoor: { id: 'outdoor', type: 'gln:outdoor-unit', systemId },
+      tank: { id: 'tank', type: 'gln:buffer-tank', systemId },
+      sourceSupply: GlnHydronicPipeNode.parse({
+        systemId,
+        circuit: 'supply',
+        path: [
+          [0, 2.5, 0],
+          [1, 2.5, 0],
+        ],
+        start: { nodeId: 'outdoor', portId: 'supply' },
+        end: { nodeId: 'tank', portId: 'source-supply' },
+      }),
+    }
+
+    const impact = getGlnHydronicDeleteImpact(nodes, systemId, ['tank'])
+
+    expect(impact.affectedPipeIds).toEqual([nodes.sourceSupply.id])
+    expect(impact.issuesAfterDelete).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'orphaned-endpoint', pipeId: nodes.sourceSupply.id }),
+      ]),
+    )
+    expect(nodes.sourceSupply.end?.nodeId).toBe('tank')
   })
 })
