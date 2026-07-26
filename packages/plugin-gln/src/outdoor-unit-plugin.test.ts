@@ -8,6 +8,7 @@ describe('GLN equipment plugin contribution', () => {
       'gln:outdoor-unit',
       'gln:buffer-tank',
       'gln:wall-panel',
+      'gln:hydronic-pipe',
     ])
   })
 
@@ -15,7 +16,7 @@ describe('GLN equipment plugin contribution', () => {
     expect(glnHostPanels.map((panel) => panel.id)).toEqual(['gln:systems', 'gln:equipment'])
     expect(glnHostPanels.find((panel) => panel.id === 'gln:equipment')).toMatchObject({
       label: '光冷暖设备',
-      kinds: ['gln:outdoor-unit', 'gln:buffer-tank', 'gln:wall-panel'],
+      kinds: ['gln:outdoor-unit', 'gln:buffer-tank', 'gln:wall-panel', 'gln:hydronic-pipe'],
       pluginId: 'pascal:gln',
       mandatory: true,
     })

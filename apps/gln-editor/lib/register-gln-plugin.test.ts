@@ -3,6 +3,7 @@ import { nodeRegistry, registerPlugin } from '@pascal-app/core/registry'
 import { SceneBridge } from '@pascal-app/mcp'
 import {
   GlnBufferTankNode,
+  GlnHydronicPipeNode,
   GlnOutdoorUnitNode,
   GlnSystemNode,
   glnPlugin,
@@ -29,6 +30,17 @@ describe('GLN plugin registration', () => {
       diameter: 0.8,
       finish: 'graphite',
     })
+    const pipe = GlnHydronicPipeNode.parse({
+      systemId: system.id,
+      circuit: 'supply',
+      path: [
+        [2, 2.5, 3],
+        [3, 2.5, 3],
+        [4, 2.5, 3],
+      ],
+      start: { nodeId: outdoorUnit.id, portId: 'supply' },
+      end: { nodeId: bufferTank.id, portId: 'source-supply' },
+    })
     const bridge = new SceneBridge()
 
     bridge.loadJSON({
@@ -36,8 +48,9 @@ describe('GLN plugin registration', () => {
         [system.id]: system,
         [outdoorUnit.id]: outdoorUnit,
         [bufferTank.id]: bufferTank,
+        [pipe.id]: pipe,
       },
-      rootNodeIds: [system.id, outdoorUnit.id, bufferTank.id],
+      rootNodeIds: [system.id, outdoorUnit.id, bufferTank.id, pipe.id],
       installedPlugins: [],
     })
 
@@ -61,6 +74,18 @@ describe('GLN plugin registration', () => {
       diameter: 0.8,
       finish: 'graphite',
       stratificationView: true,
+    })
+    expect(bridge.exportJSON().nodes[pipe.id]).toMatchObject({
+      type: 'gln:hydronic-pipe',
+      systemId: system.id,
+      circuit: 'supply',
+      path: [
+        [2, 2.5, 3],
+        [3, 2.5, 3],
+        [4, 2.5, 3],
+      ],
+      start: { nodeId: outdoorUnit.id, portId: 'supply' },
+      end: { nodeId: bufferTank.id, portId: 'source-supply' },
     })
     expect(bridge.exportJSON().installedPlugins).toEqual([glnPlugin.id])
   })

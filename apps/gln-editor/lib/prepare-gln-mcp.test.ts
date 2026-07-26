@@ -25,6 +25,7 @@ describe('GLN MCP runtime preparation', () => {
     expect(nodeRegistry.has('gln:outdoor-unit')).toBe(true)
     expect(nodeRegistry.has('gln:buffer-tank')).toBe(true)
     expect(nodeRegistry.has('gln:wall-panel')).toBe(true)
+    expect(nodeRegistry.has('gln:hydronic-pipe')).toBe(true)
     expect(getMandatoryPluginIds()).toContain(GLN_PLUGIN_ID)
   })
 })
