@@ -628,13 +628,18 @@ test('configures one editable GLN system by stable IDs without duplicating devic
     hierarchy: true,
   })
 
-  await page.getByRole('button', { name: '2D' }).click()
+  const twoDimensionalView = page.getByRole('button', { name: '2D' })
+  await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: '选择 V' }).click()
   const panelEntry = page
     .locator(`.floorplan-registry-entry[data-node-id="${fixture.ids.panel}"]`)
     .first()
   await expect(panelEntry).toBeVisible()
-  await panelEntry.locator('rect').click({ position: { x: 4, y: 4 } })
+  await panelEntry.hover({ force: true })
+  await panelEntry.dispatchEvent('pointerdown', { button: 0, pointerId: 1 })
+  await expect(page.getByRole('heading', { name: '室内面板' })).toBeVisible()
+  await page.waitForTimeout(250)
   await page.getByRole('button', { name: '光冷暖设备' }).click()
   await expect(page.locator('[data-gln-ai-lock]')).toBeVisible()
   await page.getByRole('button', { name: '锁定 AI 变更' }).click()

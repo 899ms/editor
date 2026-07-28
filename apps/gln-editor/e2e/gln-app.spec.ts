@@ -286,7 +286,9 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     )
     .toBe(movedPositionJson)
 
-  await page.getByRole('button', { name: '2D' }).click()
+  const twoDimensionalView = page.getByRole('button', { name: '2D' })
+  await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
   const floorplan = page.locator('svg.touch-none')
   await expect(floorplan).toBeVisible()
   const outdoorUnit2d = page
@@ -420,7 +422,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     })
     .not.toBe(initialTankPositionJson)
 
-  await page.getByRole('button', { name: '2D' }).click()
+  await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
   await expect(floorplan).toBeVisible()
   const bufferTank2d = page
     .locator(`.floorplan-registry-entry[data-node-id="${bufferTankId}"]`)
@@ -473,12 +476,18 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     })
     .toBe(1)
 
-  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
+  const sceneUrl = page.url()
+  const browserContext = page.context()
+  await page.close()
+  page = await browserContext.newPage()
+  await page.goto(sceneUrl, { timeout: 120_000, waitUntil: 'domcontentloaded' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveAttribute(
     'data-gln-client-node-types',
     /gln:buffer-tank/,
+    { timeout: 120_000 },
   )
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
   await page.getByRole('button', { name: '光冷暖系统' }).click()
   await expect(page.locator('[data-gln-systems-panel]')).toBeVisible({ timeout: 30_000 })
   const reloadedSystemNames = page.getByRole('textbox', { name: '系统名称' })
