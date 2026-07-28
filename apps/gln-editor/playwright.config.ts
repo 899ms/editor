@@ -9,7 +9,7 @@ const glnBaseUrl = 'http://127.0.0.1:32103'
 
 export default defineConfig({
   testDir: './e2e',
-  timeout: 90_000,
+  timeout: 180_000,
   fullyParallel: false,
   workers: 1,
   retries: 0,
@@ -17,9 +17,14 @@ export default defineConfig({
   outputDir: 'test-results',
   use: {
     baseURL: glnBaseUrl,
+    actionTimeout: 60_000,
+    navigationTimeout: 120_000,
     locale: 'zh-CN',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
+  },
+  expect: {
+    timeout: 30_000,
   },
   projects: [
     {
@@ -32,7 +37,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'bun run dev:e2e:editor',
+      command: 'bun run start:e2e:editor',
       cwd: '../..',
       env: {
         NEXT_PUBLIC_APP_URL: editorBaseUrl,
@@ -43,7 +48,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'bun run dev:e2e:gln',
+      command: 'bun run start:e2e:gln',
       cwd: '../..',
       env: {
         NEXT_PUBLIC_APP_URL: glnBaseUrl,

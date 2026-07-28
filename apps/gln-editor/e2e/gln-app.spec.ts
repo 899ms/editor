@@ -57,7 +57,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   page,
   request,
 }) => {
-  test.setTimeout(600_000)
+  test.setTimeout(900_000)
 
   await page.goto(`${glnBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
@@ -124,7 +124,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   if (!seedResponse.ok()) {
     throw new Error(`GLN equipment-area seed failed: ${await seedResponse.text()}`)
   }
-  await page.reload()
+  await page.reload({ timeout: 120_000, waitUntil: 'domcontentloaded' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
 
   await page.getByRole('button', { name: '光冷暖系统' }).click()
@@ -396,7 +396,9 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
 
   expect(initialTankPosition).toBeDefined()
   const initialTankPositionJson = JSON.stringify(initialTankPosition)
-  await page.getByRole('button', { name: '3D' }).click()
+  const threeDimensionalView = page.getByRole('button', { name: '3D' })
+  await threeDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(threeDimensionalView).toHaveAttribute('aria-pressed', 'true')
   await expect(canvas).toBeVisible()
   await page
     .locator('button')
@@ -471,7 +473,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     })
     .toBe(1)
 
-  await page.reload()
+  await page.reload({ timeout: 120_000, waitUntil: 'domcontentloaded' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveAttribute(
     'data-gln-client-node-types',

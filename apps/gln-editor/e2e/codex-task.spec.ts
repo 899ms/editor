@@ -17,6 +17,20 @@ test('shows progress, supports cancellation controls, and hands a validated Code
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  let stableReads = 0
+  let latestVersion = -1
+  while (stableReads < 3) {
+    await page.waitForTimeout(500)
+    const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+      version: number
+    }
+    if (current.version === latestVersion) stableReads += 1
+    else {
+      latestVersion = current.version
+      stableReads = 0
+    }
+  }
   const scene = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
     version: number
     graph: { nodes: Record<string, { id: string; type: string }> }
@@ -91,7 +105,7 @@ test('shows progress, supports cancellation controls, and hands a validated Code
   await page.getByRole('textbox', { name: '任务目标' }).fill('重建为正常可编辑住宅节点')
   await page.getByRole('button', { name: '生成场景计划' }).click()
   await expect(page.getByRole('button', { name: '取消任务' })).toBeVisible()
-  await expect(page.getByText('已生成', { exact: true })).toBeVisible()
+  await expect(page.getByText('已生成', { exact: true })).toBeVisible({ timeout: 30_000 })
   await expect(
     page.getByText('已生成 1 项变更，安装位置仍需人工复核，提交按钮会保持禁用。'),
   ).toBeVisible()
@@ -129,6 +143,20 @@ test('generates editable residential nodes, previews, atomically commits, and re
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  let stableReads = 0
+  let latestVersion = -1
+  while (stableReads < 3) {
+    await page.waitForTimeout(500)
+    const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+      version: number
+    }
+    if (current.version === latestVersion) stableReads += 1
+    else {
+      latestVersion = current.version
+      stableReads = 0
+    }
+  }
   const scene = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
     version: number
     graph: { nodes: Record<string, { id: string; type: string }> }

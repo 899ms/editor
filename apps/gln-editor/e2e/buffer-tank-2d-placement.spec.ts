@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test'
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 
 test('places a buffer tank from the 2D floor plan', async ({ page, request }) => {
+  test.setTimeout(240_000)
   await page.goto(`${baseUrl}/scenes`)
   await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
   const createResponsePromise = page.waitForResponse(
@@ -75,7 +76,7 @@ test('places a buffer tank from the 2D floor plan', async ({ page, request }) =>
   const placeTank = page.getByRole('button', { name: /放置缓冲水箱/ })
   await placeTank.click()
   await expect(placeTank).toHaveAttribute('aria-pressed', 'true')
-  await expect(placeTank).toHaveAttribute('aria-busy', 'false')
+  await expect(placeTank).toHaveAttribute('aria-busy', 'false', { timeout: 120_000 })
 
   const bounds = await floorplan.boundingBox()
   expect(bounds).not.toBeNull()

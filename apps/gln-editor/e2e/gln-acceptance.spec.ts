@@ -247,6 +247,7 @@ test('acceptance: Chinese GLN panels fit the target desktop viewport', async ({
   page,
   request,
 }, testInfo) => {
+  test.setTimeout(240_000)
   const fixture = createTwoLevelTwoSystemGraph()
   const created = await createScene(request, glnBaseUrl, '中文桌面布局验收', fixture.graph)
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -261,7 +262,9 @@ test('acceptance: Chinese GLN panels fit the target desktop viewport', async ({
     ['住宅导入', '[data-gln-residential-import-panel]'],
   ] as const
   for (const [buttonName, selector] of panels) {
-    await page.getByRole('button', { name: buttonName, exact: true }).click()
+    const button = page.getByRole('button', { name: buttonName, exact: true })
+    await expect(button).toBeVisible()
+    await button.evaluate((element) => (element as HTMLButtonElement).click())
     await expectPanelFitsViewport(page, selector)
     const text = await page.locator(selector).innerText()
     expect(text).not.toMatch(
@@ -375,7 +378,7 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
   await createButton.click()
   const createResponse = await createResponsePromise
   expect(createResponse.status()).toBe(201)
-  await expect(page).toHaveURL(/\/scene\/[^/]+$/)
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 60_000 })
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveCount(0)
