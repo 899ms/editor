@@ -12,12 +12,25 @@ test('previews and atomically commits one version-bound ScenePlan with one undo 
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
 
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
+  let stableReads = 0
+  let latestVersion = -1
+  while (stableReads < 3) {
+    await page.waitForTimeout(500)
+    const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+      version: number
+    }
+    if (current.version === latestVersion) stableReads += 1
+    else {
+      latestVersion = current.version
+      stableReads = 0
+    }
+  }
   const initial = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
     version: number
     graph: { nodes: Record<string, { id: string; type: string; name?: string }> }

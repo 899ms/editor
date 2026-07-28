@@ -14,7 +14,7 @@ const geistMono = localFont({
 })
 
 export const metadata: Metadata = {
-  title: 'GLN Editor',
+  title: 'GLN 光冷暖编辑器',
   description: '光冷暖住宅系统编辑器',
 }
 

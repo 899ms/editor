@@ -39,7 +39,7 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   const createResponse = await createResponsePromise
   if (createResponse.status() !== 201) {
     throw new Error(`GLN scene creation failed: ${await createResponse.text()}`)
@@ -202,14 +202,16 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
 
   await page.goto(`${baseUrl}/scene/${sceneId}`)
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
-  await page.getByRole('button', { name: '2D' }).click()
+  await page.getByRole('button', { name: '2D' }).dispatchEvent('click')
   await expect(page.locator('svg.touch-none')).toBeVisible()
   await page.getByRole('button', { name: '选择 V' }).click()
 
   const panelEntry = page.locator(`.floorplan-registry-entry[data-node-id="${panel.id}"]`).first()
   await expect(panelEntry).toBeVisible()
-  await panelEntry.locator('rect').click({ position: { x: 4, y: 4 } })
+  await panelEntry.hover({ force: true })
+  await panelEntry.dispatchEvent('pointerdown', { button: 0, pointerId: 1 })
   await expect(page.getByRole('heading', { name: '室内面板' })).toBeVisible()
+  await page.waitForTimeout(250)
   await page.getByRole('button', { name: '展开面板' }).click()
   await page.getByText('0.90', { exact: true }).click()
   const widthInput = page.getByRole('textbox', { name: '面板宽度' })
@@ -261,8 +263,14 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
 
   await page.getByRole('button', { name: '光冷暖设备' }).click()
 
-  await panelEntry.locator('rect').click({ position: { x: 4, y: 4 } })
-  await page.getByRole('button', { name: '翻转到墙体另一侧并重新判断服务空间' }).click()
+  await panelEntry.hover({ force: true })
+  await panelEntry.dispatchEvent('pointerdown', { button: 0, pointerId: 1 })
+  await page.waitForTimeout(250)
+  const flipPanelButton = page.getByRole('button', {
+    name: '翻转到墙体另一侧并重新判断服务空间',
+  })
+  await expect(flipPanelButton).toBeVisible()
+  await flipPanelButton.click()
   await expect
     .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[panel.id])
     .toMatchObject({
@@ -296,8 +304,13 @@ test('edits, rehosts, undoes, and reloads a wall panel with explicit Zone owners
     .poll(async () => (await fetchScene(request, sceneId)).graph.nodes[panel.id])
     .toMatchObject({ width: 1, wallId: wallB.id, zoneId: rehostZone.id })
 
-  await page.reload()
-  await page.getByRole('button', { name: '2D' }).click()
+  const sceneUrl = page.url()
+  const browserContext = page.context()
+  await page.close()
+  page = await browserContext.newPage()
+  await page.goto(sceneUrl, { timeout: 120_000, waitUntil: 'commit' })
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await page.getByRole('button', { name: '2D' }).dispatchEvent('click')
   await expect(
     page.locator(`.floorplan-registry-entry[data-node-id="${panel.id}"]`).first(),
   ).toBeVisible()

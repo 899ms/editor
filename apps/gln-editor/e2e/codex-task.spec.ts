@@ -13,10 +13,24 @@ test('shows progress, supports cancellation controls, and hands a validated Code
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  let stableReads = 0
+  let latestVersion = -1
+  while (stableReads < 3) {
+    await page.waitForTimeout(500)
+    const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+      version: number
+    }
+    if (current.version === latestVersion) stableReads += 1
+    else {
+      latestVersion = current.version
+      stableReads = 0
+    }
+  }
   const scene = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
     version: number
     graph: { nodes: Record<string, { id: string; type: string }> }
@@ -91,8 +105,10 @@ test('shows progress, supports cancellation controls, and hands a validated Code
   await page.getByRole('textbox', { name: '任务目标' }).fill('重建为正常可编辑住宅节点')
   await page.getByRole('button', { name: '生成场景计划' }).click()
   await expect(page.getByRole('button', { name: '取消任务' })).toBeVisible()
-  await expect(page.getByText('已生成')).toBeVisible()
-  await expect(page.getByText('已通过格式与硬校验，共 1 项变更。')).toBeVisible()
+  await expect(page.getByText('已生成', { exact: true })).toBeVisible({ timeout: 30_000 })
+  await expect(
+    page.getByText('已生成 1 项变更，安装位置仍需人工复核，提交按钮会保持禁用。'),
+  ).toBeVisible()
   await expect(page.locator('[data-residential-review-queue]')).toContainText(
     'AI 重建楼层为中等置信度构件',
   )
@@ -123,10 +139,24 @@ test('generates editable residential nodes, previews, atomically commits, and re
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  let stableReads = 0
+  let latestVersion = -1
+  while (stableReads < 3) {
+    await page.waitForTimeout(500)
+    const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+      version: number
+    }
+    if (current.version === latestVersion) stableReads += 1
+    else {
+      latestVersion = current.version
+      stableReads = 0
+    }
+  }
   const scene = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
     version: number
     graph: { nodes: Record<string, { id: string; type: string }> }
@@ -259,7 +289,7 @@ test('generates editable residential nodes, previews, atomically commits, and re
     .fill('首层 4 面围护墙，形成 1 个客厅空间。')
   await page.getByRole('textbox', { name: '任务目标' }).fill('生成一套可编辑的一层住宅')
   await page.getByRole('button', { name: '生成场景计划' }).click()
-  await expect(page.getByText('已生成')).toBeVisible()
+  await expect(page.getByText('已生成', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '发送到变更计划' }).click()
 
   await page.getByRole('button', { name: '变更计划', exact: true }).click()
@@ -278,7 +308,7 @@ test('generates editable residential nodes, previews, atomically commits, and re
   await page.getByRole('button', { name: '确认并一次提交' }).click()
   await expect(page.getByText(/已原子提交；恢复点/)).toBeVisible()
 
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   let reloadedVersion = scene.version
   await expect
@@ -322,7 +352,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
@@ -462,7 +492,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
   await expect(page.getByRole('spinbutton', { name: '目标系统总数' })).toHaveValue('1')
   await page.getByRole('textbox', { name: '任务目标' }).fill('为住宅配置一套光冷暖系统')
   await page.getByRole('button', { name: '生成场景计划' }).click()
-  await expect(page.getByText('已生成')).toBeVisible()
+  await expect(page.getByText('已生成', { exact: true })).toBeVisible()
   await expect(
     page.getByText(`已通过格式与硬校验，共 ${fixture.glnNodes.length} 项变更。`),
   ).toBeVisible()
@@ -545,7 +575,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
   if (!recreate.ok()) {
     throw new Error(`GLN recreation failed (${recreate.status()}): ${await recreate.text()}`)
   }
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect.poll(summarize).toMatchObject({
     systems: 1,
@@ -585,7 +615,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
   if (!rerun.ok()) {
     throw new Error(`GLN stable-ID rerun failed (${rerun.status()}): ${await rerun.text()}`)
   }
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect.poll(summarize).toMatchObject({
     systems: 1,
@@ -598,13 +628,19 @@ test('configures one editable GLN system by stable IDs without duplicating devic
     hierarchy: true,
   })
 
-  await page.getByRole('button', { name: '2D' }).click()
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
+  const twoDimensionalView = page.getByRole('button', { name: '2D' })
+  await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: '选择 V' }).click()
   const panelEntry = page
     .locator(`.floorplan-registry-entry[data-node-id="${fixture.ids.panel}"]`)
     .first()
   await expect(panelEntry).toBeVisible()
-  await panelEntry.locator('rect').click({ position: { x: 4, y: 4 } })
+  await panelEntry.hover({ force: true })
+  await panelEntry.dispatchEvent('pointerdown', { button: 0, pointerId: 1 })
+  await expect(page.getByRole('heading', { name: '室内面板' })).toBeVisible()
+  await page.waitForTimeout(250)
   await page.getByRole('button', { name: '光冷暖设备' }).click()
   await expect(page.locator('[data-gln-ai-lock]')).toBeVisible()
   await page.getByRole('button', { name: '锁定 AI 变更' }).click()

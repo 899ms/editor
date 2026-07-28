@@ -13,19 +13,20 @@ export function addGlnEquipmentClearance(
   group: Group,
   args: GlnClearanceEnvelope & { depth: number; height: number; width: number },
 ) {
+  const clearanceBack = Number.isFinite(args.clearanceBack) ? args.clearanceBack : 0
+  const clearanceFront = Number.isFinite(args.clearanceFront) ? args.clearanceFront : 0
+  const clearanceLeft = Number.isFinite(args.clearanceLeft) ? args.clearanceLeft : 0
+  const clearanceRight = Number.isFinite(args.clearanceRight) ? args.clearanceRight : 0
+  const clearanceTop = Number.isFinite(args.clearanceTop) ? args.clearanceTop : 0
   const totalClearance =
-    args.clearanceFront +
-    args.clearanceBack +
-    args.clearanceLeft +
-    args.clearanceRight +
-    args.clearanceTop
+    clearanceFront + clearanceBack + clearanceLeft + clearanceRight + clearanceTop
   if (totalClearance === 0) return
 
   const envelope = new Mesh(
     new BoxGeometry(
-      args.width + args.clearanceLeft + args.clearanceRight,
-      args.height + args.clearanceTop,
-      args.depth + args.clearanceFront + args.clearanceBack,
+      args.width + clearanceLeft + clearanceRight,
+      args.height + clearanceTop,
+      args.depth + clearanceFront + clearanceBack,
     ),
     new MeshBasicMaterial({
       color: '#f59e0b',
@@ -36,9 +37,9 @@ export function addGlnEquipmentClearance(
   )
   envelope.name = 'gln-equipment-clearance'
   envelope.position.set(
-    (args.clearanceRight - args.clearanceLeft) / 2,
-    (args.height + args.clearanceTop) / 2,
-    (args.clearanceFront - args.clearanceBack) / 2,
+    (clearanceRight - clearanceLeft) / 2,
+    (args.height + clearanceTop) / 2,
+    (clearanceFront - clearanceBack) / 2,
   )
   envelope.renderOrder = 1
   group.add(envelope)

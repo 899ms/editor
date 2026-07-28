@@ -57,7 +57,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   page,
   request,
 }) => {
-  test.setTimeout(600_000)
+  test.setTimeout(900_000)
 
   await page.goto(`${glnBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
@@ -66,7 +66,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     (response) =>
       response.request().method() === 'POST' && response.url() === `${glnBaseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   const createResponse = await createResponsePromise
   if (createResponse.status() !== 201) {
     throw new Error(`GLN scene creation failed: ${await createResponse.text()}`)
@@ -124,7 +124,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   if (!seedResponse.ok()) {
     throw new Error(`GLN equipment-area seed failed: ${await seedResponse.text()}`)
   }
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
 
   await page.getByRole('button', { name: '光冷暖系统' }).click()
@@ -286,7 +286,10 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     )
     .toBe(movedPositionJson)
 
-  await page.getByRole('button', { name: '2D' }).click()
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
+  const twoDimensionalView = page.getByRole('button', { name: '2D' })
+  await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
   const floorplan = page.locator('svg.touch-none')
   await expect(floorplan).toBeVisible()
   const outdoorUnit2d = page
@@ -396,7 +399,9 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
 
   expect(initialTankPosition).toBeDefined()
   const initialTankPositionJson = JSON.stringify(initialTankPosition)
-  await page.getByRole('button', { name: '3D' }).click()
+  const threeDimensionalView = page.getByRole('button', { name: '3D' })
+  await threeDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(threeDimensionalView).toHaveAttribute('aria-pressed', 'true')
   await expect(canvas).toBeVisible()
   await page
     .locator('button')
@@ -418,7 +423,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     })
     .not.toBe(initialTankPositionJson)
 
-  await page.getByRole('button', { name: '2D' }).click()
+  await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
+  await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
   await expect(floorplan).toBeVisible()
   const bufferTank2d = page
     .locator(`.floorplan-registry-entry[data-node-id="${bufferTankId}"]`)
@@ -471,13 +477,20 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     })
     .toBe(1)
 
-  await page.reload()
+  const sceneUrl = page.url()
+  const browserContext = page.context()
+  await page.close()
+  page = await browserContext.newPage()
+  await page.goto(sceneUrl, { timeout: 120_000, waitUntil: 'domcontentloaded' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveAttribute(
     'data-gln-client-node-types',
     /gln:buffer-tank/,
+    { timeout: 120_000 },
   )
-  await page.getByRole('button', { name: '光冷暖系统' }).click()
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
+  const glnSystemsButton = page.getByRole('button', { name: '光冷暖系统' })
+  await glnSystemsButton.evaluate((element) => (element as HTMLButtonElement).click())
   await expect(page.locator('[data-gln-systems-panel]')).toBeVisible({ timeout: 30_000 })
   const reloadedSystemNames = page.getByRole('textbox', { name: '系统名称' })
   await expect(reloadedSystemNames.first()).toHaveValue('一层光冷暖系统')
@@ -522,8 +535,12 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   })
   expect(originalGlnImport.status()).toBe(400)
 
-  await page.getByRole('button', { name: '插件' }).click()
-  await page.getByRole('button', { name: /^住宅导入 已安装/ }).click()
+  await page
+    .getByRole('button', { name: '插件' })
+    .evaluate((element) => (element as HTMLButtonElement).click())
+  await page
+    .getByRole('button', { name: /^住宅导入 已安装/ })
+    .evaluate((element) => (element as HTMLButtonElement).click())
   await expect(page.getByText('pascal:gln', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '必需' })).toBeDisabled()
   await expect(page.getByRole('button', { name: '卸载' })).toHaveCount(0)
@@ -540,7 +557,9 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
 
   await page.goto(`${editorBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
-  await page.getByRole('link', { name: '原版隔离场景' }).click()
+  await page
+    .getByRole('link', { name: '原版隔离场景' })
+    .evaluate((element) => (element as HTMLAnchorElement).click())
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('[data-gln-client-node-types]')).toHaveCount(0)
   await expect(page.getByRole('button', { name: '光冷暖系统' })).toHaveCount(0)

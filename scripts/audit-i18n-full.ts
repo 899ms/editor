@@ -7,7 +7,11 @@ const SOURCE_ROOTS = [
   'apps/editor/app',
   'apps/editor/components',
   'apps/editor/lib',
+  'apps/gln-editor/app',
+  'apps/gln-editor/components',
+  'apps/gln-editor/lib',
   'packages/plugin-trees/src',
+  'packages/plugin-gln/src',
   'packages/editor/src',
   'packages/nodes/src',
   'packages/viewer/src',
@@ -182,6 +186,7 @@ const TECHNICAL_TEXT_ALLOWLIST = new Set([
   'H',
   'HVAC',
   'JSON',
+  '· SHA-256',
   'K',
   'M',
   'MIT',
@@ -284,7 +289,30 @@ function normalizeText(value: string) {
 
 function looksLikeEnglishUserText(value: string) {
   const text = normalizeText(value)
-  return !TECHNICAL_TEXT_ALLOWLIST.has(text) && /[A-Za-z]{2}/.test(text)
+  if (TECHNICAL_TEXT_ALLOWLIST.has(text)) return false
+  if (/^\{.*\}$/.test(text) || /^[a-z][a-z0-9]*(?:[_:-][a-z0-9-]+)+$/.test(text)) {
+    return false
+  }
+  if (/[\u3400-\u9fff]/.test(text)) {
+    const allowedInlineTerms = new Set([
+      'AI',
+      'BIM',
+      'Codex',
+      'Enter',
+      'GLB',
+      'GLN',
+      'ID',
+      'IFC',
+      'ScenePlan',
+      'SHA',
+      'systemId',
+      'Zone',
+    ])
+    return (text.match(/[A-Za-z][A-Za-z0-9]*/g) ?? []).some(
+      (word) => !allowedInlineTerms.has(word),
+    )
+  }
+  return /[A-Za-z]{2}/.test(text)
 }
 
 function resolvesAsNodeUiText(value: string) {

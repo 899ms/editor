@@ -5197,7 +5197,7 @@ function FloorplanLinearDraftLayer({
   }, [isWallBuildActive, unit, wallDraftEnd, wallDraftStart, walls])
 
   return (
-    <>
+    <g data-floorplan-wall-draft-active={wallDraftStart ? 'true' : undefined}>
       <FloorplanDraftLayer
         anchorFill={draftStroke}
         draftAnchorPoints={EMPTY_DRAFT_ANCHOR_POINTS}
@@ -5221,7 +5221,7 @@ function FloorplanLinearDraftLayer({
           unitsPerPixel={unitsPerPixel}
         />
       )}
-    </>
+    </g>
   )
 }
 

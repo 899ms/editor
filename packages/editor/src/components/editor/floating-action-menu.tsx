@@ -226,6 +226,10 @@ function collectQuickActionNodes(
   addChildren(selected)
   const parent = selected.parentId ? nodes[selected.parentId as AnyNodeId] : undefined
   addChildren(parent)
+  // Host-dependent actions can need sibling Zones and walls from the containing level.
+  const grandparent = parent?.parentId ? nodes[parent.parentId as AnyNodeId] : undefined
+  add(parent?.parentId ?? null)
+  addChildren(grandparent)
 
   return collected
 }
