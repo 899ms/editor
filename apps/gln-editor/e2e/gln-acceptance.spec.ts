@@ -288,6 +288,7 @@ test('acceptance: large residence selection, move, and preview stay within the s
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto(`${glnBaseUrl}/scene/${created.id}`)
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
   const twoDimensionalView = page.getByRole('button', { name: '2D' })
   await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
   await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
@@ -385,6 +386,7 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveCount(0)
   await expect(page.getByRole('button', { name: '光冷暖系统' })).toHaveCount(0)
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
 
   const twoDimensionalView = page.getByRole('button', { name: '2D' })
   await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())

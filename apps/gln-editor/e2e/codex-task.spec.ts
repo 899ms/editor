@@ -628,6 +628,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
     hierarchy: true,
   })
 
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
   const twoDimensionalView = page.getByRole('button', { name: '2D' })
   await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
   await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')

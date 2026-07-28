@@ -286,6 +286,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     )
     .toBe(movedPositionJson)
 
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
   const twoDimensionalView = page.getByRole('button', { name: '2D' })
   await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
   await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
@@ -488,7 +489,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     { timeout: 120_000 },
   )
   await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
-  await page.getByRole('button', { name: '光冷暖系统' }).click()
+  const glnSystemsButton = page.getByRole('button', { name: '光冷暖系统' })
+  await glnSystemsButton.evaluate((element) => (element as HTMLButtonElement).click())
   await expect(page.locator('[data-gln-systems-panel]')).toBeVisible({ timeout: 30_000 })
   const reloadedSystemNames = page.getByRole('textbox', { name: '系统名称' })
   await expect(reloadedSystemNames.first()).toHaveValue('一层光冷暖系统')

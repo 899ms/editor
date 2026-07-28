@@ -70,6 +70,7 @@ test('places a buffer tank from the 2D floor plan', async ({ page, request }) =>
   await page.getByRole('button', { name: '光冷暖设备' }).click()
   await page.getByRole('combobox', { name: '安装空间' }).selectOption({ label: '水箱设备区' })
   await page.getByRole('combobox', { name: '区域用途' }).selectOption('equipment-area')
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
   const twoDimensionalView = page.getByRole('button', { name: '2D' })
   await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
   await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
