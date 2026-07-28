@@ -75,4 +75,7 @@ test('launches only the fixed local Codex command in an isolated read-only works
   expect(invocation?.stdin).toContain('metadata.confidence')
   expect(invocation?.stdin).toContain('frontSide/backSide')
   expect(invocation?.stdin).toContain('不能确定的几何或语义不得猜测')
+  expect(invocation?.stdin).toContain('目标系统总数：1')
+  expect(invocation?.stdin).toContain('metadata.glnLocked')
+  expect(invocation?.stdin).toContain('按 systemId 和稳定节点 ID 更新已有系统')
 })

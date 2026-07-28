@@ -45,6 +45,7 @@ export function publicCodexTask(task: CodexTaskRecord) {
         }
       : null,
     residentialReport: task.residentialReport,
+    glnConfigurationReport: task.glnConfigurationReport,
     error: task.error,
   }
 }

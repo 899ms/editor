@@ -2,7 +2,12 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import type { CodexTaskManager } from './codex-task-manager'
 import { publicCodexTask } from './codex-task-server'
-import { CodexSourceContextSchema, CodexTaskKindSchema, CodexTaskRequestSchema } from './schema'
+import {
+  CodexSourceContextSchema,
+  CodexTaskKindSchema,
+  CodexTaskRequestSchema,
+  GlnConfigurationRequestSchema,
+} from './schema'
 
 export function registerGlnCodexTaskTools(server: McpServer, manager: CodexTaskManager): void {
   server.registerTool(
@@ -16,6 +21,7 @@ export function registerGlnCodexTaskTools(server: McpServer, manager: CodexTaskM
         kind: CodexTaskKindSchema,
         brief: CodexTaskRequestSchema.shape.brief,
         source: CodexSourceContextSchema.optional(),
+        glnConfiguration: GlnConfigurationRequestSchema.optional(),
       },
     },
     async (input) => toolResult(publicCodexTask(manager.submit(input))),

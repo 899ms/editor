@@ -2,6 +2,12 @@ import { z } from 'zod'
 
 export const CodexTaskKindSchema = z.enum(['reconstruct-home', 'configure-gln', 'repair-gln'])
 
+export const GlnConfigurationRequestSchema = z
+  .object({
+    targetSystemCount: z.number().int().min(1).max(8).default(1),
+  })
+  .strict()
+
 export const CodexSourceContextSchema = z
   .object({
     kind: z.enum(['glb', 'ifc']),
@@ -26,9 +32,20 @@ export const CodexTaskRequestSchema = z
     sceneId: z.string().trim().min(1).max(256),
     brief: z.string().trim().min(1).max(8_000),
     source: CodexSourceContextSchema.optional(),
+    glnConfiguration: GlnConfigurationRequestSchema.optional(),
   })
   .strict()
+  .superRefine((request, context) => {
+    if (request.glnConfiguration && request.kind !== 'configure-gln') {
+      context.addIssue({
+        code: 'custom',
+        message: 'gln_configuration_only_for_configure_task',
+        path: ['glnConfiguration'],
+      })
+    }
+  })
 
 export type CodexTaskKind = z.infer<typeof CodexTaskKindSchema>
 export type CodexTaskRequest = z.infer<typeof CodexTaskRequestSchema>
 export type CodexSourceContext = z.infer<typeof CodexSourceContextSchema>
+export type GlnConfigurationRequest = z.infer<typeof GlnConfigurationRequestSchema>

@@ -8,6 +8,7 @@ import { createSceneOperations } from '@pascal-app/mcp/operations'
 import { SqliteSceneStore } from '@pascal-app/mcp/storage'
 import { type CodexScenePlanAdapter, createCodexTaskManager } from './codex-task-manager'
 import { createDeterministicCodexAdapter } from './deterministic-adapter'
+import { createGlnConfigurationTestGraph } from './gln-configuration-test-fixtures'
 import { CodexTaskRequestSchema } from './schema'
 
 const sceneId = 'scene-codex-task'
@@ -206,6 +207,131 @@ test('rejects a residential draft that lacks the minimum editable structure', as
   ])
 })
 
+test('generates one complete GLN system by default and returns a validated configuration report', async () => {
+  const fixture = createGlnConfigurationTestGraph('manager')
+  let preparedPlan: ScenePlan | null = null
+  const operations = {
+    async loadStoredScene(id: string) {
+      return {
+        id,
+        name: '住宅',
+        version: 1,
+        graph: fixture.residentialGraph,
+      }
+    },
+    async prepareScenePlan(scenePlan: ScenePlan) {
+      preparedPlan = scenePlan
+      return {
+        ok: true,
+        plan: scenePlan,
+        before: { sceneId, version: 1, graph: fixture.residentialGraph },
+        after: { sceneId, version: 2, graph: fixture.graph },
+        diffs: fixture.glnNodes.map((node) => ({
+          kind: 'create' as const,
+          nodeId: node.id,
+          nodeType: node.type,
+          after: node,
+          changedFields: Object.keys(node),
+        })),
+        issues: [],
+      }
+    },
+  }
+  const rawPlan: ScenePlan = {
+    id: 'plan-configure-gln',
+    sceneId,
+    baseVersion: 1,
+    operations: fixture.glnNodes.map((node) => ({
+      op: 'create',
+      ...(node.parentId ? { parentId: node.parentId } : {}),
+      node,
+    })),
+  }
+  const manager = createCodexTaskManager({
+    operations: operations as never,
+    adapter: createDeterministicCodexAdapter(rawPlan),
+  })
+
+  const task = manager.submit({
+    kind: 'configure-gln',
+    sceneId,
+    brief: '为现有住宅配置一套光冷暖系统',
+  })
+  const completed = await manager.waitForTerminal(task.id)
+
+  expect(completed.status).toBe('succeeded')
+  expect(completed.glnConfigurationReport).toMatchObject({
+    status: 'ready',
+    systems: { before: 0, requested: 1, expected: 1, after: 1 },
+    completenessIssues: [],
+    reviewItems: [],
+  })
+  expect(preparedPlan?.operations).toHaveLength(8)
+  expect(
+    preparedPlan?.operations.find(
+      (operation) => operation.op === 'create' && operation.node.type === 'gln:outdoor-unit',
+    ),
+  ).toMatchObject({
+    node: { presetId: 'generic-standard', specificationSource: 'generic-placeholder' },
+  })
+})
+
+test('requires a valid residence and protects locked GLN nodes before preview', async () => {
+  const invalidOperations = await seededOperations()
+  let generated = false
+  const invalidManager = createCodexTaskManager({
+    operations: invalidOperations,
+    adapter: {
+      async generate() {
+        generated = true
+        return {}
+      },
+    },
+  })
+  const invalid = invalidManager.submit({
+    kind: 'configure-gln',
+    sceneId,
+    brief: '配置系统',
+  })
+  expect((await invalidManager.waitForTerminal(invalid.id)).error?.code).toBe(
+    'gln_configuration_requires_residence',
+  )
+  expect(generated).toBe(false)
+
+  const fixture = createGlnConfigurationTestGraph('locked')
+  const panel = fixture.graph.nodes[fixture.ids.panel] as unknown as {
+    metadata: Record<string, unknown>
+  }
+  panel.metadata = { ...panel.metadata, glnLocked: true }
+  let prepared = false
+  const lockedManager = createCodexTaskManager({
+    operations: {
+      async loadStoredScene(id: string) {
+        return { id, name: '住宅', version: 1, graph: fixture.graph }
+      },
+      async prepareScenePlan() {
+        prepared = true
+        throw new Error('should not prepare')
+      },
+    } as never,
+    adapter: createDeterministicCodexAdapter({
+      id: 'plan-locked-gln',
+      sceneId,
+      baseVersion: 1,
+      operations: [{ op: 'update', id: fixture.ids.panel, data: { position: [8, 1.25, 0.16] } }],
+    }),
+  })
+  const locked = lockedManager.submit({
+    kind: 'configure-gln',
+    sceneId,
+    brief: '调整面板',
+  })
+  expect((await lockedManager.waitForTerminal(locked.id)).error?.code).toBe(
+    'gln_configuration_locked_node',
+  )
+  expect(prepared).toBe(false)
+})
+
 test('rejects browser-supplied commands, API keys, and unauthorized original uploads', () => {
   expect(
     CodexTaskRequestSchema.safeParse({
@@ -233,6 +359,22 @@ test('rejects browser-supplied commands, API keys, and unauthorized original upl
         summary: '本地解析摘要',
         uploadOriginal: true,
       },
+    }).success,
+  ).toBe(false)
+  expect(
+    CodexTaskRequestSchema.safeParse({
+      kind: 'configure-gln',
+      sceneId,
+      brief: '配置系统',
+      glnConfiguration: { targetSystemCount: 9 },
+    }).success,
+  ).toBe(false)
+  expect(
+    CodexTaskRequestSchema.safeParse({
+      kind: 'repair-gln',
+      sceneId,
+      brief: '修复系统',
+      glnConfiguration: { targetSystemCount: 2 },
     }).success,
   ).toBe(false)
 })
@@ -305,9 +447,9 @@ test('fails safely when Codex returns invalid JSON or a GLN task edits residenti
     adapter: createDeterministicCodexAdapter({ arbitrary: 'not-a-plan' }),
   })
   const invalid = invalidManager.submit({
-    kind: 'configure-gln',
+    kind: 'repair-gln',
     sceneId,
-    brief: '配置系统',
+    brief: '修复系统',
   })
 
   expect((await invalidManager.waitForTerminal(invalid.id)).error).toEqual({

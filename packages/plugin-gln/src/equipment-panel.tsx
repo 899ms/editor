@@ -9,11 +9,13 @@ import {
   EyeOff,
   Fan,
   GitBranch,
+  Lock,
   MapPin,
   PanelTop,
   Play,
   Route,
   Trash2,
+  Unlock,
   Wrench,
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -342,9 +344,28 @@ export default function GlnEquipmentPanel() {
       type === BUFFER_TANK_KIND ||
       type === WALL_PANEL_KIND ||
       type === HYDRONIC_PIPE_KIND
-      ? (selected as { id: string; type: string; systemId?: string })
+      ? (selected as {
+          id: string
+          type: string
+          systemId?: string
+          metadata?: unknown
+          locked?: boolean
+        })
       : null
   }, [nodes, selectedIds])
+  const selectedPhysicalNodeGenericLocked = Boolean(
+    selectedPhysicalNode?.locked === true ||
+      (selectedPhysicalNode?.metadata &&
+        typeof selectedPhysicalNode.metadata === 'object' &&
+        !Array.isArray(selectedPhysicalNode.metadata) &&
+        (selectedPhysicalNode.metadata as Record<string, unknown>).locked === true),
+  )
+  const selectedPhysicalNodeAiLocked = Boolean(
+    selectedPhysicalNode?.metadata &&
+      typeof selectedPhysicalNode.metadata === 'object' &&
+      !Array.isArray(selectedPhysicalNode.metadata) &&
+      (selectedPhysicalNode.metadata as Record<string, unknown>).glnLocked === true,
+  )
   const selectedEquipmentAsset = useMemo(() => {
     const selected = selectedIds.length === 1 ? nodes[selectedIds[0] as never] : undefined
     const type = (selected as { type?: string } | undefined)?.type
@@ -649,6 +670,57 @@ export default function GlnEquipmentPanel() {
           <p className="mt-1 text-sidebar-foreground/65 text-xs">
             通用占位尺寸预设，型号未指定。当前仅保存可编辑外形与手工填写的检修净空，不代表厂家品牌、容量、性能或检修要求。
           </p>
+        </section>
+      )}
+
+      {selectedPhysicalNode && (
+        <section className="rounded-lg border border-sidebar-border p-3" data-gln-ai-lock>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-medium text-sidebar-foreground text-sm">AI 变更锁定</p>
+              <p className="mt-1 text-sidebar-foreground/55 text-xs">
+                {selectedPhysicalNodeGenericLocked
+                  ? '此节点已被场景通用锁锁定，AI 变更状态只能在解除通用锁后调整。'
+                  : '锁定后，本地 Codex 不能更新、移动或删除此节点；你仍可手动编辑。'}
+              </p>
+            </div>
+            {selectedPhysicalNodeAiLocked ? (
+              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-foreground/60" />
+            ) : (
+              <Unlock className="mt-0.5 h-4 w-4 shrink-0 text-sidebar-foreground/60" />
+            )}
+          </div>
+          <button
+            aria-pressed={selectedPhysicalNodeAiLocked}
+            className="mt-3 flex h-9 w-full items-center justify-center rounded-md border border-sidebar-border text-sm hover:border-sidebar-ring disabled:opacity-45"
+            disabled={readOnly || selectedPhysicalNodeGenericLocked}
+            onClick={() => {
+              const metadata =
+                selectedPhysicalNode.metadata &&
+                typeof selectedPhysicalNode.metadata === 'object' &&
+                !Array.isArray(selectedPhysicalNode.metadata)
+                  ? (selectedPhysicalNode.metadata as Record<string, unknown>)
+                  : {}
+              useScene.getState().updateNodes([
+                {
+                  id: selectedPhysicalNode.id as AnyNodeId,
+                  data: {
+                    metadata: {
+                      ...metadata,
+                      glnLocked: !selectedPhysicalNodeAiLocked,
+                    },
+                  } as never,
+                },
+              ])
+            }}
+            type="button"
+          >
+            {selectedPhysicalNodeGenericLocked
+              ? '场景节点已锁定'
+              : selectedPhysicalNodeAiLocked
+                ? '允许 AI 变更'
+                : '锁定 AI 变更'}
+          </button>
         </section>
       )}
 

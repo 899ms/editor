@@ -6,6 +6,13 @@ import {
 } from '@pascal-app/core/scene-plan'
 import type { SceneOperations } from '@pascal-app/mcp/operations'
 import {
+  analyzeGlnConfiguration,
+  type GlnConfigurationReport,
+  normalizeGlnConfigurationScenePlan,
+  onlyReviewableGlnPlacementErrors,
+  validateGlnConfigurationScope,
+} from './gln-configuration-scene-plan'
+import {
   analyzeResidentialScenePlan,
   normalizeResidentialScenePlan,
   type ResidentialDraftReport,
@@ -39,6 +46,7 @@ export type CodexTaskRecord = {
   plan: ScenePlan | null
   preview: PreparedScenePlan | null
   residentialReport: ResidentialDraftReport | null
+  glnConfigurationReport: GlnConfigurationReport | null
   error: CodexTaskError | null
 }
 
@@ -82,8 +90,6 @@ const TERMINAL_STATUSES = new Set<CodexTaskStatus>([
   'cancelled',
   'timed_out',
 ])
-const GLN_NODE_PREFIX = 'gln:'
-
 class TaskFailure extends Error {
   constructor(
     readonly code: string,
@@ -116,6 +122,7 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
     plan: task.plan,
     preview: task.preview,
     residentialReport: task.residentialReport,
+    glnConfigurationReport: task.glnConfigurationReport,
     error: task.error,
   })
 
@@ -152,14 +159,14 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
       if (!scope.ok) throw new TaskFailure(scope.code, scope.message)
       return
     }
-    for (const operation of plan.operations) {
-      const type =
-        operation.op === 'create'
-          ? operation.node.type
-          : Object.values(current.graph.nodes).find((node) => node.id === operation.id)?.type
-      if (!type?.startsWith(GLN_NODE_PREFIX)) {
+    const scope = validateGlnConfigurationScope(plan, current.graph, {
+      protectExistingIds: request.kind === 'configure-gln',
+    })
+    if (!scope.ok) {
+      if (request.kind === 'repair-gln' && scope.code === 'gln_configuration_scope_violation') {
         throw new TaskFailure('task_scope_violation', '光冷暖配置和修复任务不能修改住宅结构。')
       }
+      throw new TaskFailure(scope.code, scope.message)
     }
   }
 
@@ -183,6 +190,18 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
     try {
       const current = await options.operations.loadStoredScene(task.sceneId)
       if (!current) throw new TaskFailure('scene_not_found', '找不到目标场景。')
+      if (task.request.kind === 'configure-gln') {
+        const residential = analyzeResidentialScenePlan({
+          graph: current.graph,
+          touchedNodeIds: [],
+        })
+        if (!residential.minimumStructure.satisfied) {
+          throw new TaskFailure(
+            'gln_configuration_requires_residence',
+            '请先创建满足楼层、围护墙、空间和室内外关系门槛的住宅。',
+          )
+        }
+      }
       if (task.status !== 'running') return
       update(task, { progress: 15 })
       const rawPlan = await options.adapter.generate({
@@ -210,12 +229,47 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
             '住宅草案包含不符合 Pascal 建筑节点 schema 的数据。',
           )
         }
+      } else if (task.request.kind === 'configure-gln') {
+        try {
+          scenePlan = normalizeGlnConfigurationScenePlan(parsed.data)
+        } catch {
+          throw new TaskFailure(
+            'invalid_gln_configuration_node',
+            '光冷暖配置包含不符合现有 GLN 节点 schema 的数据。',
+          )
+        }
       }
       validateTaskPolicy(task.request, scenePlan, current)
       update(task, { progress: 90 })
       const preview = await options.operations.prepareScenePlan(scenePlan)
       if (task.status !== 'running') return
+      const glnConfigurationReport =
+        task.request.kind === 'configure-gln' && preview.after
+          ? analyzeGlnConfiguration({
+              beforeGraph: current.graph,
+              afterGraph: preview.after.graph,
+              request: {
+                targetSystemCount: task.request.glnConfiguration?.targetSystemCount ?? 1,
+              },
+              touchedNodeIds: scenePlan.operations.map((operation) =>
+                operation.op === 'create' ? operation.node.id : operation.id,
+              ),
+              previewIssues: preview.issues,
+            })
+          : null
       if (!preview.ok) {
+        if (
+          glnConfigurationReport?.status === 'needs-review' &&
+          onlyReviewableGlnPlacementErrors(preview.issues)
+        ) {
+          finish(task, 'succeeded', {
+            plan: scenePlan,
+            preview,
+            glnConfigurationReport,
+            error: null,
+          })
+          return
+        }
         throw new TaskFailure('scene_plan_validation_failed', '场景计划未通过硬校验。')
       }
       const residentialReport =
@@ -239,10 +293,23 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
         })
         return
       }
+      if (glnConfigurationReport?.status === 'report-only') {
+        finish(task, 'failed', {
+          plan: null,
+          preview: null,
+          glnConfigurationReport,
+          error: {
+            code: 'gln_configuration_incomplete',
+            message: '光冷暖配置未满足目标系统数量、设备唯一性或完整闭环要求。',
+          },
+        })
+        return
+      }
       finish(task, 'succeeded', {
         plan: scenePlan,
         preview,
         residentialReport,
+        glnConfigurationReport,
         error: null,
       })
     } catch (error) {
@@ -293,6 +360,7 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
         plan: null,
         preview: null,
         residentialReport: null,
+        glnConfigurationReport: null,
         error: null,
         request,
         controller: null,

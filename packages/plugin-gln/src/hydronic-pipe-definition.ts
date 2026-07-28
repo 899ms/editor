@@ -28,6 +28,7 @@ export const glnHydronicPipeDefinition: NodeDefinition<typeof GlnHydronicPipeNod
     routing: { strategy: 'manual', state: 'routed', reviewReason: null },
   }),
   capabilities: {
+    hostable: { parents: ['level'], align: 'bottom' },
     selectable: { hitVolume: 'bbox' },
     deletable: true,
     duplicable: true,
