@@ -161,4 +161,33 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
   await expect(reloadedCard.getByRole('button', { name: '显示参考' })).toBeEnabled()
   await reloadedCard.getByRole('button', { name: '删除临时参考' }).click()
   await expect(reloadedCard.getByText(/临时参考层不在当前内存中/)).toBeVisible()
+
+  const latest = await fetchScene(request, sceneId)
+  const editableWall = Object.values(latest.graph.nodes).find((node) => node.type === 'wall')
+  if (!editableWall?.id) throw new Error('IFC reconstruction produced no editable wall')
+  const editableWallId = String(editableWall.id)
+  const edit = await request.post(`${baseUrl}/api/scenes/${sceneId}/plans`, {
+    data: {
+      action: 'commit',
+      plan: {
+        id: 'ifc-editable-wall-acceptance',
+        sceneId,
+        baseVersion: latest.version,
+        operations: [
+          {
+            op: 'update',
+            id: editableWallId,
+            data: { name: 'IFC 导入后可编辑墙体' },
+          },
+        ],
+      },
+    },
+  })
+  if (!edit.ok()) {
+    throw new Error(`IFC editable-node update failed (${edit.status()}): ${await edit.text()}`)
+  }
+  expect((await fetchScene(request, sceneId)).graph.nodes[editableWallId]).toMatchObject({
+    name: 'IFC 导入后可编辑墙体',
+    type: 'wall',
+  })
 })

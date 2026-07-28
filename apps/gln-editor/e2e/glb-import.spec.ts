@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { type APIRequestContext, expect, test } from '@playwright/test'
+import { writeSemanticResidenceGlb } from './acceptance-fixtures'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 const fixture = path.resolve(
@@ -13,6 +14,7 @@ type StoredScene = {
     nodes: Record<string, Record<string, unknown>>
     rootNodeIds: string[]
   }
+  version: number
 }
 
 async function fetchScene(request: APIRequestContext, sceneId: string) {
@@ -118,4 +120,55 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   await expect(reloadedCard.getByRole('button', { name: '显示参考' })).toBeEnabled()
   await reloadedCard.getByRole('button', { name: '删除临时参考' }).click()
   await expect(reloadedCard.getByText(/临时参考模型不在当前内存中/)).toBeVisible()
+
+  const semanticFixture = testInfo.outputPath('semantic-residence.glb')
+  writeSemanticResidenceGlb(semanticFixture)
+  await page.locator('input[accept*=".glb"]').setInputFiles(semanticFixture)
+  await expect(page.locator('[data-gln-glb-report-status]')).toHaveAttribute(
+    'data-gln-glb-report-status',
+    'draft-ready',
+  )
+  await page.getByRole('checkbox', { name: /确认以高置信可编辑草稿替换当前住宅/ }).check()
+  await page.getByRole('button', { name: '替换为可编辑住宅' }).click()
+
+  let editableWallId = ''
+  await expect
+    .poll(async () => {
+      const scene = await fetchScene(request, sceneId)
+      const wall = Object.values(scene.graph.nodes).find((node) => node.type === 'wall')
+      editableWallId = String(wall?.id ?? '')
+      return {
+        hasCeiling: Object.values(scene.graph.nodes).some((node) => node.type === 'ceiling'),
+        hasZone: Object.values(scene.graph.nodes).some((node) => node.type === 'zone'),
+        wallCount: Object.values(scene.graph.nodes).filter((node) => node.type === 'wall').length,
+      }
+    })
+    .toEqual({ hasCeiling: true, hasZone: true, wallCount: 4 })
+
+  const beforeEdit = await fetchScene(request, sceneId)
+  const edit = await request.post(`${baseUrl}/api/scenes/${sceneId}/plans`, {
+    data: {
+      action: 'commit',
+      plan: {
+        id: 'glb-editable-wall-acceptance',
+        sceneId,
+        baseVersion: beforeEdit.version,
+        operations: [
+          {
+            op: 'update',
+            id: editableWallId,
+            data: { name: 'GLB 导入后可编辑墙体' },
+          },
+        ],
+      },
+    },
+  })
+  if (!edit.ok()) {
+    throw new Error(`GLB editable-node update failed (${edit.status()}): ${await edit.text()}`)
+  }
+  await page.reload()
+  expect((await fetchScene(request, sceneId)).graph.nodes[editableWallId]).toMatchObject({
+    name: 'GLB 导入后可编辑墙体',
+    type: 'wall',
+  })
 })

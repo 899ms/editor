@@ -91,8 +91,10 @@ test('shows progress, supports cancellation controls, and hands a validated Code
   await page.getByRole('textbox', { name: '任务目标' }).fill('重建为正常可编辑住宅节点')
   await page.getByRole('button', { name: '生成场景计划' }).click()
   await expect(page.getByRole('button', { name: '取消任务' })).toBeVisible()
-  await expect(page.getByText('已生成')).toBeVisible()
-  await expect(page.getByText('已通过格式与硬校验，共 1 项变更。')).toBeVisible()
+  await expect(page.getByText('已生成', { exact: true })).toBeVisible()
+  await expect(
+    page.getByText('已生成 1 项变更，安装位置仍需人工复核，提交按钮会保持禁用。'),
+  ).toBeVisible()
   await expect(page.locator('[data-residential-review-queue]')).toContainText(
     'AI 重建楼层为中等置信度构件',
   )
@@ -259,7 +261,7 @@ test('generates editable residential nodes, previews, atomically commits, and re
     .fill('首层 4 面围护墙，形成 1 个客厅空间。')
   await page.getByRole('textbox', { name: '任务目标' }).fill('生成一套可编辑的一层住宅')
   await page.getByRole('button', { name: '生成场景计划' }).click()
-  await expect(page.getByText('已生成')).toBeVisible()
+  await expect(page.getByText('已生成', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: '发送到变更计划' }).click()
 
   await page.getByRole('button', { name: '变更计划', exact: true }).click()
@@ -462,7 +464,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
   await expect(page.getByRole('spinbutton', { name: '目标系统总数' })).toHaveValue('1')
   await page.getByRole('textbox', { name: '任务目标' }).fill('为住宅配置一套光冷暖系统')
   await page.getByRole('button', { name: '生成场景计划' }).click()
-  await expect(page.getByText('已生成')).toBeVisible()
+  await expect(page.getByText('已生成', { exact: true })).toBeVisible()
   await expect(
     page.getByText(`已通过格式与硬校验，共 ${fixture.glnNodes.length} 项变更。`),
   ).toBeVisible()

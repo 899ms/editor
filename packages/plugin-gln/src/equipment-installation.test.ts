@@ -59,6 +59,19 @@ describe('GLN equipment installation', () => {
     expect(
       buildGlnOutdoorUnitGeometry(outdoor).getObjectByName('gln-equipment-clearance'),
     ).toBeUndefined()
+    const legacyWithoutClearanceFields = {
+      ...outdoor,
+      clearanceBack: undefined,
+      clearanceFront: undefined,
+      clearanceLeft: undefined,
+      clearanceRight: undefined,
+      clearanceTop: undefined,
+    } as unknown as typeof outdoor
+    expect(
+      buildGlnOutdoorUnitGeometry(legacyWithoutClearanceFields).getObjectByName(
+        'gln-equipment-clearance',
+      ),
+    ).toBeUndefined()
     const withClearance = GlnOutdoorUnitNode.parse({ ...outdoor, clearanceFront: 0.6 })
     expect(
       buildGlnOutdoorUnitGeometry(withClearance).getObjectByName('gln-equipment-clearance'),
