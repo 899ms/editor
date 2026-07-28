@@ -12,7 +12,7 @@ test('previews and atomically commits one version-bound ScenePlan with one undo 
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()

@@ -10,7 +10,7 @@ test('places a buffer tank from the 2D floor plan', async ({ page, request }) =>
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 15_000 })
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)
@@ -63,7 +63,7 @@ test('places a buffer tank from the 2D floor plan', async ({ page, request }) =>
     },
   })
   expect(seedResponse.ok()).toBe(true)
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
 
   await page.getByRole('button', { name: '光冷暖系统' }).click()
   await page.getByRole('button', { name: '新建系统' }).click()

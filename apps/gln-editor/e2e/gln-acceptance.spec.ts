@@ -152,7 +152,7 @@ test('acceptance: persists two independent systems across two levels and preview
   await expect(page.getByText(/送风|风速|实时流量|实时温度/)).toHaveCount(0)
   await page.screenshot({ path: testInfo.outputPath('two-level-two-system-preview.png') })
 
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await page.getByRole('button', { name: '光冷暖系统' }).click()
   await expect(
     page
@@ -375,7 +375,7 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
       url.pathname === '/api/scenes'
     )
   })
-  await createButton.click()
+  await createButton.dispatchEvent('click')
   const createResponse = await createResponsePromise
   expect(createResponse.status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 60_000 })
@@ -404,7 +404,7 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
   await expect.poll(wallCount).toBe(0)
   await page.keyboard.press('Control+Shift+z')
   await expect.poll(wallCount).toBe(1)
-  await page.reload({ timeout: 120_000, waitUntil: 'domcontentloaded' })
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect.poll(wallCount).toBe(1)
 

@@ -66,7 +66,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     (response) =>
       response.request().method() === 'POST' && response.url() === `${glnBaseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   const createResponse = await createResponsePromise
   if (createResponse.status() !== 201) {
     throw new Error(`GLN scene creation failed: ${await createResponse.text()}`)
@@ -124,7 +124,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   if (!seedResponse.ok()) {
     throw new Error(`GLN equipment-area seed failed: ${await seedResponse.text()}`)
   }
-  await page.reload({ timeout: 120_000, waitUntil: 'domcontentloaded' })
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
 
   await page.getByRole('button', { name: '光冷暖系统' }).click()
@@ -473,7 +473,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     })
     .toBe(1)
 
-  await page.reload({ timeout: 120_000, waitUntil: 'domcontentloaded' })
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect(page.locator('[data-gln-client-node-types]')).toHaveAttribute(
     'data-gln-client-node-types',

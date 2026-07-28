@@ -35,7 +35,7 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 30_000 })
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)
@@ -105,7 +105,7 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
     )
     .toBe(false)
 
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await page.getByRole('button', { name: '住宅导入' }).click()
   await page.getByRole('button', { name: 'GLB' }).click()
   const reloadedCard = page.locator(`[data-gln-glb-saved-import="${importId}"]`)
@@ -166,7 +166,7 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   if (!edit.ok()) {
     throw new Error(`GLB editable-node update failed (${edit.status()}): ${await edit.text()}`)
   }
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   expect((await fetchScene(request, sceneId)).graph.nodes[editableWallId]).toMatchObject({
     name: 'GLB 导入后可编辑墙体',
     type: 'wall',

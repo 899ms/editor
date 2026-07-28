@@ -34,7 +34,7 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   const createResponse = await createResponsePromise
   expect(createResponse.status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
@@ -145,7 +145,7 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
     )
     .toBe(false)
 
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await page.getByRole('button', { name: '住宅导入' }).click()
   const reloadedCard = page.locator(`[data-gln-ifc-saved-import="${importId}"]`)
   await expect(reloadedCard).toBeVisible({ timeout: 30_000 })

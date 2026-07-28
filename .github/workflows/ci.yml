@@ -40,6 +40,10 @@ jobs:
     needs: quality
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
 
@@ -52,13 +56,13 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run GLN application acceptance
-        run: bun run test:e2e:gln
+        run: bun run prepare:e2e:gln && bunx playwright test --config apps/gln-editor/playwright.config.ts --shard=${{ matrix.shard }}/4
 
       - name: Upload GLN acceptance artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: gln-acceptance-artifacts
+          name: gln-acceptance-artifacts-${{ matrix.shard }}
           path: |
             apps/gln-editor/playwright-report
             apps/gln-editor/test-results

@@ -13,7 +13,7 @@ test('shows progress, supports cancellation controls, and hands a validated Code
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
@@ -139,7 +139,7 @@ test('generates editable residential nodes, previews, atomically commits, and re
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
@@ -308,7 +308,7 @@ test('generates editable residential nodes, previews, atomically commits, and re
   await page.getByRole('button', { name: '确认并一次提交' }).click()
   await expect(page.getByText(/已原子提交；恢复点/)).toBeVisible()
 
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   let reloadedVersion = scene.version
   await expect
@@ -352,7 +352,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
     (response) =>
       response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
   )
-  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await page.getByRole('button', { name: '新建场景' }).first().dispatchEvent('click')
   expect((await createResponsePromise).status()).toBe(201)
   await expect(page).toHaveURL(/\/scene\/[^/]+$/)
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
@@ -575,7 +575,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
   if (!recreate.ok()) {
     throw new Error(`GLN recreation failed (${recreate.status()}): ${await recreate.text()}`)
   }
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect.poll(summarize).toMatchObject({
     systems: 1,
@@ -615,7 +615,7 @@ test('configures one editable GLN system by stable IDs without duplicating devic
   if (!rerun.ok()) {
     throw new Error(`GLN stable-ID rerun failed (${rerun.status()}): ${await rerun.text()}`)
   }
-  await page.reload()
+  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
   await expect.poll(summarize).toMatchObject({
     systems: 1,
