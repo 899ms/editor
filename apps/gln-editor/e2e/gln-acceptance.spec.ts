@@ -403,6 +403,7 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
     clientY: bounds.y + bounds.height * 0.5,
     detail: 1,
   })
+  await expect(page.locator('[data-floorplan-wall-draft-active="true"]')).toBeAttached()
   await floorplan.dispatchEvent('click', {
     clientX: bounds.x + bounds.width * 0.62,
     clientY: bounds.y + bounds.height * 0.5,
