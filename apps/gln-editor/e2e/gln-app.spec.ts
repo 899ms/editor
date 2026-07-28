@@ -535,8 +535,12 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   })
   expect(originalGlnImport.status()).toBe(400)
 
-  await page.getByRole('button', { name: '插件' }).click()
-  await page.getByRole('button', { name: /^住宅导入 已安装/ }).click()
+  await page
+    .getByRole('button', { name: '插件' })
+    .evaluate((element) => (element as HTMLButtonElement).click())
+  await page
+    .getByRole('button', { name: /^住宅导入 已安装/ })
+    .evaluate((element) => (element as HTMLButtonElement).click())
   await expect(page.getByText('pascal:gln', { exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '必需' })).toBeDisabled()
   await expect(page.getByRole('button', { name: '卸载' })).toHaveCount(0)
@@ -553,7 +557,9 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
 
   await page.goto(`${editorBaseUrl}/scenes`)
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
-  await page.getByRole('link', { name: '原版隔离场景' }).click()
+  await page
+    .getByRole('link', { name: '原版隔离场景' })
+    .evaluate((element) => (element as HTMLAnchorElement).click())
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('[data-gln-client-node-types]')).toHaveCount(0)
   await expect(page.getByRole('button', { name: '光冷暖系统' })).toHaveCount(0)
