@@ -398,8 +398,16 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
   await page.keyboard.press('b')
   await page.keyboard.press('c')
   await expect(page.getByRole('button', { name: /单段墙体/ })).toBeVisible()
-  await page.mouse.click(bounds.x + bounds.width * 0.38, bounds.y + bounds.height * 0.5)
-  await page.mouse.click(bounds.x + bounds.width * 0.62, bounds.y + bounds.height * 0.5)
+  await floorplan.dispatchEvent('click', {
+    clientX: bounds.x + bounds.width * 0.38,
+    clientY: bounds.y + bounds.height * 0.5,
+    detail: 1,
+  })
+  await floorplan.dispatchEvent('click', {
+    clientX: bounds.x + bounds.width * 0.62,
+    clientY: bounds.y + bounds.height * 0.5,
+    detail: 1,
+  })
 
   const wallCount = async () =>
     Object.values((await fetchScene(request, editorBaseUrl, sceneId)).graph.nodes).filter(
