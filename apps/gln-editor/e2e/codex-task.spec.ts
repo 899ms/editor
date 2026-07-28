@@ -36,6 +36,7 @@ test('shows progress, supports cancellation controls, and hands a validated Code
     progress: 0,
     plan: null,
     preview: null,
+    residentialReport: null,
     error: null,
   }
   const succeeded = {
@@ -53,6 +54,19 @@ test('shows progress, supports cancellation controls, and hands a validated Code
         },
       ],
       issues: [],
+    },
+    residentialReport: {
+      status: 'draft-ready',
+      minimumStructure: { satisfied: true, missing: [] },
+      reviewItems: [
+        {
+          nodeId: level.id,
+          nodeType: 'level',
+          confidence: 'medium',
+          reason: 'medium-confidence',
+          message: 'AI 重建楼层为中等置信度构件：层高来自平面资料摘要',
+        },
+      ],
     },
   }
   await page.route(`**/api/scenes/${sceneId}/codex-tasks`, async (route) => {
@@ -78,11 +92,221 @@ test('shows progress, supports cancellation controls, and hands a validated Code
   await expect(page.getByRole('button', { name: '取消任务' })).toBeVisible()
   await expect(page.getByText('已生成')).toBeVisible()
   await expect(page.getByText('已通过格式与硬校验，共 1 项变更。')).toBeVisible()
-  await page.getByRole('button', { name: '发送到变更计划' }).click()
+  await expect(page.locator('[data-residential-review-queue]')).toContainText(
+    'AI 重建楼层为中等置信度构件',
+  )
+  const sendButton = page.getByRole('button', { name: '发送到变更计划' })
+  await expect(sendButton).toBeDisabled()
+  await page
+    .getByRole('checkbox', { name: '我已逐项核对这些不确定构件，允许进入差异预览。' })
+    .check()
+  await expect(sendButton).toBeEnabled()
+  await sendButton.click()
 
   await page.getByRole('button', { name: '变更计划', exact: true }).click()
   await expect(page.getByRole('textbox', { name: '计划输入' })).toHaveValue(
     JSON.stringify(plan, null, 2),
   )
   await expect(page.getByText('已接收本地 Codex 生成的场景计划。')).toBeVisible()
+})
+
+test('generates editable residential nodes, previews, atomically commits, and reloads them', async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(180_000)
+  const pageErrors: string[] = []
+  page.on('pageerror', (error) => pageErrors.push(error.message))
+  await page.goto(`${baseUrl}/scenes`)
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
+  )
+  await page.getByRole('button', { name: '新建场景' }).first().click()
+  expect((await createResponsePromise).status()).toBe(201)
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/)
+  const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
+  const scene = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+    version: number
+    graph: { nodes: Record<string, { id: string; type: string }> }
+  }
+  const level = Object.values(scene.graph.nodes).find((node) => node.type === 'level')
+  if (!level) throw new Error('Default GLN scene has no level')
+
+  const wallSpecs = [
+    ['wall_ai_e2e_north', [0, 0], [4, 0]],
+    ['wall_ai_e2e_east', [4, 0], [4, 3]],
+    ['wall_ai_e2e_south', [4, 3], [0, 3]],
+    ['wall_ai_e2e_west', [0, 3], [0, 0]],
+  ] as const
+  const operations = [
+    ...wallSpecs.map(([id, start, end]) => ({
+      op: 'create',
+      parentId: level.id,
+      node: {
+        object: 'node',
+        id,
+        type: 'wall',
+        children: [],
+        parentId: null,
+        visible: true,
+        start,
+        end,
+        height: 2.8,
+        thickness: 0.2,
+        frontSide: 'interior',
+        backSide: 'exterior',
+        metadata: { source: 'codex-residential', confidence: 'high' },
+      },
+    })),
+    {
+      op: 'create',
+      parentId: level.id,
+      node: {
+        object: 'node',
+        id: 'zone_ai_e2e_living',
+        type: 'zone',
+        parentId: null,
+        visible: true,
+        name: 'AI 客厅',
+        polygon: [
+          [0, 0],
+          [4, 0],
+          [4, 3],
+          [0, 3],
+        ],
+        autoFromWalls: true,
+        boundaryWallIds: wallSpecs.map(([id]) => id),
+        color: '#3b82f6',
+        metadata: { source: 'codex-residential', confidence: 'high' },
+      },
+    },
+  ]
+  const plan = {
+    id: 'codex-residential-e2e-plan',
+    sceneId,
+    baseVersion: scene.version,
+    operations,
+  }
+  const queued = {
+    id: 'task-codex-residential-e2e',
+    sceneId,
+    kind: 'reconstruct-home',
+    status: 'queued',
+    progress: 0,
+    plan: null,
+    preview: null,
+    residentialReport: null,
+    error: null,
+  }
+  const succeeded = {
+    ...queued,
+    status: 'succeeded',
+    progress: 100,
+    plan,
+    preview: {
+      diffs: operations.map((operation) => ({
+        kind: 'create',
+        nodeId: operation.node.id,
+        nodeType: operation.node.type,
+        changedFields: Object.keys(operation.node),
+      })),
+      issues: [],
+    },
+    residentialReport: {
+      status: 'draft-ready',
+      minimumStructure: { satisfied: true, missing: [] },
+      reviewItems: [],
+    },
+  }
+
+  await page.route(`**/api/scenes/${sceneId}/codex-tasks`, async (route) => {
+    const requestBody = route.request().postDataJSON() as {
+      kind: string
+      source?: { kind: string; summary: string; uploadOriginal: boolean }
+    }
+    expect(requestBody).toMatchObject({
+      kind: 'reconstruct-home',
+      source: {
+        kind: 'ifc',
+        summary: '首层 4 面围护墙，形成 1 个客厅空间。',
+        uploadOriginal: false,
+      },
+    })
+    await route.fulfill({
+      contentType: 'application/json',
+      status: 202,
+      body: JSON.stringify(queued),
+    })
+  })
+  await page.route(
+    `**/api/scenes/${sceneId}/codex-tasks/task-codex-residential-e2e`,
+    async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        status: 200,
+        body: JSON.stringify(succeeded),
+      })
+    },
+  )
+
+  await page.getByRole('button', { name: 'AI 场景任务' }).click()
+  await page.getByRole('combobox', { name: '任务类型' }).selectOption('reconstruct-home')
+  await page.getByRole('combobox', { name: '平面资料' }).selectOption('ifc')
+  await page
+    .getByRole('textbox', { name: '资料解析摘要' })
+    .fill('首层 4 面围护墙，形成 1 个客厅空间。')
+  await page.getByRole('textbox', { name: '任务目标' }).fill('生成一套可编辑的一层住宅')
+  await page.getByRole('button', { name: '生成场景计划' }).click()
+  await expect(page.getByText('已生成')).toBeVisible()
+  await page.getByRole('button', { name: '发送到变更计划' }).click()
+
+  await page.getByRole('button', { name: '变更计划', exact: true }).click()
+  const previewButton = page.getByRole('button', { name: '校验并生成差异预览' })
+  const preview = page.locator('[data-gln-scene-plan-preview]')
+  await previewButton.click()
+  try {
+    await expect(preview).toBeVisible({ timeout: 15_000 })
+  } catch {
+    await expect(page.getByText('无法连接场景计划服务。')).toBeVisible()
+    await page.waitForTimeout(1_000)
+    await previewButton.click()
+    await expect(preview).toBeVisible({ timeout: 15_000 })
+  }
+  await expect(page.locator('[data-diff-kind="create"]')).toHaveCount(5)
+  await page.getByRole('button', { name: '确认并一次提交' }).click()
+  await expect(page.getByText(/已原子提交；恢复点/)).toBeVisible()
+
+  await page.reload()
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  let reloadedVersion = scene.version
+  await expect
+    .poll(async () => {
+      const reloaded = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+        version: number
+        graph: {
+          nodes: Record<
+            string,
+            { id: string; type: string; metadata?: Record<string, unknown>; locked?: boolean }
+          >
+        }
+      }
+      reloadedVersion = reloaded.version
+      return {
+        walls: wallSpecs.filter(([id]) => reloaded.graph.nodes[id]?.type === 'wall').length,
+        zone: reloaded.graph.nodes.zone_ai_e2e_living?.type,
+        editable: wallSpecs.every(
+          ([id]) =>
+            reloaded.graph.nodes[id]?.locked !== true &&
+            reloaded.graph.nodes[id]?.metadata?.locked !== true,
+        ),
+      }
+    })
+    .toEqual({
+      walls: 4,
+      zone: 'zone',
+      editable: true,
+    })
+  expect(reloadedVersion).toBeGreaterThan(scene.version)
+  expect(pageErrors).toEqual([])
 })

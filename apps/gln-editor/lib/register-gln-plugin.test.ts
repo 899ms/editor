@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { nodeRegistry, registerPlugin } from '@pascal-app/core/registry'
 import { SceneBridge } from '@pascal-app/mcp'
 import {
@@ -12,6 +12,9 @@ import { ensureGlnPluginRegistered } from './register-gln-plugin'
 
 describe('GLN plugin registration', () => {
   beforeEach(() => {
+    nodeRegistry._reset()
+  })
+  afterEach(() => {
     nodeRegistry._reset()
   })
 

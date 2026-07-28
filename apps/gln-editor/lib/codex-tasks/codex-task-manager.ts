@@ -5,6 +5,12 @@ import {
   ScenePlanSchema,
 } from '@pascal-app/core/scene-plan'
 import type { SceneOperations } from '@pascal-app/mcp/operations'
+import {
+  analyzeResidentialScenePlan,
+  normalizeResidentialScenePlan,
+  type ResidentialDraftReport,
+  validateResidentialPlanScope,
+} from './residential-scene-plan'
 import { type CodexTaskKind, type CodexTaskRequest, CodexTaskRequestSchema } from './schema'
 
 export type CodexTaskStatus =
@@ -32,6 +38,7 @@ export type CodexTaskRecord = {
   completedAt: string | null
   plan: ScenePlan | null
   preview: PreparedScenePlan | null
+  residentialReport: ResidentialDraftReport | null
   error: CodexTaskError | null
 }
 
@@ -108,6 +115,7 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
     completedAt: task.completedAt,
     plan: task.plan,
     preview: task.preview,
+    residentialReport: task.residentialReport,
     error: task.error,
   })
 
@@ -139,7 +147,11 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
     if (plan.sceneId !== current.id || plan.baseVersion !== current.version) {
       throw new TaskFailure('scene_version_mismatch', '场景计划与当前场景版本不一致。')
     }
-    if (request.kind === 'reconstruct-home') return
+    if (request.kind === 'reconstruct-home') {
+      const scope = validateResidentialPlanScope(plan, current.graph)
+      if (!scope.ok) throw new TaskFailure(scope.code, scope.message)
+      return
+    }
     for (const operation of plan.operations) {
       const type =
         operation.op === 'create'
@@ -188,16 +200,49 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
       if (!parsed.success) {
         throw new TaskFailure('invalid_scene_plan', 'Codex 返回的场景计划格式无效。')
       }
-      validateTaskPolicy(task.request, parsed.data, current)
+      let scenePlan = parsed.data
+      if (task.request.kind === 'reconstruct-home') {
+        try {
+          scenePlan = normalizeResidentialScenePlan(parsed.data)
+        } catch {
+          throw new TaskFailure(
+            'invalid_residential_node',
+            '住宅草案包含不符合 Pascal 建筑节点 schema 的数据。',
+          )
+        }
+      }
+      validateTaskPolicy(task.request, scenePlan, current)
       update(task, { progress: 90 })
-      const preview = await options.operations.prepareScenePlan(parsed.data)
+      const preview = await options.operations.prepareScenePlan(scenePlan)
       if (task.status !== 'running') return
       if (!preview.ok) {
         throw new TaskFailure('scene_plan_validation_failed', '场景计划未通过硬校验。')
       }
+      const residentialReport =
+        task.request.kind === 'reconstruct-home' && preview.after
+          ? analyzeResidentialScenePlan({
+              graph: preview.after.graph,
+              touchedNodeIds: scenePlan.operations.map((operation) =>
+                operation.op === 'create' ? operation.node.id : operation.id,
+              ),
+            })
+          : null
+      if (residentialReport?.status === 'report-only') {
+        finish(task, 'failed', {
+          plan: null,
+          preview: null,
+          residentialReport,
+          error: {
+            code: 'residential_minimum_not_met',
+            message: '住宅草案缺少楼层、围护墙、空间或明确的室内外关系。',
+          },
+        })
+        return
+      }
       finish(task, 'succeeded', {
-        plan: parsed.data,
+        plan: scenePlan,
         preview,
+        residentialReport,
         error: null,
       })
     } catch (error) {
@@ -247,6 +292,7 @@ export function createCodexTaskManager(options: CreateCodexTaskManagerOptions): 
         completedAt: null,
         plan: null,
         preview: null,
+        residentialReport: null,
         error: null,
         request,
         controller: null,

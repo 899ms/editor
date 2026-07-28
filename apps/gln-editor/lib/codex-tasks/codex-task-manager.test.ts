@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import type { ScenePlan } from '@pascal-app/core/scene-plan'
-import { SiteNode } from '@pascal-app/core/schema'
+import { BuildingNode, LevelNode, SiteNode, WallNode, ZoneNode } from '@pascal-app/core/schema'
 import { createSceneOperations } from '@pascal-app/mcp/operations'
 import { SqliteSceneStore } from '@pascal-app/mcp/storage'
 import { type CodexScenePlanAdapter, createCodexTaskManager } from './codex-task-manager'
@@ -31,25 +31,98 @@ async function seededOperations() {
   return createSceneOperations({ store })
 }
 
+async function seededResidentialOperations() {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'gln-codex-residential-task-'))
+  roots.push(root)
+  const store = new SqliteSceneStore({ databasePath: path.join(root, 'tasks.db') })
+  stores.push(store)
+  const site = SiteNode.parse({
+    id: 'site_codex_residential',
+    name: '住宅',
+    children: ['building_codex_residential'],
+  })
+  const building = BuildingNode.parse({
+    id: 'building_codex_residential',
+    parentId: site.id,
+    children: ['level_codex_residential'],
+  })
+  const level = LevelNode.parse({
+    id: 'level_codex_residential',
+    parentId: building.id,
+    children: [],
+  })
+  await store.save({
+    id: sceneId,
+    name: '住宅',
+    graph: {
+      nodes: {
+        [site.id]: site,
+        [building.id]: building,
+        [level.id]: level,
+      },
+      rootNodeIds: [site.id],
+    },
+  })
+  return createSceneOperations({ store })
+}
+
+function completeResidentialPlan(confidence: 'high' | 'low' = 'high'): ScenePlan {
+  const walls = [
+    ['wall_codex_north', [0, 0], [4, 0]],
+    ['wall_codex_east', [4, 0], [4, 3]],
+    ['wall_codex_south', [4, 3], [0, 3]],
+    ['wall_codex_west', [0, 3], [0, 0]],
+  ] as const
+  return {
+    id: 'plan-residential',
+    sceneId,
+    baseVersion: 1,
+    operations: [
+      ...walls.map(([id, start, end]) => ({
+        op: 'create' as const,
+        parentId: 'level_codex_residential',
+        node: WallNode.parse({
+          id,
+          parentId: 'level_codex_residential',
+          start,
+          end,
+          height: 2.8,
+          thickness: 0.2,
+          frontSide: 'interior',
+          backSide: 'exterior',
+          metadata: { source: 'codex-residential', confidence },
+        }),
+      })),
+      {
+        op: 'create',
+        parentId: 'level_codex_residential',
+        node: ZoneNode.parse({
+          id: 'zone_codex_living',
+          name: '客厅',
+          parentId: 'level_codex_residential',
+          polygon: [
+            [0, 0],
+            [4, 0],
+            [4, 3],
+            [0, 3],
+          ],
+          autoFromWalls: true,
+          boundaryWallIds: walls.map(([id]) => id),
+          metadata: { source: 'codex-residential', confidence },
+        }),
+      },
+    ],
+  }
+}
+
 afterEach(async () => {
   for (const store of stores.splice(0)) store.close()
   await Promise.all(roots.splice(0).map((root) => fs.rm(root, { recursive: true, force: true })))
 })
 
 test('runs a whitelisted task and returns a validated ScenePlan preview without committing it', async () => {
-  const operations = await seededOperations()
-  const plan: ScenePlan = {
-    id: 'plan-1',
-    sceneId,
-    baseVersion: 1,
-    operations: [
-      {
-        op: 'update',
-        id: 'site_codex_task',
-        data: { name: '重建住宅' },
-      },
-    ],
-  }
+  const operations = await seededResidentialOperations()
+  const plan = completeResidentialPlan()
   const adapter: CodexScenePlanAdapter = {
     async generate() {
       return plan
@@ -68,7 +141,69 @@ test('runs a whitelisted task and returns a validated ScenePlan preview without 
   expect(completed.progress).toBe(100)
   expect(completed.plan).toEqual(plan)
   expect(completed.preview?.ok).toBe(true)
+  expect(completed.residentialReport?.status).toBe('draft-ready')
+  expect(completed.residentialReport?.minimumStructure.satisfied).toBe(true)
   expect((await operations.loadStoredScene(sceneId))?.version).toBe(1)
+})
+
+test('keeps low-confidence residential nodes in a review queue', async () => {
+  const operations = await seededResidentialOperations()
+  const manager = createCodexTaskManager({
+    operations,
+    adapter: createDeterministicCodexAdapter(completeResidentialPlan('low')),
+  })
+
+  const task = manager.submit({
+    kind: 'reconstruct-home',
+    sceneId,
+    brief: '按资料生成住宅并标出不确定构件。',
+  })
+  const completed = await manager.waitForTerminal(task.id)
+
+  expect(completed.status).toBe('succeeded')
+  expect(completed.residentialReport?.reviewItems).toHaveLength(5)
+  expect(
+    completed.residentialReport?.reviewItems.every((item) => item.reason === 'low-confidence'),
+  ).toBe(true)
+})
+
+test('rejects a residential draft that lacks the minimum editable structure', async () => {
+  const operations = await seededResidentialOperations()
+  const manager = createCodexTaskManager({
+    operations,
+    adapter: createDeterministicCodexAdapter({
+      id: 'incomplete-residential',
+      sceneId,
+      baseVersion: 1,
+      operations: [
+        {
+          op: 'update',
+          id: 'level_codex_residential',
+          data: {
+            name: '只有楼层',
+            metadata: { source: 'codex-residential', confidence: 'high' },
+          },
+        },
+      ],
+    }),
+  })
+
+  const task = manager.submit({
+    kind: 'reconstruct-home',
+    sceneId,
+    brief: '生成住宅',
+  })
+  const completed = await manager.waitForTerminal(task.id)
+
+  expect(completed.status).toBe('failed')
+  expect(completed.error?.code).toBe('residential_minimum_not_met')
+  expect(completed.plan).toBeNull()
+  expect(completed.preview).toBeNull()
+  expect(completed.residentialReport?.minimumStructure.missing).toEqual([
+    'wall',
+    'zone',
+    'indoor-outdoor-relation',
+  ])
 })
 
 test('rejects browser-supplied commands, API keys, and unauthorized original uploads', () => {
@@ -103,19 +238,8 @@ test('rejects browser-supplied commands, API keys, and unauthorized original upl
 })
 
 test('uses a deterministic adapter without calling an online model', async () => {
-  const operations = await seededOperations()
-  const plan: ScenePlan = {
-    id: 'deterministic-plan',
-    sceneId,
-    baseVersion: 1,
-    operations: [
-      {
-        op: 'update',
-        id: 'site_codex_task',
-        data: { name: '确定性住宅' },
-      },
-    ],
-  }
+  const operations = await seededResidentialOperations()
+  const plan = completeResidentialPlan()
   const manager = createCodexTaskManager({
     operations,
     adapter: createDeterministicCodexAdapter(plan),

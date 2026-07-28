@@ -4,6 +4,15 @@ import { useEffect, useState } from 'react'
 
 type TaskKind = 'reconstruct-home' | 'configure-gln' | 'repair-gln'
 type TaskStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled' | 'timed_out'
+type SourceKind = '' | 'glb' | 'ifc'
+
+type ResidentialReviewItem = {
+  nodeId: string
+  nodeType: string
+  confidence: 'medium' | 'low' | null
+  reason: 'medium-confidence' | 'low-confidence' | 'missing-confidence'
+  message: string
+}
 
 type TaskPayload = {
   id: string
@@ -12,6 +21,11 @@ type TaskPayload = {
   progress: number
   plan: unknown | null
   preview: { diffs: unknown[]; issues: unknown[] } | null
+  residentialReport: {
+    status: 'draft-ready' | 'report-only'
+    minimumStructure: { satisfied: boolean; missing: string[] }
+    reviewItems: ResidentialReviewItem[]
+  } | null
   error: { code: string; message: string } | null
 }
 
@@ -39,9 +53,13 @@ function currentSceneId() {
 export default function GlnCodexTaskPanel() {
   const [kind, setKind] = useState<TaskKind>('configure-gln')
   const [brief, setBrief] = useState('')
+  const [sourceKind, setSourceKind] = useState<SourceKind>('')
+  const [sourceSummary, setSourceSummary] = useState('')
   const [task, setTask] = useState<TaskPayload | null>(null)
   const [message, setMessage] = useState('')
+  const [reviewAcknowledged, setReviewAcknowledged] = useState(false)
   const active = task?.status === 'queued' || task?.status === 'running'
+  const reviewItems = task?.residentialReport?.reviewItems ?? []
 
   useEffect(() => {
     if (!active || !task) return
@@ -67,12 +85,29 @@ export default function GlnCodexTaskPanel() {
       setMessage('请填写场景任务目标。')
       return
     }
+    if (kind === 'reconstruct-home' && sourceKind && !sourceSummary.trim()) {
+      setMessage('请选择“仅使用文字需求”，或填写资料解析摘要。')
+      return
+    }
     setMessage('')
+    setReviewAcknowledged(false)
     try {
       const response = await fetch(`/api/scenes/${encodeURIComponent(sceneId)}/codex-tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, brief: brief.trim() }),
+        body: JSON.stringify({
+          kind,
+          brief: brief.trim(),
+          ...(kind === 'reconstruct-home' && sourceKind && sourceSummary.trim()
+            ? {
+                source: {
+                  kind: sourceKind,
+                  summary: sourceSummary.trim(),
+                  uploadOriginal: false,
+                },
+              }
+            : {}),
+        }),
       })
       const payload = (await response.json()) as TaskPayload & { error?: string }
       if (!response.ok) {
@@ -118,7 +153,11 @@ export default function GlnCodexTaskPanel() {
         <select
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
           disabled={active}
-          onChange={(event) => setKind(event.target.value as TaskKind)}
+          onChange={(event) => {
+            setKind(event.target.value as TaskKind)
+            setTask(null)
+            setReviewAcknowledged(false)
+          }}
           value={kind}
         >
           {Object.entries(KIND_LABELS).map(([value, label]) => (
@@ -128,6 +167,41 @@ export default function GlnCodexTaskPanel() {
           ))}
         </select>
       </label>
+
+      {kind === 'reconstruct-home' ? (
+        <div className="space-y-3 rounded-md border border-border p-3">
+          <label className="block space-y-2">
+            <span className="font-medium text-sm">平面资料</span>
+            <select
+              aria-label="平面资料"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+              disabled={active}
+              onChange={(event) => setSourceKind(event.target.value as SourceKind)}
+              value={sourceKind}
+            >
+              <option value="">仅使用文字需求</option>
+              <option value="glb">GLB 本地解析摘要</option>
+              <option value="ifc">IFC 本地解析摘要</option>
+            </select>
+          </label>
+          {sourceKind ? (
+            <label className="block space-y-2">
+              <span className="font-medium text-sm">资料解析摘要</span>
+              <textarea
+                className="min-h-24 w-full resize-y rounded-md border border-border bg-background p-3 text-sm outline-none focus:border-primary"
+                disabled={active}
+                maxLength={50_000}
+                onChange={(event) => setSourceSummary(event.target.value)}
+                placeholder="粘贴本地导入分析得到的楼层、墙线、空间与不确定项摘要"
+                value={sourceSummary}
+              />
+            </label>
+          ) : null}
+          <p className="text-muted-foreground text-xs">
+            原始文件不会上传；只把本地解析摘要交给受限任务。
+          </p>
+        </div>
+      ) : null}
 
       <label className="block space-y-2">
         <span className="font-medium text-sm">任务目标</span>
@@ -143,7 +217,11 @@ export default function GlnCodexTaskPanel() {
 
       <button
         className="w-full rounded-md bg-primary px-3 py-2 font-medium text-primary-foreground text-sm disabled:opacity-50"
-        disabled={active || brief.trim().length === 0}
+        disabled={
+          active ||
+          brief.trim().length === 0 ||
+          (kind === 'reconstruct-home' && !!sourceKind && sourceSummary.trim().length === 0)
+        }
         onClick={() => void submit()}
         type="button"
       >
@@ -163,6 +241,12 @@ export default function GlnCodexTaskPanel() {
             />
           </div>
           {task.error ? <p className="text-destructive text-xs">{task.error.message}</p> : null}
+          {task.residentialReport?.status === 'report-only' ? (
+            <p className="text-destructive text-xs">
+              最低住宅结构未满足：
+              {task.residentialReport.minimumStructure.missing.join('、')}
+            </p>
+          ) : null}
           {active ? (
             <button
               className="w-full rounded-md border border-destructive px-3 py-2 text-destructive text-sm"
@@ -177,8 +261,30 @@ export default function GlnCodexTaskPanel() {
               <p className="text-muted-foreground text-xs">
                 已通过格式与硬校验，共 {task.preview?.diffs.length ?? 0} 项变更。
               </p>
+              {reviewItems.length > 0 ? (
+                <div className="space-y-2" data-residential-review-queue>
+                  <strong className="text-sm">住宅构件复核队列（{reviewItems.length}）</strong>
+                  <ul className="max-h-40 space-y-1 overflow-y-auto text-xs">
+                    {reviewItems.map((item) => (
+                      <li className="rounded-sm bg-amber-500/10 p-2" key={item.nodeId}>
+                        {item.message}
+                      </li>
+                    ))}
+                  </ul>
+                  <label className="flex items-start gap-2 text-xs">
+                    <input
+                      checked={reviewAcknowledged}
+                      className="mt-0.5"
+                      onChange={(event) => setReviewAcknowledged(event.target.checked)}
+                      type="checkbox"
+                    />
+                    <span>我已逐项核对这些不确定构件，允许进入差异预览。</span>
+                  </label>
+                </div>
+              ) : null}
               <button
-                className="w-full rounded-md bg-emerald-600 px-3 py-2 font-medium text-sm text-white"
+                className="w-full rounded-md bg-emerald-600 px-3 py-2 font-medium text-sm text-white disabled:opacity-50"
+                disabled={reviewItems.length > 0 && !reviewAcknowledged}
                 onClick={sendToPreview}
                 type="button"
               >
