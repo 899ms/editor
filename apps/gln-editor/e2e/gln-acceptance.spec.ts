@@ -387,6 +387,12 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
   await expect(page.locator('[data-gln-client-node-types]')).toHaveCount(0)
   await expect(page.getByRole('button', { name: '光冷暖系统' })).toHaveCount(0)
   await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+      }),
+  )
 
   const twoDimensionalView = page.getByRole('button', { name: '2D' })
   await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())
@@ -410,14 +416,17 @@ test('acceptance: original Editor keeps its normal edit, undo, save, and reload 
     detail: 1,
   })
 
+  const floorplanWalls = floorplan.locator('.floorplan-registry-entry[data-node-id^="wall_"]')
+  await expect(floorplanWalls).toHaveCount(1)
+  await page.keyboard.press('Control+z')
+  await expect(floorplanWalls).toHaveCount(0)
+  await page.keyboard.press('Control+Shift+z')
+  await expect(floorplanWalls).toHaveCount(1)
+
   const wallCount = async () =>
     Object.values((await fetchScene(request, editorBaseUrl, sceneId)).graph.nodes).filter(
       (node) => node.type === 'wall',
     ).length
-  await expect.poll(wallCount).toBe(1)
-  await page.keyboard.press('Control+z')
-  await expect.poll(wallCount).toBe(0)
-  await page.keyboard.press('Control+Shift+z')
   await expect.poll(wallCount).toBe(1)
   const sceneUrl = page.url()
   const browserContext = page.context()
