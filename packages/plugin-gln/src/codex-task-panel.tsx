@@ -14,17 +14,41 @@ type ResidentialReviewItem = {
   message: string
 }
 
+type GlnConfigurationReviewItem = {
+  code: 'installation' | 'panel-placement' | 'routing'
+  message: string
+  nodeIds: string[]
+}
+
+type GlnConfigurationCompletenessIssue = {
+  code: string
+  message: string
+  nodeIds: string[]
+}
+
 type TaskPayload = {
   id: string
   kind: TaskKind
   status: TaskStatus
   progress: number
   plan: unknown | null
-  preview: { diffs: unknown[]; issues: unknown[] } | null
+  preview: { ok: boolean; diffs: unknown[]; issues: unknown[] } | null
   residentialReport: {
     status: 'draft-ready' | 'report-only'
     minimumStructure: { satisfied: boolean; missing: string[] }
     reviewItems: ResidentialReviewItem[]
+  } | null
+  glnConfigurationReport: {
+    status: 'ready' | 'needs-review' | 'report-only'
+    systems: {
+      before: number
+      requested: number
+      expected: number
+      after: number
+      affectedIds: string[]
+    }
+    completenessIssues: GlnConfigurationCompletenessIssue[]
+    reviewItems: GlnConfigurationReviewItem[]
   } | null
   error: { code: string; message: string } | null
 }
@@ -55,11 +79,14 @@ export default function GlnCodexTaskPanel() {
   const [brief, setBrief] = useState('')
   const [sourceKind, setSourceKind] = useState<SourceKind>('')
   const [sourceSummary, setSourceSummary] = useState('')
+  const [targetSystemCount, setTargetSystemCount] = useState(1)
   const [task, setTask] = useState<TaskPayload | null>(null)
   const [message, setMessage] = useState('')
   const [reviewAcknowledged, setReviewAcknowledged] = useState(false)
   const active = task?.status === 'queued' || task?.status === 'running'
-  const reviewItems = task?.residentialReport?.reviewItems ?? []
+  const residentialReviewItems = task?.residentialReport?.reviewItems ?? []
+  const glnReviewItems = task?.glnConfigurationReport?.reviewItems ?? []
+  const hasReviewItems = residentialReviewItems.length > 0 || glnReviewItems.length > 0
 
   useEffect(() => {
     if (!active || !task) return
@@ -104,6 +131,13 @@ export default function GlnCodexTaskPanel() {
                   kind: sourceKind,
                   summary: sourceSummary.trim(),
                   uploadOriginal: false,
+                },
+              }
+            : {}),
+          ...(kind === 'configure-gln'
+            ? {
+                glnConfiguration: {
+                  targetSystemCount,
                 },
               }
             : {}),
@@ -203,6 +237,28 @@ export default function GlnCodexTaskPanel() {
         </div>
       ) : null}
 
+      {kind === 'configure-gln' ? (
+        <label className="block space-y-2">
+          <span className="font-medium text-sm">目标系统总数</span>
+          <input
+            aria-label="目标系统总数"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+            disabled={active}
+            max={8}
+            min={1}
+            onChange={(event) => {
+              const next = Number(event.target.value)
+              if (Number.isInteger(next)) setTargetSystemCount(Math.min(8, Math.max(1, next)))
+            }}
+            type="number"
+            value={targetSystemCount}
+          />
+          <span className="block text-muted-foreground text-xs">
+            普通住宅默认一套；明确需要分区独立主机时可增加，现有系统不会被自动删除。
+          </span>
+        </label>
+      ) : null}
+
       <label className="block space-y-2">
         <span className="font-medium text-sm">任务目标</span>
         <textarea
@@ -247,6 +303,18 @@ export default function GlnCodexTaskPanel() {
               {task.residentialReport.minimumStructure.missing.join('、')}
             </p>
           ) : null}
+          {task.glnConfigurationReport?.status === 'report-only' ? (
+            <div className="space-y-1 text-destructive text-xs" data-gln-configuration-report>
+              <p>当前计划未形成完整、无重复的光冷暖系统：</p>
+              <ul className="space-y-1">
+                {task.glnConfigurationReport.completenessIssues.map((issue) => (
+                  <li key={`${issue.code}-${issue.nodeIds.join('-')}-${issue.message}`}>
+                    {issue.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           {active ? (
             <button
               className="w-full rounded-md border border-destructive px-3 py-2 text-destructive text-sm"
@@ -259,32 +327,53 @@ export default function GlnCodexTaskPanel() {
           {task.status === 'succeeded' && task.plan ? (
             <>
               <p className="text-muted-foreground text-xs">
-                已通过格式与硬校验，共 {task.preview?.diffs.length ?? 0} 项变更。
+                {task.preview?.ok
+                  ? `已通过格式与硬校验，共 ${task.preview.diffs.length} 项变更。`
+                  : `已生成 ${task.preview?.diffs.length ?? 0} 项变更，安装位置仍需人工复核，提交按钮会保持禁用。`}
               </p>
-              {reviewItems.length > 0 ? (
+              {residentialReviewItems.length > 0 ? (
                 <div className="space-y-2" data-residential-review-queue>
-                  <strong className="text-sm">住宅构件复核队列（{reviewItems.length}）</strong>
+                  <strong className="text-sm">
+                    住宅构件复核队列（{residentialReviewItems.length}）
+                  </strong>
                   <ul className="max-h-40 space-y-1 overflow-y-auto text-xs">
-                    {reviewItems.map((item) => (
+                    {residentialReviewItems.map((item) => (
                       <li className="rounded-sm bg-amber-500/10 p-2" key={item.nodeId}>
                         {item.message}
                       </li>
                     ))}
                   </ul>
-                  <label className="flex items-start gap-2 text-xs">
-                    <input
-                      checked={reviewAcknowledged}
-                      className="mt-0.5"
-                      onChange={(event) => setReviewAcknowledged(event.target.checked)}
-                      type="checkbox"
-                    />
-                    <span>我已逐项核对这些不确定构件，允许进入差异预览。</span>
-                  </label>
                 </div>
+              ) : null}
+              {glnReviewItems.length > 0 ? (
+                <div className="space-y-2" data-gln-configuration-review-queue>
+                  <strong className="text-sm">安装与水路复核队列（{glnReviewItems.length}）</strong>
+                  <ul className="max-h-40 space-y-1 overflow-y-auto text-xs">
+                    {glnReviewItems.map((item) => (
+                      <li
+                        className="rounded-sm bg-amber-500/10 p-2"
+                        key={`${item.code}-${item.nodeIds.join('-')}-${item.message}`}
+                      >
+                        {item.message}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {hasReviewItems ? (
+                <label className="flex items-start gap-2 text-xs">
+                  <input
+                    checked={reviewAcknowledged}
+                    className="mt-0.5"
+                    onChange={(event) => setReviewAcknowledged(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>我已逐项核对这些不确定构件，允许进入差异预览。</span>
+                </label>
               ) : null}
               <button
                 className="w-full rounded-md bg-emerald-600 px-3 py-2 font-medium text-sm text-white disabled:opacity-50"
-                disabled={reviewItems.length > 0 && !reviewAcknowledged}
+                disabled={hasReviewItems && !reviewAcknowledged}
                 onClick={sendToPreview}
                 type="button"
               >

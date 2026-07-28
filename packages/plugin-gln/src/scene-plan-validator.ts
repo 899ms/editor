@@ -4,9 +4,22 @@ import type {
   ScenePlanValidatorDefinition,
 } from '@pascal-app/core/scene-plan'
 import type { AnyNode, AnyNodeId, WallNode } from '@pascal-app/core/schema'
+import { getGlnBufferTankPorts } from './buffer-tank-ports'
 import { getGlnInstallationIssues } from './equipment-installation'
+import {
+  type GlnHydronicPipeNode,
+  GlnHydronicPipeNode as GlnHydronicPipeSchema,
+} from './hydronic-pipe-schema'
+import {
+  collectGlnRoutingObstacles,
+  type GlnRoutePoint,
+  planGlnConcealedRoute,
+  resolveGlnNodeLevelId,
+} from './hydronic-routing'
 import { getGlnHydronicTopologyIssues } from './hydronic-topology'
+import { getGlnOutdoorUnitPorts } from './outdoor-unit-ports'
 import { resolveWallPanelTarget } from './wall-panel-installation'
+import { getGlnWallPanelPorts } from './wall-panel-ports'
 import type { GlnWallPanelNode } from './wall-panel-schema'
 
 type PlanNode = Record<string, unknown> & {
@@ -69,6 +82,19 @@ function validateSystemsAndZones(
       if (nodes[zoneId]?.type !== 'zone') {
         issues.push(
           error('gln-zone-missing', '系统目标设置只能引用存在的 Zone。', [systemId, zoneId]),
+        )
+        continue
+      }
+      const hasPanel = Object.values(nodes).some(
+        (node) =>
+          node.type === 'gln:wall-panel' && node.systemId === systemId && node.zoneId === zoneId,
+      )
+      if (!hasPanel) {
+        issues.push(
+          error('gln-zone-without-panel', '只有安装了室内面板的 Zone 才能启用目标温湿度设置。', [
+            systemId,
+            zoneId,
+          ]),
         )
       }
     }
@@ -172,6 +198,110 @@ function validateInstallation(
     .map((issue) => error(`gln-installation-${issue.code}`, issue.message, issue.nodeIds))
 }
 
+function endpointPosition(
+  endpoint: NonNullable<GlnHydronicPipeNode['start']>,
+  nodes: Record<string, PlanNode>,
+): GlnRoutePoint | null {
+  const owner = nodes[endpoint.nodeId]
+  if (!owner) return null
+  const ports =
+    owner.type === 'gln:outdoor-unit'
+      ? getGlnOutdoorUnitPorts(owner as never)
+      : owner.type === 'gln:buffer-tank'
+        ? getGlnBufferTankPorts(owner as never)
+        : owner.type === 'gln:wall-panel'
+          ? getGlnWallPanelPorts(owner as never)
+          : []
+  const port = ports.find((candidate) => candidate.id === endpoint.portId)
+  return port ? ([...port.position] as GlnRoutePoint) : null
+}
+
+function pathsEqual(left: readonly GlnRoutePoint[], right: readonly GlnRoutePoint[]) {
+  const epsilon = 1e-5
+  return (
+    left.length === right.length &&
+    left.every((point, index) =>
+      point.every((value, axis) => Math.abs(value - right[index]![axis]!) < epsilon),
+    )
+  )
+}
+
+function validateTouchedPipeRouting(
+  context: ScenePlanValidationContext,
+  nodes: Record<string, PlanNode>,
+): ScenePlanIssue[] {
+  const sceneNodes = nodes as unknown as Readonly<Record<AnyNodeId, AnyNode>>
+  const obstacles = collectGlnRoutingObstacles(sceneNodes)
+  const touched = new Set(context.diffs.map((diff) => diff.nodeId))
+  const issues: ScenePlanIssue[] = []
+  for (const candidate of Object.values(nodes)) {
+    if (candidate.type !== 'gln:hydronic-pipe') continue
+    const parsed = GlnHydronicPipeSchema.safeParse(candidate)
+    if (!parsed.success) continue
+    const pipe = parsed.data
+    if (
+      !touched.has(pipe.id) &&
+      !touched.has(pipe.start?.nodeId ?? '') &&
+      !touched.has(pipe.end?.nodeId ?? '')
+    ) {
+      continue
+    }
+    if (!(pipe.start && pipe.end)) continue
+    const start = endpointPosition(pipe.start, nodes)
+    const end = endpointPosition(pipe.end, nodes)
+    if (!(start && end)) continue
+    const startLevelId = resolveGlnNodeLevelId(sceneNodes, pipe.start.nodeId)
+    const endLevelId = resolveGlnNodeLevelId(sceneNodes, pipe.end.nodeId)
+    const parent = pipe.parentId ? nodes[pipe.parentId] : undefined
+    if (parent?.type !== 'level' || !startLevelId || pipe.parentId !== startLevelId) {
+      issues.push(
+        error(
+          'gln-routing-parent-mismatch',
+          '水管必须挂在起点设备所属楼层，不能成为根节点或挂到其他楼层。',
+          [pipe.id, ...(pipe.parentId ? [pipe.parentId] : []), pipe.start.nodeId],
+        ),
+      )
+      continue
+    }
+    const relevantObstacles = obstacles.filter((obstacle) => {
+      const levelId = resolveGlnNodeLevelId(sceneNodes, obstacle.id)
+      return !levelId || levelId === startLevelId || levelId === endLevelId
+    })
+    const planned = planGlnConcealedRoute({
+      start,
+      end,
+      startNodeId: pipe.start.nodeId,
+      endNodeId: pipe.end.nodeId,
+      startLevelId,
+      endLevelId,
+      obstacles: relevantObstacles,
+    })
+    if (planned.routing.state === 'needs-review') {
+      const reason =
+        planned.routing.reviewReason === 'missing-riser'
+          ? '跨层水路缺少已确认的竖向通道，需要人工选定路径。'
+          : '自动水路与场景障碍冲突，需要人工调整路径。'
+      issues.push(error('gln-routing-needs-review', reason, [pipe.id]))
+      continue
+    }
+    if (
+      !pathsEqual(pipe.path, planned.path) ||
+      pipe.routing.state !== planned.routing.state ||
+      pipe.routing.strategy !== planned.routing.strategy ||
+      pipe.routing.reviewReason !== planned.routing.reviewReason
+    ) {
+      issues.push(
+        error(
+          'gln-routing-unvalidated',
+          'AI 水路必须采用编辑器依据端口、楼层和障碍物计算的隐蔽路径；当前路径需要人工复核。',
+          [pipe.id],
+        ),
+      )
+    }
+  }
+  return issues
+}
+
 function validateTopology(
   nodes: Record<string, PlanNode>,
   affected: ReadonlySet<string>,
@@ -199,6 +329,7 @@ export function validateGlnScenePlan(context: ScenePlanValidationContext): Scene
     ...validatePanelHosts(context, nodes),
     ...validateDuplicateEquipment(nodes, affected),
     ...validateInstallation(context, nodes),
+    ...validateTouchedPipeRouting(context, nodes),
     ...validateTopology(nodes, affected),
   ]
 }

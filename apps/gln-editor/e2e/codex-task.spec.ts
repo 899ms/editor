@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { createGlnConfigurationTestGraph } from '../lib/codex-tasks/gln-configuration-test-fixtures'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 
@@ -309,4 +310,319 @@ test('generates editable residential nodes, previews, atomically commits, and re
     })
   expect(reloadedVersion).toBeGreaterThan(scene.version)
   expect(pageErrors).toEqual([])
+})
+
+test('configures one editable GLN system by stable IDs without duplicating devices', async ({
+  page,
+  request,
+}) => {
+  test.setTimeout(240_000)
+  await page.goto(`${baseUrl}/scenes`)
+  const createResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url() === `${baseUrl}/api/scenes`,
+  )
+  await page.getByRole('button', { name: '新建场景' }).first().click()
+  expect((await createResponsePromise).status()).toBe(201)
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/)
+  const sceneId = new URL(page.url()).pathname.split('/').at(-1)!
+  await page.goto(`${baseUrl}/scenes`)
+  const initial = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+    version: number
+  }
+  const fixture = createGlnConfigurationTestGraph('codex_e2e')
+  const seed = await request.put(`${baseUrl}/api/scenes/${sceneId}`, {
+    data: {
+      name: 'AI 配置光冷暖',
+      graph: {
+        ...fixture.residentialGraph,
+        installedPlugins: ['pascal:gln'],
+      },
+      expectedVersion: initial.version,
+    },
+  })
+  if (!seed.ok()) {
+    throw new Error(`GLN configuration seed failed (${seed.status()}): ${await seed.text()}`)
+  }
+  const seeded = (await seed.json()) as { version: number }
+  const configuredZoneSettings = {
+    [fixture.ids.livingZone]: {
+      targetTemperature: 23,
+      targetTemperatureSource: 'template',
+      targetHumidity: 48,
+      targetHumiditySource: 'template',
+      enabled: true,
+    },
+  }
+  const plan = {
+    id: 'codex-gln-configuration-e2e',
+    sceneId,
+    baseVersion: seeded.version,
+    operations: fixture.glnNodes.map((node) => {
+      const configuredNode =
+        node.id === fixture.ids.system
+          ? {
+              ...node,
+              name: 'AI 配置住宅主系统',
+              zoneSettings: configuredZoneSettings,
+            }
+          : node
+      return {
+        op: 'create',
+        ...(configuredNode.parentId ? { parentId: configuredNode.parentId } : {}),
+        node: configuredNode,
+      }
+    }),
+  }
+  const queued = {
+    id: 'task-codex-gln-configuration-e2e',
+    sceneId,
+    kind: 'configure-gln',
+    status: 'queued',
+    progress: 0,
+    plan: null,
+    preview: null,
+    residentialReport: null,
+    glnConfigurationReport: null,
+    error: null,
+  }
+  const succeeded = {
+    ...queued,
+    status: 'succeeded',
+    progress: 100,
+    plan,
+    preview: {
+      ok: true,
+      diffs: plan.operations.map((operation) => ({
+        kind: 'create',
+        nodeId: operation.node.id,
+        nodeType: operation.node.type,
+        changedFields: Object.keys(operation.node),
+      })),
+      issues: [],
+    },
+    glnConfigurationReport: {
+      status: 'ready',
+      systems: {
+        before: 0,
+        requested: 1,
+        expected: 1,
+        after: 1,
+        affectedIds: [fixture.ids.system],
+      },
+      completenessIssues: [],
+      reviewItems: [],
+    },
+  }
+
+  await page.route(`**/api/scenes/${sceneId}/codex-tasks`, async (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({
+      kind: 'configure-gln',
+      glnConfiguration: { targetSystemCount: 1 },
+    })
+    await route.fulfill({
+      contentType: 'application/json',
+      status: 202,
+      body: JSON.stringify(queued),
+    })
+  })
+  await page.route(
+    `**/api/scenes/${sceneId}/codex-tasks/task-codex-gln-configuration-e2e`,
+    async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        status: 200,
+        body: JSON.stringify(succeeded),
+      })
+    },
+  )
+
+  await page.goto(`${baseUrl}/scene/${sceneId}`)
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await page
+    .locator(
+      '.pascal-loader-1, .pascal-loader-2, .pascal-loader-3, .pascal-loader-4, .pascal-loader-5',
+    )
+    .waitFor({ state: 'detached', timeout: 20_000 })
+  let stableReads = 0
+  let latestVersion = plan.baseVersion
+  while (stableReads < 3) {
+    await page.waitForTimeout(500)
+    const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+      version: number
+    }
+    if (current.version === latestVersion) stableReads += 1
+    else {
+      latestVersion = current.version
+      stableReads = 0
+    }
+  }
+  plan.baseVersion = latestVersion
+  await page.getByRole('button', { name: 'AI 场景任务' }).click()
+  await expect(page.getByRole('spinbutton', { name: '目标系统总数' })).toHaveValue('1')
+  await page.getByRole('textbox', { name: '任务目标' }).fill('为住宅配置一套光冷暖系统')
+  await page.getByRole('button', { name: '生成场景计划' }).click()
+  await expect(page.getByText('已生成')).toBeVisible()
+  await expect(
+    page.getByText(`已通过格式与硬校验，共 ${fixture.glnNodes.length} 项变更。`),
+  ).toBeVisible()
+  await page.getByRole('button', { name: '发送到变更计划' }).click()
+  await page.getByRole('button', { name: '变更计划', exact: true }).click()
+  await page.getByRole('button', { name: '校验并生成差异预览' }).click()
+  await expect(page.locator('[data-diff-kind="create"]')).toHaveCount(fixture.glnNodes.length)
+  await expect(page.locator('[data-diff-kind="create"]').first()).toContainText(fixture.ids.system)
+  await page.getByRole('button', { name: '确认并一次提交' }).click()
+  await expect(page.getByText(/已原子提交；恢复点/)).toBeVisible()
+
+  const summarize = async () => {
+    const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+      version: number
+      graph: { nodes: Record<string, Record<string, unknown>> }
+    }
+    const nodes = Object.values(current.graph.nodes)
+    const system = current.graph.nodes[fixture.ids.system]
+    const level = current.graph.nodes[fixture.ids.level]
+    const panel = current.graph.nodes[fixture.ids.panel]
+    const hostWall = current.graph.nodes[String(panel?.parentId ?? '')]
+    const levelHostedIds = [fixture.ids.outdoor, fixture.ids.tank, ...fixture.ids.pipes]
+    return {
+      version: current.version,
+      systems: nodes.filter((node) => node.type === 'gln:system').length,
+      outdoors: nodes.filter((node) => node.type === 'gln:outdoor-unit').length,
+      tanks: nodes.filter((node) => node.type === 'gln:buffer-tank').length,
+      panels: nodes.filter((node) => node.type === 'gln:wall-panel').length,
+      pipes: nodes.filter((node) => node.type === 'gln:hydronic-pipe').length,
+      temperature: (
+        system?.zoneSettings as Record<string, { targetTemperature?: number }> | undefined
+      )?.[fixture.ids.livingZone]?.targetTemperature,
+      locked: Object.values(current.graph.nodes).some(
+        (node) =>
+          node.type?.toString().startsWith('gln:') &&
+          (node.locked === true ||
+            (node.metadata as Record<string, unknown> | undefined)?.locked === true),
+      ),
+      hierarchy:
+        levelHostedIds.every(
+          (id) =>
+            current.graph.nodes[id]?.parentId === fixture.ids.level &&
+            (level?.children as string[] | undefined)?.includes(id),
+        ) &&
+        panel?.parentId === hostWall?.id &&
+        (hostWall?.children as string[] | undefined)?.includes(fixture.ids.panel),
+    }
+  }
+
+  await expect.poll(summarize).toMatchObject({
+    systems: 1,
+    outdoors: 1,
+    tanks: 1,
+    panels: 1,
+    pipes: 4,
+    temperature: 23,
+    locked: false,
+    hierarchy: true,
+  })
+
+  await page.keyboard.press('Control+z')
+  await expect.poll(summarize).toMatchObject({
+    systems: 0,
+    outdoors: 0,
+    tanks: 0,
+    panels: 0,
+    pipes: 0,
+    locked: false,
+  })
+
+  const afterUndo = await summarize()
+  const recreatePlan = {
+    ...plan,
+    id: 'codex-gln-configuration-recreate-e2e',
+    baseVersion: afterUndo.version,
+  }
+  const recreate = await request.post(`${baseUrl}/api/scenes/${sceneId}/plans`, {
+    data: { action: 'commit', plan: recreatePlan },
+  })
+  if (!recreate.ok()) {
+    throw new Error(`GLN recreation failed (${recreate.status()}): ${await recreate.text()}`)
+  }
+  await page.reload()
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await expect.poll(summarize).toMatchObject({
+    systems: 1,
+    outdoors: 1,
+    tanks: 1,
+    panels: 1,
+    pipes: 4,
+    temperature: 23,
+    locked: false,
+    hierarchy: true,
+  })
+
+  const afterRecreate = await summarize()
+  const rerunPlan = {
+    ...plan,
+    id: 'codex-gln-configuration-rerun-e2e',
+    baseVersion: afterRecreate.version,
+    operations: [
+      {
+        op: 'update',
+        id: fixture.ids.system,
+        data: {
+          name: 'AI 再次配置住宅主系统',
+          zoneSettings: {
+            [fixture.ids.livingZone]: {
+              ...configuredZoneSettings[fixture.ids.livingZone],
+              targetTemperature: 22,
+            },
+          },
+        },
+      },
+    ],
+  }
+  const rerun = await request.post(`${baseUrl}/api/scenes/${sceneId}/plans`, {
+    data: { action: 'commit', plan: rerunPlan },
+  })
+  if (!rerun.ok()) {
+    throw new Error(`GLN stable-ID rerun failed (${rerun.status()}): ${await rerun.text()}`)
+  }
+  await page.reload()
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await expect.poll(summarize).toMatchObject({
+    systems: 1,
+    outdoors: 1,
+    tanks: 1,
+    panels: 1,
+    pipes: 4,
+    temperature: 22,
+    locked: false,
+    hierarchy: true,
+  })
+
+  await page.getByRole('button', { name: '2D' }).click()
+  await page.getByRole('button', { name: '选择 V' }).click()
+  const panelEntry = page
+    .locator(`.floorplan-registry-entry[data-node-id="${fixture.ids.panel}"]`)
+    .first()
+  await expect(panelEntry).toBeVisible()
+  await panelEntry.locator('rect').click({ position: { x: 4, y: 4 } })
+  await page.getByRole('button', { name: '光冷暖设备' }).click()
+  await expect(page.locator('[data-gln-ai-lock]')).toBeVisible()
+  await page.getByRole('button', { name: '锁定 AI 变更' }).click()
+  await expect
+    .poll(async () => {
+      const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+        graph: { nodes: Record<string, { metadata?: Record<string, unknown> }> }
+      }
+      return current.graph.nodes[fixture.ids.panel]?.metadata?.glnLocked
+    })
+    .toBe(true)
+  await page.getByRole('button', { name: '允许 AI 变更' }).click()
+  await expect
+    .poll(async () => {
+      const current = (await (await request.get(`${baseUrl}/api/scenes/${sceneId}`)).json()) as {
+        graph: { nodes: Record<string, { metadata?: Record<string, unknown> }> }
+      }
+      return current.graph.nodes[fixture.ids.panel]?.metadata?.glnLocked
+    })
+    .toBe(false)
 })
