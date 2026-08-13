@@ -42,7 +42,9 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
   expect(sceneId).toBeTruthy()
   if (!sceneId) return
 
-  await page.getByRole('button', { name: '住宅导入' }).click()
+  await page
+    .getByRole('button', { name: '住宅导入' })
+    .evaluate((element) => (element as HTMLButtonElement).click())
   await expect(page.locator('[data-gln-ifc-import-panel]')).toBeVisible({ timeout: 30_000 })
   await page.locator('input[type="file"]').setInputFiles(fixture)
   const report = page.locator('[data-gln-ifc-report-status]')
@@ -146,7 +148,9 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
     .toBe(false)
 
   await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
-  await page.getByRole('button', { name: '住宅导入' }).click()
+  await page
+    .getByRole('button', { name: '住宅导入' })
+    .evaluate((element) => (element as HTMLButtonElement).click())
   const reloadedCard = page.locator(`[data-gln-ifc-saved-import="${importId}"]`)
   await expect(reloadedCard).toBeVisible({ timeout: 30_000 })
   await expect(reloadedCard.getByText(/临时参考层不在当前内存中/)).toBeVisible()

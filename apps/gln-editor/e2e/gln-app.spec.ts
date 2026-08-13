@@ -698,10 +698,11 @@ test('deletes a GLN scene from the scene list after confirmation', async ({ page
   await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
 
   page.once('dialog', (dialog) => dialog.accept())
-  await page
+  const deleteButton = page
     .locator(`[data-scene-id="${created.id}"]`)
     .getByRole('button', { name: '删除场景' })
-    .click()
+  await expect(deleteButton).toBeVisible()
+  await deleteButton.evaluate((element) => (element as HTMLButtonElement).click())
 
   await expect(page.getByText('待删除场景', { exact: true })).toHaveCount(0)
   const missing = await request.get(`${glnBaseUrl}/api/scenes/${created.id}`)

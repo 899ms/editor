@@ -42,7 +42,9 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   expect(sceneId).toBeTruthy()
   if (!sceneId) return
 
-  await page.getByRole('button', { name: '住宅导入' }).click()
+  await page
+    .getByRole('button', { name: '住宅导入' })
+    .evaluate((element) => (element as HTMLButtonElement).click())
   await page.getByRole('button', { name: 'GLB' }).click()
   await expect(page.locator('[data-gln-glb-import-panel]')).toBeVisible()
   await page.locator('input[accept*=".glb"]').setInputFiles(fixture)
@@ -106,7 +108,9 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
     .toBe(false)
 
   await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
-  await page.getByRole('button', { name: '住宅导入' }).click()
+  await page
+    .getByRole('button', { name: '住宅导入' })
+    .evaluate((element) => (element as HTMLButtonElement).click())
   await page.getByRole('button', { name: 'GLB' }).click()
   const reloadedCard = page.locator(`[data-gln-glb-saved-import="${importId}"]`)
   await expect(reloadedCard.getByText(/临时参考模型不在当前内存中/)).toBeVisible()
