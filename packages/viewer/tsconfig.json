@@ -10,5 +10,8 @@
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../core" }, { "path": "../i18n" }]
+  "references": [
+    { "path": "../core/tsconfig.json" },
+    { "path": "../i18n/tsconfig.json" }
+  ]
 }

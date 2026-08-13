@@ -20,7 +20,6 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { getGlnInstallationIssues } from './equipment-installation'
-import type { GlnEquipmentInstallationAreaKind } from './equipment-installation-schema'
 import { useGlnEquipmentStore } from './equipment-store'
 import { getGlnPort } from './hydronic-pipe-ports'
 import {
@@ -39,24 +38,6 @@ const OUTDOOR_UNIT_KIND = 'gln:outdoor-unit'
 const BUFFER_TANK_KIND = 'gln:buffer-tank'
 const WALL_PANEL_KIND = 'gln:wall-panel'
 const HYDRONIC_PIPE_KIND = 'gln:hydronic-pipe'
-
-const OUTDOOR_AREA_KINDS: GlnEquipmentInstallationAreaKind[] = ['outdoor-equipment-area']
-const TANK_AREA_KINDS: GlnEquipmentInstallationAreaKind[] = [
-  'equipment-room',
-  'mechanical-room',
-  'equipment-area',
-]
-const INSTALLATION_AREA_KINDS: GlnEquipmentInstallationAreaKind[] = [
-  ...OUTDOOR_AREA_KINDS,
-  ...TANK_AREA_KINDS,
-]
-const AREA_KIND_LABELS: Record<GlnEquipmentInstallationAreaKind, string> = {
-  unassigned: '未确认',
-  'outdoor-equipment-area': '室外设备区',
-  'equipment-room': '设备间',
-  'mechanical-room': '机房',
-  'equipment-area': '设备区',
-}
 
 function GlnDisplayModeControl() {
   const displayMode = useGlnEquipmentStore((state) => state.displayMode)
@@ -142,8 +123,9 @@ function PipeCoordinateInput({
 }
 
 function SelectedPipeEditor({ pipe, readOnly }: { pipe: GlnHydronicPipe; readOnly: boolean }) {
-  const updatePath = (path: GlnHydronicPipe['path']) =>
-    useScene.getState().updateNode(pipe.id as AnyNodeId, { path } as never)
+  const updatePipe = (patch: Partial<GlnHydronicPipe>) =>
+    useScene.getState().updateNode(pipe.id as AnyNodeId, patch as never)
+  const updatePath = (path: GlnHydronicPipe['path']) => updatePipe({ path })
   const addPoint = () => {
     const endIndex = pipe.path.length - 1
     const previous = pipe.path[endIndex - 1]!
@@ -187,6 +169,73 @@ function SelectedPipeEditor({ pipe, readOnly }: { pipe: GlnHydronicPipe; readOnl
         >
           新增路径点
         </button>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <label className="space-y-1 text-sidebar-foreground/65 text-xs">
+          <span>布管方式</span>
+          <select
+            className="h-9 w-full rounded border border-sidebar-border bg-sidebar px-2 text-sidebar-foreground text-sm"
+            disabled={readOnly}
+            onChange={(event) =>
+              updatePipe({
+                installationMode: event.target.value as GlnHydronicPipe['installationMode'],
+              })
+            }
+            value={pipe.installationMode}
+          >
+            <option value="ceiling">走天花板</option>
+            <option value="wall">沿墙</option>
+            <option value="through-wall">穿墙</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-sidebar-foreground/65 text-xs">
+          <span>管材</span>
+          <select
+            className="h-9 w-full rounded border border-sidebar-border bg-sidebar px-2 text-sidebar-foreground text-sm"
+            disabled={readOnly}
+            onChange={(event) =>
+              updatePipe({ pipeMaterial: event.target.value as GlnHydronicPipe['pipeMaterial'] })
+            }
+            value={pipe.pipeMaterial}
+          >
+            <option value="pex">PEX</option>
+            <option value="pp-r">PP-R</option>
+            <option value="copper">铜管</option>
+            <option value="stainless-steel">不锈钢</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-sidebar-foreground/65 text-xs">
+          <span>管径（英寸）</span>
+          <input
+            className="h-9 w-full rounded border border-sidebar-border bg-sidebar px-2 text-sidebar-foreground text-sm"
+            disabled={readOnly}
+            max={2}
+            min={0.25}
+            onChange={(event) =>
+              updatePipe({ diameterIn: Math.max(0.25, Math.min(2, Number(event.target.value))) })
+            }
+            step={0.25}
+            type="number"
+            value={pipe.diameterIn}
+          />
+        </label>
+        <label className="space-y-1 text-sidebar-foreground/65 text-xs">
+          <span>保温厚度（米）</span>
+          <input
+            className="h-9 w-full rounded border border-sidebar-border bg-sidebar px-2 text-sidebar-foreground text-sm"
+            disabled={readOnly}
+            max={0.08}
+            min={0}
+            onChange={(event) =>
+              updatePipe({
+                insulationThicknessM: Math.max(0, Math.min(0.08, Number(event.target.value))),
+              })
+            }
+            step={0.005}
+            type="number"
+            value={pipe.insulationThicknessM}
+          />
+        </label>
       </div>
       <div className="mt-3 space-y-2">
         {pipe.path.map((point, index) => {
@@ -388,12 +437,14 @@ export default function GlnEquipmentPanel() {
   const setSystemId = useGlnEquipmentStore((state) => state.setSystemId)
   const hydronicCircuit = useGlnEquipmentStore((state) => state.hydronicCircuit)
   const setHydronicCircuit = useGlnEquipmentStore((state) => state.setHydronicCircuit)
+  const hydronicInstallationMode = useGlnEquipmentStore((state) => state.hydronicInstallationMode)
+  const setHydronicInstallationMode = useGlnEquipmentStore(
+    (state) => state.setHydronicInstallationMode,
+  )
+  const hydronicServiceHeightM = useGlnEquipmentStore((state) => state.hydronicServiceHeightM)
+  const setHydronicServiceHeightM = useGlnEquipmentStore((state) => state.setHydronicServiceHeightM)
   const showConcealedRoutes = useGlnEquipmentStore((state) => state.showConcealedRoutes)
   const setShowConcealedRoutes = useGlnEquipmentStore((state) => state.setShowConcealedRoutes)
-  const installationAreaZoneId = useGlnEquipmentStore((state) => state.installationAreaZoneId)
-  const setInstallationAreaZoneId = useGlnEquipmentStore((state) => state.setInstallationAreaZoneId)
-  const installationAreaKind = useGlnEquipmentStore((state) => state.installationAreaKind)
-  const setInstallationAreaKind = useGlnEquipmentStore((state) => state.setInstallationAreaKind)
   const displayMode = useGlnEquipmentStore((state) => state.displayMode)
   const [deletePreviewOpen, setDeletePreviewOpen] = useState(false)
 
@@ -403,20 +454,6 @@ export default function GlnEquipmentPanel() {
   }, [systemId, systemIds, setSystemId])
 
   const canPlace = !readOnly && !!levelId && !!systemId
-  const installationZones = useMemo(
-    () =>
-      Object.values(nodes)
-        .filter((node) => node.type === 'zone' && node.parentId === levelId)
-        .map((node) => {
-          const zone = node as unknown as { id: string; name?: string }
-          return { id: zone.id, name: zone.name?.trim() || '未命名空间' }
-        }),
-    [levelId, nodes],
-  )
-  const outdoorInstallationReady =
-    !!installationAreaZoneId && installationAreaKind === 'outdoor-equipment-area'
-  const tankInstallationReady =
-    !!installationAreaZoneId && TANK_AREA_KINDS.includes(installationAreaKind)
   const topologyIssues = useMemo(
     () => (systemId ? getGlnHydronicTopologyIssues(nodes as never, systemId) : []),
     [nodes, systemId],
@@ -448,8 +485,6 @@ export default function GlnEquipmentPanel() {
       | typeof HYDRONIC_PIPE_KIND,
   ) => {
     if (!canPlace) return
-    if (kind === OUTDOOR_UNIT_KIND && !outdoorInstallationReady) return
-    if (kind === BUFFER_TANK_KIND && !tankInstallationReady) return
     setReadyKind(null)
     const editor = useEditor.getState()
     ;(editor.setTool as (tool: string) => void)(kind)
@@ -543,49 +578,6 @@ export default function GlnEquipmentPanel() {
         </select>
       </label>
 
-      <section className="rounded-lg border border-sidebar-border p-3" data-gln-installation-area>
-        <p className="font-medium text-sidebar-foreground text-sm">确认安装区域</p>
-        <p className="mt-1 text-sidebar-foreground/55 text-xs">
-          外机仅限室外设备区；水箱仅限设备间、机房或设备区。该选择会写入新设备。
-        </p>
-        <label className="mt-3 flex flex-col gap-1.5 text-sidebar-foreground text-xs">
-          安装空间
-          <select
-            aria-label="安装空间"
-            className="h-9 rounded-md border border-sidebar-border bg-sidebar px-2 text-sm outline-none focus:border-sidebar-ring"
-            disabled={readOnly || !levelId}
-            onChange={(event) => setInstallationAreaZoneId(event.target.value || null)}
-            value={installationAreaZoneId ?? ''}
-          >
-            <option value="">请选择空间</option>
-            {installationZones.map((zone) => (
-              <option key={zone.id} value={zone.id}>
-                {zone.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="mt-3 flex flex-col gap-1.5 text-sidebar-foreground text-xs">
-          区域用途
-          <select
-            aria-label="区域用途"
-            className="h-9 rounded-md border border-sidebar-border bg-sidebar px-2 text-sm outline-none focus:border-sidebar-ring"
-            disabled={readOnly}
-            onChange={(event) =>
-              setInstallationAreaKind(event.target.value as GlnEquipmentInstallationAreaKind)
-            }
-            value={installationAreaKind}
-          >
-            <option value="unassigned">未确认</option>
-            {INSTALLATION_AREA_KINDS.map((kind) => (
-              <option key={kind} value={kind}>
-                {AREA_KIND_LABELS[kind]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </section>
-
       <button
         aria-busy={activeTool === OUTDOOR_UNIT_KIND && readyKind !== OUTDOOR_UNIT_KIND}
         aria-pressed={activeTool === OUTDOOR_UNIT_KIND}
@@ -594,7 +586,7 @@ export default function GlnEquipmentPanel() {
             ? 'border-sidebar-ring bg-sidebar-accent'
             : 'border-sidebar-border hover:border-sidebar-ring/60 hover:bg-sidebar-accent/50'
         } disabled:cursor-not-allowed disabled:opacity-45`}
-        disabled={!canPlace || !outdoorInstallationReady}
+        disabled={!canPlace}
         onClick={() => activate(OUTDOOR_UNIT_KIND)}
         type="button"
       >
@@ -617,7 +609,7 @@ export default function GlnEquipmentPanel() {
           <div>
             <p className="font-medium text-sidebar-foreground text-sm">绘制供回水管</p>
             <p className="text-sidebar-foreground/55 text-xs">
-              点击添加路径点，Enter 完成并连接端口
+              复用机电管线绘制，连接设备供回水端口
             </p>
           </div>
         </div>
@@ -638,6 +630,54 @@ export default function GlnEquipmentPanel() {
             </button>
           ))}
         </div>
+        <div
+          aria-label="布管方式"
+          className="mt-2 grid grid-cols-3 gap-1"
+          data-gln-hydronic-installation-mode={hydronicInstallationMode}
+          role="group"
+        >
+          {(
+            [
+              ['ceiling', '天花板'],
+              ['wall', '沿墙'],
+              ['through-wall', '穿墙'],
+            ] as const
+          ).map(([mode, label]) => (
+            <button
+              aria-pressed={hydronicInstallationMode === mode}
+              className={`rounded-md border px-1 py-2 text-xs ${
+                hydronicInstallationMode === mode
+                  ? 'border-sidebar-ring bg-sidebar-accent'
+                  : 'border-sidebar-border hover:border-sidebar-ring/60'
+              }`}
+              key={mode}
+              onClick={() => setHydronicInstallationMode(mode)}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="mt-2 flex items-center justify-between gap-3 text-sidebar-foreground/65 text-xs">
+          <span>安装高度</span>
+          <span className="flex items-center gap-1">
+            <input
+              aria-label="水管安装高度"
+              className="h-8 w-20 rounded border border-sidebar-border bg-sidebar px-2 text-right text-sidebar-foreground"
+              max={6}
+              min={0.1}
+              onChange={(event) =>
+                setHydronicServiceHeightM(
+                  Math.max(0.1, Math.min(6, Number(event.target.value) || 2.3)),
+                )
+              }
+              step={0.05}
+              type="number"
+              value={hydronicServiceHeightM}
+            />
+            米
+          </span>
+        </label>
         <button
           aria-pressed={activeTool === HYDRONIC_PIPE_KIND}
           className="mt-2 flex h-10 w-full items-center justify-center rounded-md bg-sidebar-accent font-medium text-sidebar-foreground text-sm hover:bg-sidebar-accent/75 disabled:cursor-not-allowed disabled:opacity-45"
@@ -895,7 +935,7 @@ export default function GlnEquipmentPanel() {
             ? 'border-sidebar-ring bg-sidebar-accent'
             : 'border-sidebar-border hover:border-sidebar-ring/60 hover:bg-sidebar-accent/50'
         } disabled:cursor-not-allowed disabled:opacity-45`}
-        disabled={!canPlace || !tankInstallationReady}
+        disabled={!canPlace}
         onClick={() => activate(BUFFER_TANK_KIND)}
         type="button"
       >

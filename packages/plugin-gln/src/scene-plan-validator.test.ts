@@ -40,7 +40,7 @@ function context(nodes: Record<string, Record<string, unknown>>, touchedIds: str
 }
 
 describe('GLN ScenePlan hard validation', () => {
-  test('rejects duplicate source equipment, missing zones, invalid areas, and incomplete ports', () => {
+  test('rejects duplicate source equipment, missing zones, and incomplete ports', () => {
     const nodes = {
       'gln-system_one': {
         id: 'gln-system_one',
@@ -64,7 +64,7 @@ describe('GLN ScenePlan hard validation', () => {
     expect(codes).toContain('gln-zone-missing')
     expect(codes).toContain('gln-zone-without-panel')
     expect(codes).toContain('gln-duplicate-equipment')
-    expect(codes).toContain('gln-installation-area-unassigned')
+    expect(codes).not.toContain('gln-installation-area-unassigned')
     expect(codes).toContain('gln-topology-missing-link')
   })
 

@@ -71,6 +71,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@iconify/react": "^6.0.2",
+        "@modelcontextprotocol/sdk": "^1.29.0",
         "@number-flow/react": "^0.6.0",
         "@pascal-app/core": "*",
         "@pascal-app/editor": "*",
@@ -330,6 +331,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@pascal-app/ifc-converter": "workspace:*",
+        "@pascal-app/nodes": "workspace:*",
       },
       "devDependencies": {
         "@pascal-app/core": "0.9.2",

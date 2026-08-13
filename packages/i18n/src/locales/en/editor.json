@@ -409,6 +409,10 @@
     "nodeCount_other": "{{count}} nodes",
     "count_one": "{{count}} scene.",
     "count_other": "{{count}} scenes.",
+    "delete": "Delete scene",
+    "deleteConfirm": "Delete “{{sceneName}}”? This cannot be undone.",
+    "deleting": "Deleting…",
+    "deleteFailed": "Could not delete the scene.",
     "notFound": "Scene not found",
     "notFoundDescription": "We couldn't find a scene with id {{id}}."
   },

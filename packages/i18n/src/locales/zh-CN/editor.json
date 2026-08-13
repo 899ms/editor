@@ -409,6 +409,10 @@
     "nodeCount_other": "{{count}} 个节点",
     "count_one": "共 {{count}} 个场景。",
     "count_other": "共 {{count}} 个场景。",
+    "delete": "删除场景",
+    "deleteConfirm": "确定要删除“{{sceneName}}”吗？此操作无法撤销。",
+    "deleting": "正在删除…",
+    "deleteFailed": "无法删除场景。",
     "notFound": "未找到场景",
     "notFoundDescription": "找不到 ID 为 {{id}} 的场景。"
   },

@@ -15,7 +15,7 @@ import { Hammer, Layers } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BuildTab } from './build-tab'
 import { CommunityViewerToolbarLeft, CommunityViewerToolbarRight } from './viewer-toolbar'
 
@@ -35,6 +35,8 @@ export interface SceneMeta {
 interface SceneLoaderProps {
   initialScene: SceneGraph
   meta: SceneMeta
+  /** Optional host replacement for the standard Build sidebar. */
+  buildTabComponent?: ComponentType
 }
 
 type SceneGraphWithCollections = SceneGraph & {
@@ -81,7 +83,11 @@ function currentSceneGraphSignature(): string {
   })
 }
 
-export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
+export function SceneLoader({
+  initialScene,
+  meta,
+  buildTabComponent: BuildTabComponent = BuildTab,
+}: SceneLoaderProps) {
   const { t } = usePascalTranslation('editor')
   const router = useRouter()
   const versionRef = useRef(meta.version)
@@ -110,7 +116,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
       {
         id: 'build',
         label: t('tabs.build'),
-        component: BuildTab,
+        component: BuildTabComponent,
         mobileDefaultSnap: 0.5,
         mobileIcon: <Hammer className="h-5 w-5" />,
         icon: (
@@ -124,7 +130,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
         ),
       },
     ],
-    [t],
+    [BuildTabComponent, t],
   )
 
   const handleLoad = useCallback(async () => initialScene, [initialScene])
@@ -269,14 +275,6 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
           <p className="font-medium text-destructive text-xs">{saveErrorText}</p>
         </div>
       )}
-      <div className="pointer-events-none absolute top-4 right-4 z-40 flex items-center gap-2">
-        <Link
-          className="pointer-events-auto rounded-md border border-border bg-background/90 px-3 py-1.5 font-medium text-xs shadow-sm backdrop-blur hover:bg-accent/40"
-          href="/scenes"
-        >
-          {t('navigation.allScenes')}
-        </Link>
-      </div>
       <Editor
         layoutVersion="v2"
         onLoad={handleLoad}
@@ -285,7 +283,18 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
         projectId={meta.projectId ?? 'default'}
         sidebarTabs={sidebarTabs}
         viewerToolbarLeft={<CommunityViewerToolbarLeft />}
-        viewerToolbarRight={<CommunityViewerToolbarRight />}
+        viewerToolbarRight={
+          <div className="flex items-center gap-2" data-viewer-toolbar-actions>
+            <CommunityViewerToolbarRight />
+            <Link
+              className="inline-flex h-8 items-center rounded-xl border border-border bg-background/90 px-3 font-medium text-xs shadow-2xl backdrop-blur-md hover:bg-accent/40"
+              data-scene-navigation-action
+              href="/scenes"
+            >
+              {t('navigation.allScenes')}
+            </Link>
+          </div>
+        }
       />
     </div>
   )

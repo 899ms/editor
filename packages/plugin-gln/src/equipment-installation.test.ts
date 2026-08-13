@@ -1,30 +1,16 @@
 import { describe, expect, test } from 'bun:test'
-import { type AnyNodeId, ZoneNode } from '@pascal-app/core'
+import type { AnyNodeId } from '@pascal-app/core'
 import { GlnBufferTankNode } from './buffer-tank-schema'
 import { getGlnInstallationIssues } from './equipment-installation'
 import { buildGlnOutdoorUnitGeometry } from './outdoor-unit-geometry'
 import { glnOutdoorUnitParametrics } from './outdoor-unit-parametrics'
 import { GlnOutdoorUnitNode } from './outdoor-unit-schema'
 
-const outdoorZone = ZoneNode.parse({
-  id: 'zone_outdoor',
-  parentId: 'level_test',
-  name: '设备阳台',
-  polygon: [
-    [0, 0],
-    [6, 0],
-    [6, 6],
-    [0, 6],
-  ],
-})
-
 const outdoor = GlnOutdoorUnitNode.parse({
   id: 'gln-outdoor-unit_test',
   parentId: 'level_test',
   systemId: 'gln-system_test',
   position: [2, 0, 2],
-  installationAreaZoneId: outdoorZone.id,
-  installationAreaKind: 'outdoor-equipment-area',
 })
 
 const tank = GlnBufferTankNode.parse({
@@ -32,11 +18,9 @@ const tank = GlnBufferTankNode.parse({
   parentId: 'level_test',
   systemId: 'gln-system_test',
   position: [4, 0, 2],
-  installationAreaZoneId: outdoorZone.id,
-  installationAreaKind: 'equipment-area',
 })
 
-const scene = (...nodes: Array<typeof outdoor | typeof tank | typeof outdoorZone>) =>
+const scene = (...nodes: Array<typeof outdoor | typeof tank>) =>
   Object.fromEntries(nodes.map((node) => [node.id, node])) as never as Record<AnyNodeId, never>
 
 describe('GLN equipment installation', () => {
@@ -78,26 +62,23 @@ describe('GLN equipment installation', () => {
     ).toBeDefined()
   })
 
-  test('requires valid confirmed areas and reports out-of-area placement', () => {
-    expect(getGlnInstallationIssues(scene(outdoor, tank, outdoorZone))).toEqual([])
-
-    const invalidKind = GlnOutdoorUnitNode.parse({
+  test('allows floor equipment without dedicated installation areas', () => {
+    const unassignedOutdoor = GlnOutdoorUnitNode.parse({
       ...outdoor,
-      installationAreaKind: 'equipment-area',
+      installationAreaZoneId: null,
+      installationAreaKind: 'unassigned',
     })
-    expect(getGlnInstallationIssues(scene(invalidKind, outdoorZone))).toMatchObject([
-      { code: 'area-kind-invalid', nodeIds: [invalidKind.id, outdoorZone.id] },
-    ])
-
-    const outside = GlnOutdoorUnitNode.parse({ ...outdoor, position: [5.8, 0, 2] })
-    expect(getGlnInstallationIssues(scene(outside, outdoorZone))).toMatchObject([
-      { code: 'outside-confirmed-area', nodeIds: [outside.id, outdoorZone.id] },
-    ])
+    const unassignedTank = GlnBufferTankNode.parse({
+      ...tank,
+      installationAreaZoneId: null,
+      installationAreaKind: 'unassigned',
+    })
+    expect(getGlnInstallationIssues(scene(unassignedOutdoor, unassignedTank))).toEqual([])
   })
 
   test('reports equipment and explicit clearance conflicts with selectable node ids', () => {
     const overlapping = GlnBufferTankNode.parse({ ...tank, position: [2.1, 0, 2] })
-    expect(getGlnInstallationIssues(scene(outdoor, overlapping, outdoorZone))).toMatchObject([
+    expect(getGlnInstallationIssues(scene(outdoor, overlapping))).toMatchObject([
       { code: 'clearance-overlap', nodeIds: [outdoor.id, overlapping.id] },
     ])
   })

@@ -210,16 +210,6 @@ test('acceptance: rejected plans leave the persisted graph and version untouched
         data: { end: null },
       },
     },
-    {
-      expectedCode: 'gln-installation-area-kind-invalid',
-      id: 'acceptance-illegal-installation',
-      baseVersion: baseline.version,
-      operation: {
-        op: 'update',
-        id: fixture.ids.tank,
-        data: { installationAreaKind: 'outdoor-equipment-area' },
-      },
-    },
   ] as const
 
   for (const entry of cases) {

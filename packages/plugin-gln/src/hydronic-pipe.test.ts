@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'bun:test'
+import { glnHydronicPipeDefinition } from './hydronic-pipe-definition'
+import { buildGlnHydronicPipeFloorplan } from './hydronic-pipe-floorplan'
 import { buildGlnHydronicPipeGeometry } from './hydronic-pipe-geometry'
+import {
+  resolveHydronicInstallationPoint,
+  snapHydronicPointAlong45,
+  snapHydronicPointToWall,
+} from './hydronic-pipe-placement'
 import {
   areGlnHydronicEndpointsCompatible,
   getGlnHydronicPipePorts,
@@ -30,7 +37,70 @@ describe('GLN hydronic pipe', () => {
     expect(pipe.path).toHaveLength(3)
     expect(pipe.start?.portId).toBe('supply')
     expect(pipe.end?.portId).toBe('source-supply')
-    expect(buildGlnHydronicPipeGeometry(pipe).children).toHaveLength(3)
+    expect(pipe).toMatchObject({
+      pipeMaterial: 'pex',
+      insulationThicknessM: 0.01,
+      installationMode: 'ceiling',
+      serviceHeightM: 2.3,
+    })
+    expect(buildGlnHydronicPipeGeometry(pipe).children).toHaveLength(6)
+  })
+
+  test('reuses the shared plan path editor while keeping connected endpoints fixed', () => {
+    const pipe = GlnHydronicPipeNode.parse({
+      systemId: 'gln-system_ground',
+      path: [
+        [0, 2.3, 0],
+        [2, 2.3, 0],
+        [2, 2.3, 2],
+      ],
+    })
+    const floorplan = buildGlnHydronicPipeFloorplan(pipe, {
+      viewState: { selected: true, highlighted: false, hovered: false },
+    } as never)
+    const handles =
+      floorplan?.kind === 'group'
+        ? floorplan.children.filter((child) => child.kind === 'endpoint-handle')
+        : []
+
+    expect(handles).toHaveLength(1)
+    expect(handles[0]).toMatchObject({
+      affordance: 'move-path-point',
+      payload: { pointIndex: 1 },
+    })
+    expect(glnHydronicPipeDefinition.floorplanAffordances?.['move-path-point']).toBeDefined()
+  })
+
+  test('supports ceiling, wall-face, and through-wall placement without drainage semantics', () => {
+    const nodes = {
+      wall: {
+        id: 'wall_1',
+        type: 'wall',
+        parentId: 'level_1',
+        start: [0, 0],
+        end: [4, 0],
+        thickness: 0.2,
+      },
+    } as never
+
+    expect(snapHydronicPointToWall([2, 0.2], nodes, 'level_1')).toEqual([2, 0.125])
+    expect(
+      resolveHydronicInstallationPoint({
+        mode: 'wall',
+        point: [2, 2.3, 0.2],
+        nodes,
+        levelId: 'level_1',
+      }),
+    ).toEqual([2, 2.3, 0.125])
+    expect(
+      resolveHydronicInstallationPoint({
+        mode: 'through-wall',
+        point: [2, 2.3, -1],
+        nodes,
+        levelId: 'level_1',
+      }),
+    ).toEqual([2, 2.3, -1])
+    expect(snapHydronicPointAlong45([0, 2.3, 0], [1.7, 2.3, 0.4], 0.5)).toEqual([1.5, 2.3, 0])
   })
 
   test('exposes open supply or return tips without inferring topology from color or position', () => {

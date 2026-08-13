@@ -5,7 +5,7 @@ import { MaterialPaintPanel, triggerSFX, useEditor } from '@pascal-app/editor'
 import { resolveLocalizedLabel, usePascalTranslation } from '@pascal-app/i18n'
 import { useLiquidLineToolOptions } from '@pascal-app/nodes'
 import Image from 'next/image'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Tooltip,
   TooltipContent,
@@ -67,6 +67,18 @@ type MepItem = {
   labelKey: string
   iconSrc: string
   kind: MepToolKind
+}
+
+/**
+ * Optional host-specific category rendered alongside the built-in construction
+ * tools. It keeps domain tools in the familiar Build sidebar without adding a
+ * separate application rail panel.
+ */
+export type BuildTabExtraGroup = {
+  id: string
+  label: string
+  icon: ReactNode
+  content: ReactNode
 }
 
 // Same icons + ordering as the community Build sidebar, minus presets.
@@ -272,7 +284,7 @@ const MEP_TOOL_KINDS = new Set<string>([
   'pipe-trap',
 ])
 
-export function BuildTab() {
+export function BuildTab({ extraGroups = [] }: { extraGroups?: readonly BuildTabExtraGroup[] }) {
   const { t } = usePascalTranslation('editor')
   const { t: commonT } = usePascalTranslation('common')
   const { t: tNodes } = usePascalTranslation('nodes')
@@ -280,6 +292,7 @@ export function BuildTab() {
   const mode = useEditor((s) => s.mode)
   const follow = useLiquidLineToolOptions((s) => s.follow)
   const toggleFollow = useLiquidLineToolOptions((s) => s.toggleFollow)
+  const [openExtraGroupId, setOpenExtraGroupId] = useState<string | null>(null)
 
   // The fitting / follow tools are armed from a segment's panel, not a grid
   // tile — keep the segment tile lit so the panel (and the way back) stays
@@ -340,6 +353,7 @@ export function BuildTab() {
   }
 
   const handleTypeClick = useCallback((type: BuildType) => {
+    setOpenExtraGroupId(null)
     if (type.mode === 'material-paint') {
       activatePaintMode()
     } else if (type.id === 'mep') {
@@ -350,6 +364,18 @@ export function BuildTab() {
       activateBuildTool(type.kind)
     }
   }, [])
+
+  const activateExtraGroup = useCallback((id: string) => {
+    const ed = useEditor.getState()
+    ed.setPhase('structure')
+    ed.setStructureLayer('elements')
+    ed.setCatalogCategory(null)
+    ed.setMode('build')
+    ed.setTool(null)
+    setOpenExtraGroupId(id)
+  }, [])
+
+  const openExtraGroup = extraGroups.find((group) => group.id === openExtraGroupId) ?? null
 
   // On open, land on the first build tool — parity with the community Build
   // sidebar, so switching to Build immediately arms a usable tool. Skip when a
@@ -407,10 +433,49 @@ export function BuildTab() {
               </Tooltip>
             )
           })}
+          {extraGroups.map((group) => {
+            const active = group.id === openExtraGroup?.id
+            return (
+              <Tooltip key={group.id}>
+                <TooltipTrigger asChild>
+                  <button
+                    aria-label={group.label}
+                    className={cn(
+                      'group relative flex aspect-square items-center justify-center rounded-xl p-1 transition-all duration-200',
+                      active
+                        ? 'bg-primary/10 ring-1 ring-primary/50'
+                        : 'bg-muted/40 opacity-70 grayscale hover:bg-muted hover:opacity-100 hover:grayscale-0',
+                    )}
+                    data-build-extra-group={group.id}
+                    onClick={() => {
+                      triggerSFX('sfx:menu-click')
+                      activateExtraGroup(group.id)
+                    }}
+                    onMouseEnter={() => triggerSFX('sfx:menu-hover')}
+                    type="button"
+                  >
+                    <span className="flex size-full items-center justify-center text-muted-foreground transition-transform duration-200 group-hover:scale-110 group-hover:text-foreground">
+                      {group.icon}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="pointer-events-none" side="top">
+                  {group.label}
+                </TooltipContent>
+              </Tooltip>
+            )
+          })}
         </div>
       </TooltipProvider>
 
-      {mode === 'material-paint' ? (
+      {openExtraGroup ? (
+        <div
+          className="min-h-0 flex-1 overflow-y-auto"
+          data-build-extra-group-content={openExtraGroup.id}
+        >
+          {openExtraGroup.content}
+        </div>
+      ) : mode === 'material-paint' ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
           <MaterialPaintPanel />
         </div>

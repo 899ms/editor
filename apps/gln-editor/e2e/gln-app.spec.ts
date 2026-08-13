@@ -1,4 +1,5 @@
 import { type APIRequestContext, expect, test } from '@playwright/test'
+import { createResidentialGraph } from '../lib/create-residential-graph'
 
 const glnBaseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 const editorBaseUrl = process.env.EDITOR_E2E_BASE_URL ?? 'http://localhost:32102'
@@ -12,6 +13,8 @@ type SceneNode = {
   end?: [number, number]
   finish?: string
   id: string
+  installationAreaKind?: string
+  installationAreaZoneId?: string | null
   mode?: string
   metadata?: Record<string, unknown>
   name?: string
@@ -52,6 +55,123 @@ async function fetchNode(
   const scene = await fetchScene(request, baseUrl, sceneId)
   return scene.graph.nodes[nodeId]
 }
+
+test('keeps the scene navigation action clear of viewer toolbar controls', async ({ page }) => {
+  await page.setViewportSize({ width: 526, height: 800 })
+  await page.goto(`${glnBaseUrl}/scenes`)
+  await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
+  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 30_000 })
+
+  const toolbarActions = page.locator('[data-viewer-toolbar-actions]')
+  const allScenes = toolbarActions.getByRole('link', { name: '全部场景' })
+  await expect(toolbarActions).toBeVisible()
+  await expect(allScenes).toBeVisible()
+  const sceneBounds = await allScenes.boundingBox()
+  expect(sceneBounds).not.toBeNull()
+  if (!sceneBounds) return
+
+  const overlaps = await page.locator('button').evaluateAll(
+    (buttons, scene) =>
+      buttons
+        .map((button) => {
+          const bounds = button.getBoundingClientRect()
+          const visible = button.checkVisibility() && bounds.top < 96
+          return {
+            name: button.getAttribute('aria-label') ?? button.textContent?.trim() ?? '',
+            overlaps:
+              visible &&
+              scene.left < bounds.right &&
+              scene.right > bounds.left &&
+              scene.top < bounds.bottom &&
+              scene.bottom > bounds.top,
+          }
+        })
+        .filter((entry) => entry.overlaps)
+        .map((entry) => entry.name),
+    sceneBounds,
+  )
+  expect(overlaps).toEqual([])
+})
+
+test('exposes the GLN devices and hydronic modes, then places an unrestricted outdoor unit', async ({
+  page,
+  request,
+}) => {
+  await page.goto(`${glnBaseUrl}/scenes`)
+  await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
+  await page.getByRole('button', { name: '新建场景' }).first().click()
+  await expect(page).toHaveURL(/\/scene\/[^/]+$/, { timeout: 30_000 })
+  const sceneId = page.url().split('/').at(-1)
+  expect(sceneId).toBeTruthy()
+
+  const buildTab = page.getByRole('button', { name: '建造' })
+  await buildTab.click()
+  const glnCategory = page.locator('[data-build-extra-group="gln"]')
+  // The editor persists the previously open panel. If Build was already the
+  // active rail icon, the first click toggles it closed; reopen it for this
+  // catalog assertion.
+  if (!(await glnCategory.isVisible())) await buildTab.click()
+  await expect(glnCategory).toBeVisible()
+  await glnCategory.click()
+
+  const quickCatalog = page.locator('[data-gln-quick-equipment]')
+  await expect(quickCatalog).toBeVisible()
+  await expect(page.getByRole('button', { name: '选择外机' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '选择缓冲水箱' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '选择水管' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '选择面板' })).toBeVisible()
+
+  await page.getByRole('button', { name: '选择水管' }).click()
+  const installationMode = page.locator('[data-gln-hydronic-installation-mode]')
+  await expect(installationMode).toBeVisible()
+  await expect(installationMode.getByRole('button', { name: '天花板' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await installationMode.getByRole('button', { name: '沿墙' }).click()
+  await expect(installationMode).toHaveAttribute('data-gln-hydronic-installation-mode', 'wall')
+  await installationMode.getByRole('button', { name: '穿墙' }).click()
+  await expect(installationMode).toHaveAttribute(
+    'data-gln-hydronic-installation-mode',
+    'through-wall',
+  )
+  await expect(page.getByRole('spinbutton', { name: '水管安装高度' })).toHaveValue('2.3')
+
+  await page.getByRole('button', { name: '选择外机' }).click()
+  await expect(page.locator('[data-gln-client-node-types]')).toHaveAttribute(
+    'data-gln-client-node-types',
+    /gln:system/,
+  )
+
+  const canvas = page.locator('[data-pascal-viewer-3d] canvas')
+  await expect(canvas).toBeVisible()
+  const canvasBounds = await canvas.boundingBox()
+  expect(canvasBounds).not.toBeNull()
+  if (!(canvasBounds && sceneId)) return
+  await page.mouse.click(
+    canvasBounds.x + canvasBounds.width * 0.68,
+    canvasBounds.y + canvasBounds.height * 0.68,
+  )
+
+  await expect
+    .poll(async () => {
+      const scene = await fetchScene(request, glnBaseUrl, sceneId)
+      const unit = Object.values(scene.graph.nodes).find((node) => node.type === 'gln:outdoor-unit')
+      return unit
+        ? {
+            installationAreaKind: unit.installationAreaKind,
+            installationAreaZoneId: unit.installationAreaZoneId,
+            type: unit.type,
+          }
+        : null
+    })
+    .toEqual({
+      installationAreaKind: 'unassigned',
+      installationAreaZoneId: null,
+      type: 'gln:outdoor-unit',
+    })
+})
 
 test('keeps GLN scenes isolated and persists an edited residential scene', async ({
   page,
@@ -179,10 +299,7 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   expect(afterPreview.version).toBe(beforePreview.version)
   expect(afterPreview.graph).toEqual(beforePreview.graph)
   await page.getByRole('button', { name: '编辑视图' }).click()
-  await expect(page.locator('[data-gln-installation-area]')).toBeVisible()
-
-  await page.getByRole('combobox', { name: '安装空间' }).selectOption({ label: '设备阳台' })
-  await page.getByRole('combobox', { name: '区域用途' }).selectOption('outdoor-equipment-area')
+  await expect(page.locator('[data-gln-installation-area]')).toHaveCount(0)
   await page.getByRole('button', { name: /放置外机/ }).click()
   const canvas = page.locator('[data-pascal-viewer-3d] canvas')
   await expect(canvas).toBeVisible()
@@ -340,7 +457,6 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
     await page.getByRole('button', { name: '光冷暖设备' }).click()
   }
   await expect(page.locator('[data-gln-equipment-panel]')).toBeVisible({ timeout: 30_000 })
-  await page.getByRole('combobox', { name: '区域用途' }).selectOption('equipment-area')
   const placeTank = page.getByRole('button', { name: /放置缓冲水箱/ })
   await placeTank.click()
   await expect(placeTank).toHaveAttribute('aria-pressed', 'true')
@@ -362,6 +478,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
       initialTankPosition = tank?.position
       return tank
         ? {
+            installationAreaKind: tank.installationAreaKind,
+            installationAreaZoneId: tank.installationAreaZoneId,
             systemId: tank.systemId,
             type: tank.type,
             stratificationView: tank.stratificationView,
@@ -369,6 +487,8 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
         : null
     })
     .toEqual({
+      installationAreaKind: 'unassigned',
+      installationAreaZoneId: null,
       systemId: selectedSystemId,
       type: 'gln:buffer-tank',
       stratificationView: true,
@@ -565,4 +685,25 @@ test('keeps GLN scenes isolated and persists an edited residential scene', async
   await expect(page.getByRole('button', { name: '光冷暖系统' })).toHaveCount(0)
   const originalHealth = await request.get(`${editorBaseUrl}/api/health`)
   expect(await originalHealth.json()).toMatchObject({ app: 'editor', status: 'ok' })
+})
+
+test('deletes a GLN scene from the scene list after confirmation', async ({ page, request }) => {
+  const createResponse = await request.post(`${glnBaseUrl}/api/scenes`, {
+    data: { name: '待删除场景', graph: createResidentialGraph() },
+  })
+  expect(createResponse.status()).toBe(201)
+  const created = (await createResponse.json()) as { id: string }
+
+  await page.goto(`${glnBaseUrl}/scenes`)
+  await expect(page.getByRole('heading', { name: '我的场景' })).toBeVisible()
+
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .locator(`[data-scene-id="${created.id}"]`)
+    .getByRole('button', { name: '删除场景' })
+    .click()
+
+  await expect(page.getByText('待删除场景', { exact: true })).toHaveCount(0)
+  const missing = await request.get(`${glnBaseUrl}/api/scenes/${created.id}`)
+  expect(missing.status()).toBe(404)
 })

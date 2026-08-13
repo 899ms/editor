@@ -6,10 +6,11 @@ import {
   SceneLoader as EditorSceneLoader,
   type SceneMeta,
 } from '../../editor/components/scene-loader'
+import { GlnBuildTab } from './build-tab'
 
 export type { SceneMeta }
 
-type SceneLoaderProps = ComponentProps<typeof EditorSceneLoader>
+type SceneLoaderProps = Omit<ComponentProps<typeof EditorSceneLoader>, 'buildTabComponent'>
 
 function ClientSceneStateMarker() {
   const nodeTypes = useScene((state) =>
@@ -26,7 +27,7 @@ export function SceneLoader(props: SceneLoaderProps) {
   return (
     <>
       <ClientSceneStateMarker />
-      <EditorSceneLoader {...props} />
+      <EditorSceneLoader {...props} buildTabComponent={GlnBuildTab} />
     </>
   )
 }
