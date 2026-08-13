@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type APIRequestContext, expect, test } from '@playwright/test'
+import { type APIRequestContext, expect, type Locator, test } from '@playwright/test'
 import { writeSemanticResidenceGlb } from './acceptance-fixtures'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
@@ -23,6 +23,12 @@ async function fetchScene(request: APIRequestContext, sceneId: string) {
   return (await response.json()) as StoredScene
 }
 
+async function clickVisible(locator: Locator) {
+  await expect(locator).toBeVisible()
+  await expect(locator).toBeEnabled()
+  await locator.evaluate((element) => (element as HTMLElement).click())
+}
+
 test('analyzes a local GLB without upload and persists only a reconstruction report', async ({
   page,
   request,
@@ -42,10 +48,8 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   expect(sceneId).toBeTruthy()
   if (!sceneId) return
 
-  await page
-    .getByRole('button', { name: '住宅导入' })
-    .evaluate((element) => (element as HTMLButtonElement).click())
-  await page.getByRole('button', { name: 'GLB' }).click()
+  await clickVisible(page.getByRole('button', { name: '住宅导入' }))
+  await clickVisible(page.getByRole('button', { name: 'GLB' }))
   await expect(page.locator('[data-gln-glb-import-panel]')).toBeVisible()
   await page.locator('input[accept*=".glb"]').setInputFiles(fixture)
 
@@ -56,7 +60,7 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   const preview = page.locator('[data-gln-glb-low-res-view]')
   await expect(preview).toBeVisible()
   await expect(preview).toHaveAttribute('src', /^data:image\/svg\+xml,/)
-  await page.getByRole('button', { name: '保存检测报告' }).click()
+  await clickVisible(page.getByRole('button', { name: '保存检测报告' }))
 
   let importId = ''
   await expect
@@ -92,14 +96,14 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   await expect(canvas).toBeVisible()
   await page.waitForTimeout(500)
   const hiddenFrame = await canvas.screenshot()
-  await savedCard.getByRole('button', { name: '显示参考' }).click()
+  await clickVisible(savedCard.getByRole('button', { name: '显示参考' }))
   await expect(savedCard.getByRole('button', { name: '隐藏参考' })).toBeVisible()
   await page.waitForTimeout(500)
   const visibleFrame = await canvas.screenshot({
     path: testInfo.outputPath('glb-reference-visible.png'),
   })
   expect(hiddenFrame.equals(visibleFrame)).toBe(false)
-  await savedCard.getByRole('button', { name: '隐藏参考' }).click()
+  await clickVisible(savedCard.getByRole('button', { name: '隐藏参考' }))
   await expect
     .poll(
       async () =>
@@ -108,10 +112,8 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
     .toBe(false)
 
   await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
-  await page
-    .getByRole('button', { name: '住宅导入' })
-    .evaluate((element) => (element as HTMLButtonElement).click())
-  await page.getByRole('button', { name: 'GLB' }).click()
+  await clickVisible(page.getByRole('button', { name: '住宅导入' }))
+  await clickVisible(page.getByRole('button', { name: 'GLB' }))
   const reloadedCard = page.locator(`[data-gln-glb-saved-import="${importId}"]`)
   await expect(reloadedCard.getByText(/临时参考模型不在当前内存中/)).toBeVisible()
   await expect(reloadedCard.getByRole('button', { name: '显示参考' })).toBeDisabled()
@@ -122,7 +124,7 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
     'report-only',
   )
   await expect(reloadedCard.getByRole('button', { name: '显示参考' })).toBeEnabled()
-  await reloadedCard.getByRole('button', { name: '删除临时参考' }).click()
+  await clickVisible(reloadedCard.getByRole('button', { name: '删除临时参考' }))
   await expect(reloadedCard.getByText(/临时参考模型不在当前内存中/)).toBeVisible()
 
   const semanticFixture = testInfo.outputPath('semantic-residence.glb')
@@ -132,8 +134,12 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
     'data-gln-glb-report-status',
     'draft-ready',
   )
-  await page.getByRole('checkbox', { name: /确认以高置信可编辑草稿替换当前住宅/ }).check()
-  await page.getByRole('button', { name: '替换为可编辑住宅' }).click()
+  const confirmReplacement = page.getByRole('checkbox', {
+    name: /确认以高置信可编辑草稿替换当前住宅/,
+  })
+  await clickVisible(confirmReplacement)
+  await expect(confirmReplacement).toBeChecked()
+  await clickVisible(page.getByRole('button', { name: '替换为可编辑住宅' }))
 
   let editableWallId = ''
   await expect
