@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type APIRequestContext, expect, type Locator, test } from '@playwright/test'
+import { type APIRequestContext, expect, type Locator, type Page, test } from '@playwright/test'
 import { writeSemanticResidenceGlb } from './acceptance-fixtures'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
@@ -27,6 +27,13 @@ async function clickVisible(locator: Locator) {
   await expect(locator).toBeVisible()
   await expect(locator).toBeEnabled()
   await locator.evaluate((element) => (element as HTMLElement).click())
+}
+
+async function screenshotCanvas(page: Page, canvas: Locator, path?: string) {
+  const clip = await canvas.boundingBox()
+  expect(clip).not.toBeNull()
+  if (!clip) throw new Error('GLB reference canvas has no measurable bounds')
+  return page.screenshot({ clip, path })
 }
 
 test('analyzes a local GLB without upload and persists only a reconstruction report', async ({
@@ -95,13 +102,15 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   const canvas = page.locator('[data-pascal-viewer-3d] canvas')
   await expect(canvas).toBeVisible()
   await page.waitForTimeout(500)
-  const hiddenFrame = await canvas.screenshot()
+  const hiddenFrame = await screenshotCanvas(page, canvas)
   await clickVisible(savedCard.getByRole('button', { name: '显示参考' }))
   await expect(savedCard.getByRole('button', { name: '隐藏参考' })).toBeVisible()
   await page.waitForTimeout(500)
-  const visibleFrame = await canvas.screenshot({
-    path: testInfo.outputPath('glb-reference-visible.png'),
-  })
+  const visibleFrame = await screenshotCanvas(
+    page,
+    canvas,
+    testInfo.outputPath('glb-reference-visible.png'),
+  )
   expect(hiddenFrame.equals(visibleFrame)).toBe(false)
   await clickVisible(savedCard.getByRole('button', { name: '隐藏参考' }))
   await expect
