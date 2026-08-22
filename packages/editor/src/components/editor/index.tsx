@@ -1202,11 +1202,9 @@ export default function Editor({
         }
       } finally {
         if (!cancelled) {
+          finishSceneLoad()
           setIsSceneLoading(false)
           setHasLoadedInitialScene(true)
-          requestAnimationFrame(() => {
-            finishSceneLoad()
-          })
         }
       }
     }
