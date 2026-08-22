@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type APIRequestContext, expect, type Locator, type Page, test } from '@playwright/test'
+import { type APIRequestContext, expect, type Locator, test } from '@playwright/test'
 import { writeSemanticResidenceGlb } from './acceptance-fixtures'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
@@ -29,39 +29,21 @@ async function clickVisible(locator: Locator) {
   await locator.evaluate((element) => (element as HTMLElement).click())
 }
 
-async function captureCanvas(page: Page, canvas: Locator) {
-  const box = await canvas.boundingBox()
-  const viewport = page.viewportSize()
-  expect(box).not.toBeNull()
-  expect(viewport).not.toBeNull()
-  if (!box || !viewport) throw new Error('GLB reference canvas has no measurable bounds')
+async function canvasPixelDigest(canvas: Locator) {
+  return canvas.evaluate(async (element) => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+    const target = element as HTMLCanvasElement
+    const gl =
+      target.getContext('webgl2', { preserveDrawingBuffer: false }) ??
+      target.getContext('webgl', { preserveDrawingBuffer: false })
+    if (!gl) throw new Error('GLB reference canvas has no WebGL context')
 
-  const screenshot = await page.screenshot()
-  const croppedDataUrl = await page.evaluate(
-    async ({ box, screenshotBase64, viewport }) => {
-      const image = new Image()
-      image.src = `data:image/png;base64,${screenshotBase64}`
-      await image.decode()
-
-      const scaleX = image.naturalWidth / viewport.width
-      const scaleY = image.naturalHeight / viewport.height
-      const left = Math.max(0, Math.floor(box.x * scaleX))
-      const top = Math.max(0, Math.floor(box.y * scaleY))
-      const right = Math.min(image.naturalWidth, Math.ceil((box.x + box.width) * scaleX))
-      const bottom = Math.min(image.naturalHeight, Math.ceil((box.y + box.height) * scaleY))
-      const crop = document.createElement('canvas')
-      crop.width = right - left
-      crop.height = bottom - top
-      const context = crop.getContext('2d')
-      if (!context || crop.width <= 0 || crop.height <= 0) {
-        throw new Error('GLB reference canvas is outside the screenshot viewport')
-      }
-      context.drawImage(image, left, top, crop.width, crop.height, 0, 0, crop.width, crop.height)
-      return crop.toDataURL('image/png')
-    },
-    { box, screenshotBase64: screenshot.toString('base64'), viewport },
-  )
-  return Buffer.from(croppedDataUrl.split(',')[1] ?? '', 'base64')
+    gl.finish()
+    const pixels = new Uint8Array(target.width * target.height * 4)
+    gl.readPixels(0, 0, target.width, target.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+    const digest = await crypto.subtle.digest('SHA-256', pixels)
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  })
 }
 
 test('analyzes a local GLB without upload and persists only a reconstruction report', async ({
@@ -130,16 +112,12 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   const canvas = page.locator('[data-pascal-viewer-3d] canvas')
   await expect(canvas).toBeVisible()
   await page.waitForTimeout(500)
-  const hiddenFrame = await captureCanvas(page, canvas)
+  const hiddenFrameDigest = await canvasPixelDigest(canvas)
   await clickVisible(savedCard.getByRole('button', { name: '显示参考' }))
   await expect(savedCard.getByRole('button', { name: '隐藏参考' })).toBeVisible()
   await page.waitForTimeout(500)
-  const visibleFrame = await captureCanvas(page, canvas)
-  await testInfo.attach('glb-reference-visible.png', {
-    body: visibleFrame,
-    contentType: 'image/png',
-  })
-  expect(hiddenFrame.equals(visibleFrame)).toBe(false)
+  const visibleFrameDigest = await canvasPixelDigest(canvas)
+  expect(visibleFrameDigest).not.toBe(hiddenFrameDigest)
   await clickVisible(savedCard.getByRole('button', { name: '隐藏参考' }))
   await expect
     .poll(
