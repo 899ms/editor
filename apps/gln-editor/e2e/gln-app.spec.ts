@@ -94,6 +94,39 @@ test('keeps the scene navigation action clear of viewer toolbar controls', async
   expect(overlaps).toEqual([])
 })
 
+test('does not create a new scene version when the editor only loads the scene', async ({
+  page,
+  request,
+}) => {
+  const createResponse = await request.post(`${glnBaseUrl}/api/scenes`, {
+    data: { name: '仅加载不保存', graph: createResidentialGraph() },
+  })
+  expect(createResponse.status()).toBe(201)
+  const created = (await createResponse.json()) as { id: string }
+  const beforeLoad = await fetchScene(request, glnBaseUrl, created.id)
+  let putRequestCount = 0
+
+  page.on('request', (browserRequest) => {
+    if (
+      browserRequest.method() === 'PUT' &&
+      browserRequest.url() === `${glnBaseUrl}/api/scenes/${created.id}`
+    ) {
+      putRequestCount += 1
+    }
+  })
+
+  await page.goto(`${glnBaseUrl}/scene/${created.id}`)
+  await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
+  await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
+  await page.waitForTimeout(1_500)
+
+  const afterLoad = await fetchScene(request, glnBaseUrl, created.id)
+  expect(putRequestCount).toBe(0)
+  expect(afterLoad.version).toBe(beforeLoad.version)
+  expect(afterLoad.graph).toEqual(beforeLoad.graph)
+})
+
 test('exposes the GLN devices and hydronic modes, then places an unrestricted outdoor unit', async ({
   page,
   request,

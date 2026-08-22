@@ -67,7 +67,9 @@ export function useAutoSave({
 }: UseAutoSaveOptions): { isLoadingSceneRef: MutableRefObject<boolean> } {
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const isSavingRef = useRef(false)
-  const isLoadingSceneRef = useRef(false)
+  // Child plugin effects mount before the Editor's scene-loading effect, so
+  // autosave must start paused to avoid treating mandatory registration as an edit.
+  const isLoadingSceneRef = useRef(true)
   const pendingSaveRef = useRef(false)
   const executeSaveRef = useRef<(() => Promise<void>) | null>(null)
   const hasDirtyChangesRef = useRef(false)
