@@ -1131,7 +1131,7 @@ export default function Editor({
 
   useKeyboard({ isVersionPreviewMode, disabled: isFirstPersonMode || isStudioMode })
 
-  const { isLoadingSceneRef } = useAutoSave({
+  const { beginSceneLoad, finishSceneLoad, markSceneHydrated } = useAutoSave({
     onSave,
     onDirty,
     onSaveStatusChange,
@@ -1177,7 +1177,7 @@ export default function Editor({
     let cancelled = false
 
     async function load() {
-      isLoadingSceneRef.current = true
+      beginSceneLoad()
       setHasLoadedInitialScene(false)
       setIsViewerSceneReady(false)
       setIsSceneLoading(true)
@@ -1188,12 +1188,14 @@ export default function Editor({
         const sceneGraph = onLoad ? await onLoad() : loadSceneFromLocalStorage()
         if (!cancelled) {
           applySceneGraphToEditor(sceneGraph)
+          markSceneHydrated()
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
       } catch {
         if (!cancelled) {
           applySceneGraphToEditor(null)
+          markSceneHydrated()
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
@@ -1202,7 +1204,7 @@ export default function Editor({
           setIsSceneLoading(false)
           setHasLoadedInitialScene(true)
           requestAnimationFrame(() => {
-            isLoadingSceneRef.current = false
+            finishSceneLoad()
           })
         }
       }
@@ -1213,7 +1215,7 @@ export default function Editor({
     return () => {
       cancelled = true
     }
-  }, [onLoad, isLoadingSceneRef])
+  }, [beginSceneLoad, finishSceneLoad, markSceneHydrated, onLoad])
 
   // Apply preview scene when version preview mode changes
   useEffect(() => {
