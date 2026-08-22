@@ -1178,6 +1178,7 @@ export default function Editor({
 
     async function load() {
       beginSceneLoad()
+      useScene.getState().setReadOnly(true)
       setHasLoadedInitialScene(false)
       setIsViewerSceneReady(false)
       setIsSceneLoading(true)
@@ -1224,16 +1225,18 @@ export default function Editor({
     }
   }, [isVersionPreviewMode, previewScene])
 
-  // Lock scene graph and reset to select mode when entering version preview
+  // Keep the graph locked until its persisted baseline is applied. The editor
+  // shell and plugin panels can render before this effect finishes on fast CI
+  // clients, so allowing edits earlier can make hydration overwrite user work.
   useEffect(() => {
-    useScene.getState().setReadOnly(isVersionPreviewMode)
+    useScene.getState().setReadOnly(isVersionPreviewMode || !hasLoadedInitialScene)
     if (isVersionPreviewMode) {
       useEditor.getState().setMode('select')
     }
     return () => {
       useScene.getState().setReadOnly(false)
     }
-  }, [isVersionPreviewMode])
+  }, [hasLoadedInitialScene, isVersionPreviewMode])
 
   useEffect(() => {
     document.body.classList.add('dark')
