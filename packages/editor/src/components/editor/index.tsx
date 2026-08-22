@@ -1349,6 +1349,11 @@ export default function Editor({
     }
 
     const renderTabContent = (tabId: string) => {
+      // Do not mount interactive panels until the scene baseline and autosave
+      // subscription are ready. Fast clients can otherwise invoke a panel
+      // handler before passive effects subscribe to the scene store.
+      if (!hasLoadedInitialScene) return null
+
       // Built-in panels
       if (tabId === 'site') {
         return <SitePanel {...sitePanelProps} />
