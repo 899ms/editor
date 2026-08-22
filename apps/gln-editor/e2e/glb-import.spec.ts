@@ -29,11 +29,39 @@ async function clickVisible(locator: Locator) {
   await locator.evaluate((element) => (element as HTMLElement).click())
 }
 
-async function screenshotCanvas(page: Page, canvas: Locator, path?: string) {
-  const clip = await canvas.boundingBox()
-  expect(clip).not.toBeNull()
-  if (!clip) throw new Error('GLB reference canvas has no measurable bounds')
-  return page.screenshot({ clip, path })
+async function captureCanvas(page: Page, canvas: Locator) {
+  const box = await canvas.boundingBox()
+  const viewport = page.viewportSize()
+  expect(box).not.toBeNull()
+  expect(viewport).not.toBeNull()
+  if (!box || !viewport) throw new Error('GLB reference canvas has no measurable bounds')
+
+  const screenshot = await page.screenshot()
+  const croppedDataUrl = await page.evaluate(
+    async ({ box, screenshotBase64, viewport }) => {
+      const image = new Image()
+      image.src = `data:image/png;base64,${screenshotBase64}`
+      await image.decode()
+
+      const scaleX = image.naturalWidth / viewport.width
+      const scaleY = image.naturalHeight / viewport.height
+      const left = Math.max(0, Math.floor(box.x * scaleX))
+      const top = Math.max(0, Math.floor(box.y * scaleY))
+      const right = Math.min(image.naturalWidth, Math.ceil((box.x + box.width) * scaleX))
+      const bottom = Math.min(image.naturalHeight, Math.ceil((box.y + box.height) * scaleY))
+      const crop = document.createElement('canvas')
+      crop.width = right - left
+      crop.height = bottom - top
+      const context = crop.getContext('2d')
+      if (!context || crop.width <= 0 || crop.height <= 0) {
+        throw new Error('GLB reference canvas is outside the screenshot viewport')
+      }
+      context.drawImage(image, left, top, crop.width, crop.height, 0, 0, crop.width, crop.height)
+      return crop.toDataURL('image/png')
+    },
+    { box, screenshotBase64: screenshot.toString('base64'), viewport },
+  )
+  return Buffer.from(croppedDataUrl.split(',')[1] ?? '', 'base64')
 }
 
 test('analyzes a local GLB without upload and persists only a reconstruction report', async ({
@@ -102,15 +130,15 @@ test('analyzes a local GLB without upload and persists only a reconstruction rep
   const canvas = page.locator('[data-pascal-viewer-3d] canvas')
   await expect(canvas).toBeVisible()
   await page.waitForTimeout(500)
-  const hiddenFrame = await screenshotCanvas(page, canvas)
+  const hiddenFrame = await captureCanvas(page, canvas)
   await clickVisible(savedCard.getByRole('button', { name: '显示参考' }))
   await expect(savedCard.getByRole('button', { name: '隐藏参考' })).toBeVisible()
   await page.waitForTimeout(500)
-  const visibleFrame = await screenshotCanvas(
-    page,
-    canvas,
-    testInfo.outputPath('glb-reference-visible.png'),
-  )
+  const visibleFrame = await captureCanvas(page, canvas)
+  await testInfo.attach('glb-reference-visible.png', {
+    body: visibleFrame,
+    contentType: 'image/png',
+  })
   expect(hiddenFrame.equals(visibleFrame)).toBe(false)
   await clickVisible(savedCard.getByRole('button', { name: '隐藏参考' }))
   await expect
