@@ -1,7 +1,7 @@
 'use client'
 
 import { emitter, useScene } from '@pascal-app/core'
-import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { type SceneGraph, saveSceneToLocalStorage } from '../lib/scene'
 
 const AUTOSAVE_DEBOUNCE_MS = 1000
@@ -44,6 +44,16 @@ export function shouldFlushAutosaveOnCleanup({
   return hasDirtyChanges && !isLoadingScene
 }
 
+export function shouldQueueSceneLoadChange({
+  changed,
+  hasHydratedScene,
+}: {
+  changed: boolean
+  hasHydratedScene: boolean
+}) {
+  return changed && hasHydratedScene
+}
+
 export type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'paused' | 'error'
 
 interface UseAutoSaveOptions {
@@ -64,10 +74,17 @@ export function useAutoSave({
   onDirty,
   onSaveStatusChange,
   isVersionPreviewMode = false,
-}: UseAutoSaveOptions): { isLoadingSceneRef: MutableRefObject<boolean> } {
+}: UseAutoSaveOptions): {
+  beginSceneLoad: () => void
+  finishSceneLoad: () => void
+  markSceneHydrated: () => void
+} {
   const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const isSavingRef = useRef(false)
-  const isLoadingSceneRef = useRef(false)
+  // Child plugin effects mount before the Editor's scene-loading effect, so
+  // autosave must start paused to avoid treating mandatory registration as an edit.
+  const isLoadingSceneRef = useRef(true)
+  const hasHydratedSceneRef = useRef(false)
   const pendingSaveRef = useRef(false)
   const executeSaveRef = useRef<(() => Promise<void>) | null>(null)
   const hasDirtyChangesRef = useRef(false)
@@ -94,6 +111,32 @@ export function useAutoSave({
   const setSaveStatus = useCallback((status: SaveStatus) => {
     onSaveStatusChangeRef.current?.(status)
   }, [])
+
+  const beginSceneLoad = useCallback(() => {
+    isLoadingSceneRef.current = true
+    hasHydratedSceneRef.current = false
+  }, [])
+
+  const markSceneHydrated = useCallback(() => {
+    hasHydratedSceneRef.current = true
+  }, [])
+
+  const finishSceneLoad = useCallback(() => {
+    isLoadingSceneRef.current = false
+
+    if (!(hasDirtyChangesRef.current && !isVersionPreviewModeRef.current)) {
+      setSaveStatus(isVersionPreviewModeRef.current ? 'paused' : 'saved')
+      return
+    }
+
+    setSaveStatus('pending')
+    if (isSavingRef.current || saveTimeoutRef.current) return
+
+    saveTimeoutRef.current = setTimeout(() => {
+      saveTimeoutRef.current = undefined
+      executeSaveRef.current?.()
+    }, AUTOSAVE_DEBOUNCE_MS)
+  }, [setSaveStatus])
 
   // Stable subscription to scene changes
   useEffect(() => {
@@ -174,10 +217,29 @@ export function useAutoSave({
 
     const unsubscribe = useScene.subscribe((state) => {
       if (isLoadingSceneRef.current) {
-        lastNodesSnapshot = JSON.stringify(state.nodes)
+        const currentNodesSnapshot = JSON.stringify(state.nodes)
+        const changed =
+          currentNodesSnapshot !== lastNodesSnapshot ||
+          state.collections !== lastCollectionsRef ||
+          state.materials !== lastMaterialsRef ||
+          state.installedPlugins !== lastInstalledPluginsRef
+
+        lastNodesSnapshot = currentNodesSnapshot
         lastCollectionsRef = state.collections
         lastMaterialsRef = state.materials
         lastInstalledPluginsRef = state.installedPlugins
+
+        if (
+          shouldQueueSceneLoadChange({
+            changed,
+            hasHydratedScene: hasHydratedSceneRef.current,
+          })
+        ) {
+          hasDirtyChangesRef.current = true
+          pendingSaveRef.current = true
+          onDirtyRef.current?.()
+          setSaveStatus('paused')
+        }
         return
       }
 
@@ -304,5 +366,5 @@ export function useAutoSave({
     setSaveStatus('saved')
   }, [isVersionPreviewMode, setSaveStatus])
 
-  return { isLoadingSceneRef }
+  return { beginSceneLoad, finishSceneLoad, markSceneHydrated }
 }

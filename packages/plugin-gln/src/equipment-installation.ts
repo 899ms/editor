@@ -1,13 +1,12 @@
-import type { AnyNode, AnyNodeId, ZoneNode } from '@pascal-app/core'
+import type { AnyNode, AnyNodeId } from '@pascal-app/core'
 import type { GlnBufferTankNode } from './buffer-tank-schema'
-import type { GlnEquipmentInstallationAreaKind } from './equipment-installation-schema'
 import type { GlnOutdoorUnitNode } from './outdoor-unit-schema'
 
 type GlnFloorEquipmentNode = GlnOutdoorUnitNode | GlnBufferTankNode
 type GlnSceneNode = AnyNode | GlnFloorEquipmentNode
 
 export type GlnInstallationIssue = {
-  code: 'area-unassigned' | 'area-kind-invalid' | 'outside-confirmed-area' | 'clearance-overlap'
+  code: 'clearance-overlap'
   message: string
   nodeIds: string[]
 }
@@ -18,23 +17,6 @@ type Rect = {
   halfDepth: number
   halfWidth: number
   yaw: number
-}
-
-function pointInPolygon(point: Point, polygon: readonly Point[]) {
-  let inside = false
-  for (let index = 0, previous = polygon.length - 1; index < polygon.length; previous = index++) {
-    const currentPoint = polygon[index]!
-    const previousPoint = polygon[previous]!
-    const x = currentPoint[0]!
-    const z = currentPoint[1]!
-    const previousX = previousPoint[0]!
-    const previousZ = previousPoint[1]!
-    const intersects =
-      z > point[1] !== previousZ > point[1] &&
-      point[0] < ((previousX - x) * (point[1] - z)) / (previousZ - z) + x
-    if (intersects) inside = !inside
-  }
-  return inside
 }
 
 function toClearanceRect(node: GlnFloorEquipmentNode): Rect {
@@ -94,59 +76,17 @@ function isFloorEquipment(node: GlnSceneNode): node is GlnFloorEquipmentNode {
   return node.type === 'gln:outdoor-unit' || node.type === 'gln:buffer-tank'
 }
 
-function isAreaKindAllowed(node: GlnFloorEquipmentNode, kind: GlnEquipmentInstallationAreaKind) {
-  return node.type === 'gln:outdoor-unit'
-    ? kind === 'outdoor-equipment-area'
-    : kind === 'equipment-room' || kind === 'mechanical-room' || kind === 'equipment-area'
-}
-
 function nodeName(node: GlnSceneNode) {
   return node.name?.trim() || (node.type === 'gln:outdoor-unit' ? '外机' : '缓冲水箱')
 }
 
 /**
- * Scene-level validation for confirmed installation areas and explicitly
- * entered service clearances. It does not manufacture product requirements;
- * only values the user has supplied become part of the clearance envelope.
+ * Scene-level validation for explicitly entered service clearances. Installation
+ * area fields remain optional metadata and never block equipment placement.
  */
 export function getGlnInstallationIssues(nodes: Readonly<Record<AnyNodeId, GlnSceneNode>>) {
   const equipment = Object.values(nodes).filter(isFloorEquipment)
   const issues: GlnInstallationIssue[] = []
-
-  for (const node of equipment) {
-    const zone = node.installationAreaZoneId
-      ? (nodes[node.installationAreaZoneId as AnyNodeId] as ZoneNode | undefined)
-      : undefined
-    if (zone?.type !== 'zone') {
-      issues.push({
-        code: 'area-unassigned',
-        message: `${nodeName(node)}未选择已确认的安装区域。`,
-        nodeIds: [node.id],
-      })
-      continue
-    }
-    if (!isAreaKindAllowed(node, node.installationAreaKind)) {
-      issues.push({
-        code: 'area-kind-invalid',
-        message:
-          node.type === 'gln:outdoor-unit'
-            ? '外机只能放在确认的室外设备区。'
-            : '缓冲水箱只能放在设备间、机房或已确认设备区。',
-        nodeIds: [node.id, zone.id],
-      })
-      continue
-    }
-    if (
-      zone.parentId !== node.parentId ||
-      !rectCorners(toClearanceRect(node)).every((corner) => pointInPolygon(corner, zone.polygon))
-    ) {
-      issues.push({
-        code: 'outside-confirmed-area',
-        message: `${nodeName(node)}或其已填写净空超出确认安装区域。`,
-        nodeIds: [node.id, zone.id],
-      })
-    }
-  }
 
   for (let index = 0; index < equipment.length; index++) {
     const left = equipment[index]!

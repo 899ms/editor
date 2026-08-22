@@ -4,6 +4,12 @@ import { z } from 'zod'
 export const GlnHydronicCircuit = z.enum(['supply', 'return'])
 export type GlnHydronicCircuit = z.infer<typeof GlnHydronicCircuit>
 
+export const GlnHydronicInstallationMode = z.enum(['ceiling', 'wall', 'through-wall'])
+export type GlnHydronicInstallationMode = z.infer<typeof GlnHydronicInstallationMode>
+
+export const GlnHydronicPipeMaterial = z.enum(['pex', 'pp-r', 'copper', 'stainless-steel'])
+export type GlnHydronicPipeMaterial = z.infer<typeof GlnHydronicPipeMaterial>
+
 export const GlnHydronicRouteStrategy = z.enum(['manual', 'ceiling', 'ceiling-riser'])
 export type GlnHydronicRouteStrategy = z.infer<typeof GlnHydronicRouteStrategy>
 
@@ -45,6 +51,10 @@ export const GlnHydronicPipeNode = BaseNode.extend({
       [1, 2.5, 0],
     ]),
   diameterIn: z.number().min(0.25).max(2).default(1),
+  pipeMaterial: GlnHydronicPipeMaterial.default('pex'),
+  insulationThicknessM: z.number().min(0).max(0.08).default(0.01),
+  installationMode: GlnHydronicInstallationMode.default('ceiling'),
+  serviceHeightM: z.number().min(0.1).max(6).default(2.3),
   start: GlnPipeEndpoint.nullable().default(null),
   end: GlnPipeEndpoint.nullable().default(null),
   concealed: z.boolean().default(true),

@@ -133,6 +133,7 @@ export {
   GLN_OUTDOOR_UNIT_PRESETS,
   GLN_WALL_PANEL_PRESETS,
 } from './equipment-presets'
+export { useGlnEquipmentStore } from './equipment-store'
 export {
   buildGlbReportScene,
   buildGlbResidentialReplacement,

@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./shared/polyline-path-affordance": {
+      "types": "./dist/shared/polyline-path-affordance.d.ts",
+      "import": "./dist/shared/polyline-path-affordance.js",
+      "default": "./dist/shared/polyline-path-affordance.js"
     }
   },
   "files": [

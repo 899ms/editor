@@ -279,21 +279,19 @@ test('requires the requested system count and a complete non-duplicated closed l
   })
   expect(splitReport.completenessIssues.map((issue) => issue.code)).toContain('missing-panel-loop')
 
-  const invalidExistingPlacement = structuredClone(graph)
-  const misplacedOutdoor = invalidExistingPlacement.nodes[
-    'gln-outdoor-unit_primary'
-  ] as unknown as {
+  const unrestrictedPlacement = structuredClone(graph)
+  const movedOutdoor = unrestrictedPlacement.nodes['gln-outdoor-unit_primary'] as unknown as {
     position: [number, number, number]
   }
-  misplacedOutdoor.position = [50, 0, 50]
+  movedOutdoor.position = [50, 0, 50]
   const placementReport = analyzeGlnConfiguration({
-    beforeGraph: invalidExistingPlacement,
-    afterGraph: invalidExistingPlacement,
+    beforeGraph: unrestrictedPlacement,
+    afterGraph: unrestrictedPlacement,
     request: { targetSystemCount: 1 },
     touchedNodeIds: ['gln-system_primary'],
   })
-  expect(placementReport.status).toBe('needs-review')
-  expect(placementReport.reviewItems.map((item) => item.code)).toContain('installation')
+  expect(placementReport.status).toBe('ready')
+  expect(placementReport.reviewItems.map((item) => item.code)).not.toContain('installation')
 })
 
 test('routes unresolved placement and concealed paths into an explicit review queue', () => {
@@ -310,9 +308,9 @@ test('routes unresolved placement and concealed paths into an explicit review qu
     previewIssues: [
       {
         severity: 'error',
-        code: 'gln-installation-outside-confirmed-area',
-        message: '外机超出确认安装区域。',
-        nodeIds: ['gln-outdoor-unit_primary'],
+        code: 'gln-installation-clearance-overlap',
+        message: '设备检修净距重叠。',
+        nodeIds: ['gln-outdoor-unit_primary', 'gln-buffer-tank_primary'],
       },
     ],
   })
@@ -322,7 +320,7 @@ test('routes unresolved placement and concealed paths into an explicit review qu
     onlyReviewableGlnPlacementErrors([
       {
         severity: 'error',
-        code: 'gln-installation-outside-confirmed-area',
+        code: 'gln-installation-clearance-overlap',
         message: '待复核',
       },
     ]),

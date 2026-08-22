@@ -4,6 +4,7 @@ import { emitter, type GridEvent, type NodePort, nodeRegistry, useScene } from '
 import {
   CursorSphere,
   EDITOR_LAYER,
+  isAngleSnapActive,
   isGridSnapActive,
   markToolCancelConsumed,
   triggerSFX,
@@ -15,6 +16,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { BufferGeometry, LineBasicMaterial, Vector3 } from 'three'
 import { useGlnEquipmentStore } from './equipment-store'
 import { glnHydronicPipeDefinition } from './hydronic-pipe-definition'
+import {
+  resolveHydronicInstallationPoint,
+  snapHydronicPointAlong45,
+} from './hydronic-pipe-placement'
 import {
   areGlnHydronicEndpointsCompatible,
   isGlnHydronicPortCompatible,
@@ -62,11 +67,25 @@ export default function GlnHydronicPipeTool() {
       const store = useGlnEquipmentStore.getState()
       if (!store.systemId || !store.hydronicCircuit) return null
       const grid = isGridSnapActive() ? useEditor.getState().gridSnapStep : 0
-      const raw: Point = [event.localPosition[0], 2.5, event.localPosition[2]]
-      const snapped: Point =
+      const raw: Point = [
+        event.localPosition[0],
+        store.hydronicServiceHeightM,
+        event.localPosition[2],
+      ]
+      let snapped: Point =
         grid > 0
           ? [Math.round(raw[0] / grid) * grid, raw[1], Math.round(raw[2] / grid) * grid]
           : raw
+      const previous = pointsRef.current.at(-1)
+      if (previous && isAngleSnapActive()) {
+        snapped = snapHydronicPointAlong45(previous, snapped, grid)
+      }
+      snapped = resolveHydronicInstallationPoint({
+        mode: store.hydronicInstallationMode,
+        point: snapped,
+        nodes: useScene.getState().nodes,
+        levelId: activeLevelId,
+      })
       const first = endpointsRef.current[0] ?? null
       const candidate = event.nativeEvent?.altKey
         ? null
@@ -98,6 +117,9 @@ export default function GlnHydronicPipeTool() {
         systemId: store.systemId,
         circuit: store.hydronicCircuit,
         path: draft,
+        installationMode: store.hydronicInstallationMode,
+        serviceHeightM: store.hydronicServiceHeightM,
+        concealed: true,
         start: start.endpoint,
         end: end.endpoint,
       })

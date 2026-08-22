@@ -192,6 +192,8 @@ const TECHNICAL_TEXT_ALLOWLIST = new Set([
   'MIT',
   'MCP',
   'PDF',
+  'PEX',
+  'PP-R',
   'Pascal',
   'Q',
   'R',

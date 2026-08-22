@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 
-test('places a buffer tank from the 2D floor plan', async ({ page, request }) => {
+test('places an unrestricted buffer tank from the 2D floor plan', async ({ page, request }) => {
   test.setTimeout(240_000)
   await page.goto(`${baseUrl}/scenes`)
   await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
@@ -16,60 +16,9 @@ test('places a buffer tank from the 2D floor plan', async ({ page, request }) =>
   const sceneId = new URL(page.url()).pathname.split('/').at(-1)
   expect(sceneId).toBeTruthy()
 
-  const initialResponse = await request.get(`${baseUrl}/api/scenes/${sceneId}`)
-  expect(initialResponse.ok()).toBe(true)
-  const initialScene = (await initialResponse.json()) as {
-    graph: {
-      nodes: Record<
-        string,
-        {
-          children?: string[]
-          id: string
-          type: string
-        }
-      >
-    }
-    version: number
-  }
-  const level = Object.values(initialScene.graph.nodes).find((node) => node.type === 'level')
-  expect(level).toBeTruthy()
-  if (!level) return
-  const graph = structuredClone(initialScene.graph)
-  const zoneId = 'zone_buffer_tank_equipment'
-  graph.nodes[level.id]!.children = [...(graph.nodes[level.id]!.children ?? []), zoneId]
-  graph.nodes[zoneId] = {
-    id: zoneId,
-    type: 'zone',
-    parentId: level.id,
-    name: '水箱设备区',
-    visible: false,
-    polygon: [
-      [-20, -20],
-      [20, -20],
-      [20, 20],
-      [-20, 20],
-    ],
-    autoFromWalls: false,
-    boundaryWallIds: [],
-    color: '#3b82f6',
-    metadata: {},
-    object: 'node',
-  } as never
-  const seedResponse = await request.put(`${baseUrl}/api/scenes/${sceneId}`, {
-    data: {
-      graph,
-      name: '水箱二维放置测试',
-      expectedVersion: initialScene.version,
-    },
-  })
-  expect(seedResponse.ok()).toBe(true)
-  await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
-
   await page.getByRole('button', { name: '光冷暖系统' }).click()
   await page.getByRole('button', { name: '新建系统' }).click()
   await page.getByRole('button', { name: '光冷暖设备' }).click()
-  await page.getByRole('combobox', { name: '安装空间' }).selectOption({ label: '水箱设备区' })
-  await page.getByRole('combobox', { name: '区域用途' }).selectOption('equipment-area')
   await expect(page.locator('[class*="pascal-loader-"]')).toHaveCount(0, { timeout: 120_000 })
   const twoDimensionalView = page.getByRole('button', { name: '2D' })
   await twoDimensionalView.evaluate((element) => (element as HTMLButtonElement).click())

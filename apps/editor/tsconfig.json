@@ -19,8 +19,8 @@
   ],
   "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx"],
   "references": [
-    { "path": "../../packages/core" },
-    { "path": "../../packages/i18n" },
-    { "path": "../../packages/viewer" }
+    { "path": "../../packages/core/tsconfig.json" },
+    { "path": "../../packages/i18n/tsconfig.json" },
+    { "path": "../../packages/viewer/tsconfig.json" }
   ]
 }

@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { type APIRequestContext, expect, test } from '@playwright/test'
+import { type APIRequestContext, expect, type Locator, test } from '@playwright/test'
 
 const baseUrl = process.env.GLN_E2E_BASE_URL ?? 'http://127.0.0.1:32103'
 const fixture = path.resolve(
@@ -22,6 +22,12 @@ async function fetchScene(request: APIRequestContext, sceneId: string) {
   return (await response.json()) as StoredScene
 }
 
+async function clickVisible(locator: Locator) {
+  await expect(locator).toBeVisible()
+  await expect(locator).toBeEnabled()
+  await locator.evaluate((element) => (element as HTMLElement).click())
+}
+
 test('rebuilds a local IFC as editable residential nodes without configuring GLN equipment', async ({
   page,
   request,
@@ -42,7 +48,7 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
   expect(sceneId).toBeTruthy()
   if (!sceneId) return
 
-  await page.getByRole('button', { name: '住宅导入' }).click()
+  await clickVisible(page.getByRole('button', { name: '住宅导入' }))
   await expect(page.locator('[data-gln-ifc-import-panel]')).toBeVisible({ timeout: 30_000 })
   await page.locator('input[type="file"]').setInputFiles(fixture)
   const report = page.locator('[data-gln-ifc-report-status]')
@@ -51,8 +57,12 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
   })
   await expect(report.getByText('04-ifc-open-house.ifc')).toBeVisible()
   await expect(page.getByRole('button', { name: '替换为可编辑住宅' })).toBeDisabled()
-  await page.getByRole('checkbox', { name: /确认以这份可编辑住宅草稿替换当前住宅/ }).check()
-  await page.getByRole('button', { name: '替换为可编辑住宅' }).click()
+  const confirmReplacement = page.getByRole('checkbox', {
+    name: /确认以这份可编辑住宅草稿替换当前住宅/,
+  })
+  await clickVisible(confirmReplacement)
+  await expect(confirmReplacement).toBeChecked()
+  await clickVisible(page.getByRole('button', { name: '替换为可编辑住宅' }))
 
   let importId = ''
   await expect
@@ -124,7 +134,7 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
   await expect(canvas).toBeVisible()
   await page.waitForTimeout(500)
   const hiddenReferenceFrame = await canvas.screenshot()
-  await savedCard.getByRole('button', { name: '显示参考' }).click()
+  await clickVisible(savedCard.getByRole('button', { name: '显示参考' }))
   await expect(savedCard.getByRole('button', { name: '隐藏参考' })).toBeVisible()
   await expect
     .poll(
@@ -137,7 +147,7 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
     path: testInfo.outputPath('ifc-reference-visible.png'),
   })
   expect(hiddenReferenceFrame.equals(visibleReferenceFrame)).toBe(false)
-  await savedCard.getByRole('button', { name: '隐藏参考' }).click()
+  await clickVisible(savedCard.getByRole('button', { name: '隐藏参考' }))
   await expect
     .poll(
       async () =>
@@ -146,7 +156,7 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
     .toBe(false)
 
   await page.goto(page.url(), { timeout: 120_000, waitUntil: 'commit' })
-  await page.getByRole('button', { name: '住宅导入' }).click()
+  await clickVisible(page.getByRole('button', { name: '住宅导入' }))
   const reloadedCard = page.locator(`[data-gln-ifc-saved-import="${importId}"]`)
   await expect(reloadedCard).toBeVisible({ timeout: 30_000 })
   await expect(reloadedCard.getByText(/临时参考层不在当前内存中/)).toBeVisible()
@@ -159,7 +169,7 @@ test('rebuilds a local IFC as editable residential nodes without configuring GLN
     { timeout: 180_000 },
   )
   await expect(reloadedCard.getByRole('button', { name: '显示参考' })).toBeEnabled()
-  await reloadedCard.getByRole('button', { name: '删除临时参考' }).click()
+  await clickVisible(reloadedCard.getByRole('button', { name: '删除临时参考' }))
   await expect(reloadedCard.getByText(/临时参考层不在当前内存中/)).toBeVisible()
 
   const latest = await fetchScene(request, sceneId)

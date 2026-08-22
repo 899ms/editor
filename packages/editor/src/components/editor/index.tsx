@@ -1131,7 +1131,7 @@ export default function Editor({
 
   useKeyboard({ isVersionPreviewMode, disabled: isFirstPersonMode || isStudioMode })
 
-  const { isLoadingSceneRef } = useAutoSave({
+  const { beginSceneLoad, finishSceneLoad, markSceneHydrated } = useAutoSave({
     onSave,
     onDirty,
     onSaveStatusChange,
@@ -1177,7 +1177,8 @@ export default function Editor({
     let cancelled = false
 
     async function load() {
-      isLoadingSceneRef.current = true
+      beginSceneLoad()
+      useScene.getState().setReadOnly(true)
       setHasLoadedInitialScene(false)
       setIsViewerSceneReady(false)
       setIsSceneLoading(true)
@@ -1188,22 +1189,22 @@ export default function Editor({
         const sceneGraph = onLoad ? await onLoad() : loadSceneFromLocalStorage()
         if (!cancelled) {
           applySceneGraphToEditor(sceneGraph)
+          markSceneHydrated()
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
       } catch {
         if (!cancelled) {
           applySceneGraphToEditor(null)
+          markSceneHydrated()
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
       } finally {
         if (!cancelled) {
+          finishSceneLoad()
           setIsSceneLoading(false)
           setHasLoadedInitialScene(true)
-          requestAnimationFrame(() => {
-            isLoadingSceneRef.current = false
-          })
         }
       }
     }
@@ -1213,7 +1214,7 @@ export default function Editor({
     return () => {
       cancelled = true
     }
-  }, [onLoad, isLoadingSceneRef])
+  }, [beginSceneLoad, finishSceneLoad, markSceneHydrated, onLoad])
 
   // Apply preview scene when version preview mode changes
   useEffect(() => {
@@ -1222,16 +1223,18 @@ export default function Editor({
     }
   }, [isVersionPreviewMode, previewScene])
 
-  // Lock scene graph and reset to select mode when entering version preview
+  // Keep the graph locked until its persisted baseline is applied. The editor
+  // shell and plugin panels can render before this effect finishes on fast CI
+  // clients, so allowing edits earlier can make hydration overwrite user work.
   useEffect(() => {
-    useScene.getState().setReadOnly(isVersionPreviewMode)
+    useScene.getState().setReadOnly(isVersionPreviewMode || !hasLoadedInitialScene)
     if (isVersionPreviewMode) {
       useEditor.getState().setMode('select')
     }
     return () => {
       useScene.getState().setReadOnly(false)
     }
-  }, [isVersionPreviewMode])
+  }, [hasLoadedInitialScene, isVersionPreviewMode])
 
   useEffect(() => {
     document.body.classList.add('dark')
@@ -1346,6 +1349,11 @@ export default function Editor({
     }
 
     const renderTabContent = (tabId: string) => {
+      // Do not mount interactive panels until the scene baseline and autosave
+      // subscription are ready. Fast clients can otherwise invoke a panel
+      // handler before passive effects subscribe to the scene store.
+      if (!hasLoadedInitialScene) return null
+
       // Built-in panels
       if (tabId === 'site') {
         return <SitePanel {...sitePanelProps} />

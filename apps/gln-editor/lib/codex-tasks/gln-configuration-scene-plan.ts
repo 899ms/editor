@@ -309,10 +309,11 @@ const REVIEWABLE_PANEL_CODES = new Set([
   'gln-panel-too-small',
   'gln-panel-zone-unresolved',
 ])
+const REVIEWABLE_INSTALLATION_CODES = new Set(['gln-installation-clearance-overlap'])
 
 function reviewItemCode(issue: ScenePlanIssue): GlnConfigurationReviewItem['code'] | null {
   if (issue.severity !== 'error') return null
-  if (issue.code.startsWith('gln-installation-')) return 'installation'
+  if (REVIEWABLE_INSTALLATION_CODES.has(issue.code)) return 'installation'
   if (issue.code.startsWith('gln-routing-')) return 'routing'
   if (REVIEWABLE_PANEL_CODES.has(issue.code)) return 'panel-placement'
   return null

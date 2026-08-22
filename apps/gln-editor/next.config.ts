@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
   logging: {
     browserToTerminal: true,
   },
+  // The workspace type gate runs `tsgo --noEmit` before E2E. Keeping Next's
+  // duplicate checker disabled matches the original Editor and avoids its
+  // Windows project-reference resolver during `next start`.
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   transpilePackages: [
     'three',
     '@pascal-app/viewer',

@@ -4,6 +4,7 @@ import {
   isSuspiciousNodeDrop,
   shouldBlockAutosaveNodeDrop,
   shouldFlushAutosaveOnCleanup,
+  shouldQueueSceneLoadChange,
 } from './use-auto-save'
 
 describe('isSuspiciousNodeDrop', () => {
@@ -68,6 +69,26 @@ describe('shouldFlushAutosaveOnCleanup', () => {
       shouldFlushAutosaveOnCleanup({
         hasDirtyChanges: true,
         isLoadingScene: false,
+      }),
+    ).toBe(true)
+  })
+})
+
+describe('shouldQueueSceneLoadChange', () => {
+  test('ignores store churn before the persisted scene has been applied', () => {
+    expect(
+      shouldQueueSceneLoadChange({
+        changed: true,
+        hasHydratedScene: false,
+      }),
+    ).toBe(false)
+  })
+
+  test('queues a real edit made after hydration but before loading finishes', () => {
+    expect(
+      shouldQueueSceneLoadChange({
+        changed: true,
+        hasHydratedScene: true,
       }),
     ).toBe(true)
   })
