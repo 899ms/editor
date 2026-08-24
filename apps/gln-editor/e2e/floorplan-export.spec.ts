@@ -110,20 +110,19 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
     }
   })
 
-  await page.getByRole('button', { name: '设置', exact: true }).click()
+  await clickVisible(page.getByRole('button', { name: '设置', exact: true }))
   const fitButton = page.getByRole('button', {
     name: '完整平面图 · 视图对齐正北',
     exact: true,
   })
-  await expect(fitButton).toBeVisible()
-  await fitButton.click()
+  await clickVisible(fitButton)
 
   await expect
     .poll(() => readFloorplanViewport(floorplan))
     .toEqual({ isCropped: false, transform: '' })
 
   const svgDownloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: '完整平面图（SVG）', exact: true }).click()
+  await clickVisible(page.getByRole('button', { name: '完整平面图（SVG）', exact: true }))
   const svgDownload = await svgDownloadPromise
   expect(await svgDownload.failure()).toBeNull()
   expect(svgDownload.suggestedFilename()).toMatch(/^floorplan_full_\d{4}-\d{2}-\d{2}\.svg$/)
@@ -136,7 +135,7 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   expect(svgText).toContain('#238aa5')
 
   const pdfDownloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: '完整平面图（PDF）', exact: true }).click()
+  await clickVisible(page.getByRole('button', { name: '完整平面图（PDF）', exact: true }))
   const pdfDownload = await pdfDownloadPromise
   expect(await pdfDownload.failure()).toBeNull()
   expect(pdfDownload.suggestedFilename()).toMatch(/^floorplan_full_\d{4}-\d{2}-\d{2}\.pdf$/)
