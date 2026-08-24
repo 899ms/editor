@@ -71,6 +71,48 @@ describe('GLN hydronic pipe', () => {
     expect(glnHydronicPipeDefinition.floorplanAffordances?.['move-path-point']).toBeDefined()
   })
 
+  test('renders CAD-readable supply and return lines with directional flow arrows', () => {
+    const floorplanFor = (circuit: 'supply' | 'return', path: [number, number, number][]) =>
+      buildGlnHydronicPipeFloorplan(
+        GlnHydronicPipeNode.parse({ systemId: 'gln-system_ground', circuit, path }),
+        { viewState: { selected: false, highlighted: false, hovered: false } } as never,
+      )
+    const supply = floorplanFor('supply', [
+      [0, 2.3, 0],
+      [4, 2.3, 0],
+    ])
+    const returning = floorplanFor('return', [
+      [4, 2.3, 1],
+      [0, 2.3, 1],
+    ])
+
+    expect(supply).toMatchObject({
+      kind: 'group',
+      children: [
+        {
+          kind: 'polyline',
+          stroke: '#d95f45',
+          strokeWidth: 3.5,
+          strokeDasharray: '8 5',
+          vectorEffect: 'non-scaling-stroke',
+        },
+        { kind: 'polygon', fill: '#d95f45', stroke: '#ffffff', pointerEvents: 'none' },
+      ],
+    })
+    expect(returning).toMatchObject({
+      kind: 'group',
+      children: [
+        { kind: 'polyline', stroke: '#238aa5' },
+        { kind: 'polygon', fill: '#238aa5' },
+      ],
+    })
+
+    const supplyArrow = supply?.kind === 'group' ? supply.children[1] : null
+    const returnArrow = returning?.kind === 'group' ? returning.children[1] : null
+    expect(supplyArrow?.kind === 'polygon' ? supplyArrow.points[0]![0] : 0).toBeGreaterThan(2)
+    expect(returnArrow?.kind === 'polygon' ? returnArrow.points[0]![0] : 4).toBeLessThan(2)
+  })
+
   test('supports ceiling, wall-face, and through-wall placement without drainage semantics', () => {
     const nodes = {
       wall: {

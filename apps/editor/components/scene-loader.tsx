@@ -11,7 +11,7 @@ import {
   type SidebarTab,
 } from '@pascal-app/editor'
 import { usePascalTranslation } from '@pascal-app/i18n'
-import { Hammer, Layers } from 'lucide-react'
+import { Hammer, Layers, Settings } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -128,6 +128,14 @@ export function SceneLoader({
             width={32}
           />
         ),
+      },
+      {
+        id: 'settings',
+        label: t('tabs.settings'),
+        component: EmptySceneTab,
+        mobileDefaultSnap: 0.5,
+        mobileIcon: <Settings className="h-5 w-5" />,
+        icon: <Settings className="h-5 w-5" />,
       },
     ],
     [BuildTabComponent, t],

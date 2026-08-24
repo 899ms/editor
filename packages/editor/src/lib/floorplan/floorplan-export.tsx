@@ -14,6 +14,7 @@ import { createElement } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { FloorplanGeometryRenderer } from '../../components/editor-2d/renderers/floorplan-geometry-renderer'
+import { resolveFloorplanLabelAngle } from '../../components/editor-2d/renderers/floorplan-label-angle'
 import {
   buildContext,
   floorplanLayerRank,
@@ -21,7 +22,8 @@ import {
   isFloorplanNodeVisible,
   splitFloorplanOverlay,
 } from '../../components/editor-2d/renderers/floorplan-registry-layer'
-import { FLOORPLAN_VIEW_ROTATION_DEG } from './geometry'
+import useEditor from '../../store/use-editor'
+import { FLOORPLAN_VIEW_ROTATION_DEG, floorplanLocalToWorldPoint } from './geometry'
 
 /**
  * Floorplan PDF export.
@@ -31,8 +33,8 @@ import { FLOORPLAN_VIEW_ROTATION_DEG } from './geometry'
  * a neutral `viewState` so nodes render in their default, unselected form.
  * Every level of the active building becomes its own page, titled with the
  * level's label, with the plan fit to the page (independent of the live
- * pan/zoom). jsPDF + svg2pdf are dynamically imported so they only load when
- * an export actually runs.
+ * pan/zoom). jsPDF is dynamically imported only when PDF export runs; the
+ * standalone SVG path remains vector-based.
  *
  * `scope: 'structure'` keeps only `category === 'structure'` nodes (walls,
  * slabs, ceilings, doors, windows, stairs, columns, roofs…); `'full'` keeps
@@ -43,9 +45,13 @@ export type FloorplanExportScope = 'full' | 'structure'
 const SVG_NS = 'http://www.w3.org/2000/svg'
 /** Meters of margin around the plan bounds. */
 const PADDING_M = 1
-/** PDF page margin + title band, in pt. */
+/** PDF page margin, in pt. */
 const PAGE_MARGIN_PT = 36
-const TITLE_BAND_PT = 28
+/** Extra plan-space height reserved for the level title. */
+const TITLE_BAND_M = 0.7
+/** Matches the live floor-plan viewport's minimum size and content margin. */
+const LIVE_FALLBACK_VIEW_SIZE_M = 12
+const LIVE_PADDING_M = 2
 
 // Neutral view state — no selection / hover / palette, so builders emit their
 // default appearance (the core palette only carries selection/handle colors).
@@ -68,7 +74,7 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
     return
   }
 
-  const [{ jsPDF }, { svg2pdf }] = await Promise.all([import('jspdf'), import('svg2pdf.js')])
+  const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
   const pageH = doc.internal.pageSize.getHeight()
@@ -81,9 +87,6 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
   let pageCount = 0
   try {
     for (const level of levels) {
-      const geometries = collectFloorplanGeometry(nodes, level.id, scope, unit)
-      if (geometries.length === 0) continue
-
       // Rotate the exported plan to the same north-up orientation the on-screen
       // 2D view uses when aligned to north (user rotation offset = 0), so a PDF
       // points north instead of drawing raw plan-local axes.
@@ -91,22 +94,24 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
       const building = buildingId ? nodes[buildingId] : undefined
       const buildingRotationY = building?.type === 'building' ? (building.rotation[1] ?? 0) : 0
       const rotationDeg = FLOORPLAN_VIEW_ROTATION_DEG - (buildingRotationY * 180) / Math.PI
+      const geometries = collectFloorplanGeometry(nodes, level.id, scope, unit, rotationDeg)
+      if (geometries.length === 0) continue
 
-      const mounted = await mountFloorplanSvg(host, geometries, rotationDeg)
+      const mounted = await mountFloorplanSvg(host, geometries, rotationDeg, level.label)
       if (!mounted) continue
 
       try {
         if (pageCount > 0) doc.addPage()
         pageCount++
 
-        doc.setFontSize(14)
-        doc.text(level.label, PAGE_MARGIN_PT, PAGE_MARGIN_PT + 12)
-
-        // Fit the plan into the page below the title band, preserving aspect.
+        // Fit the complete, browser-rasterized plan into the page. Rasterizing
+        // at high resolution preserves Chinese/system-font labels that jsPDF's
+        // built-in font and svg2pdf cannot encode reliably. The SVG download
+        // remains the lossless vector deliverable.
         const boxX = PAGE_MARGIN_PT
-        const boxY = PAGE_MARGIN_PT + TITLE_BAND_PT
+        const boxY = PAGE_MARGIN_PT
         const boxW = pageW - PAGE_MARGIN_PT * 2
-        const boxH = pageH - PAGE_MARGIN_PT * 2 - TITLE_BAND_PT
+        const boxH = pageH - PAGE_MARGIN_PT * 2
         const aspect = mounted.width / mounted.height
         let w = boxW
         let h = w / aspect
@@ -117,15 +122,8 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
         const x = boxX + (boxW - w) / 2
         const y = boxY + (boxH - h) / 2
 
-        // svg2pdf doesn't honour `vector-effect: non-scaling-stroke` (which
-        // many builders use to keep door/window/stair line weights constant
-        // on screen). Left as-is, those pixel-sized widths render as
-        // metre-wide strokes — huge grey blobs. Convert them to the real-unit
-        // width that lands at the intended point weight once svg2pdf scales
-        // the plan onto the page.
-        inlineNonScalingStrokes(mounted.svg, w / mounted.width)
-
-        await svg2pdf(mounted.svg, doc, { x, y, width: w, height: h })
+        const imageData = await rasterizeFloorplanSvg(mounted.svg, mounted.width, mounted.height)
+        doc.addImage(imageData, 'PNG', x, y, w, h, undefined, 'FAST')
       } finally {
         mounted.cleanup()
       }
@@ -137,7 +135,149 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
     }
 
     const date = new Date().toISOString().split('T')[0]
-    doc.save(`floorplan_${scope}_${date}.pdf`)
+    downloadBlob(doc.output('blob'), `floorplan_${scope}_${date}.pdf`)
+  } finally {
+    host.remove()
+  }
+}
+
+/**
+ * Export the same north-up, bounds-fitted floorplan geometry as standalone SVG.
+ * Unlike the live editor viewport, the file is independent of pan and zoom.
+ */
+export async function exportFloorplanSvg(scope: FloorplanExportScope): Promise<void> {
+  const nodes = useScene.getState().nodes
+  const unit = useViewer.getState().unit
+  const levels = resolveExportLevels(nodes)
+  if (levels.length === 0) {
+    console.warn('[floorplan-export] no level to export')
+    return
+  }
+
+  const host = document.createElement('div')
+  host.style.cssText =
+    'position:fixed;left:-10000px;top:0;width:1px;height:1px;overflow:hidden;pointer-events:none;'
+  document.body.appendChild(host)
+
+  try {
+    for (const level of levels) {
+      const buildingId = resolveBuildingForLevel(level.id, nodes as Record<AnyNodeId, AnyNode>)
+      const building = buildingId ? nodes[buildingId] : undefined
+      const buildingRotationY = building?.type === 'building' ? (building.rotation[1] ?? 0) : 0
+      const rotationDeg = FLOORPLAN_VIEW_ROTATION_DEG - (buildingRotationY * 180) / Math.PI
+      const geometries = collectFloorplanGeometry(nodes, level.id, scope, unit, rotationDeg)
+      if (geometries.length === 0) continue
+
+      const mounted = await mountFloorplanSvg(host, geometries, rotationDeg, level.label)
+      if (!mounted) continue
+
+      try {
+        const svg = mounted.svg.cloneNode(true) as SVGSVGElement
+        const exportWidthPx = 1600
+        svg.setAttribute('width', `${exportWidthPx}`)
+        svg.setAttribute(
+          'height',
+          `${Math.round((exportWidthPx * mounted.height) / mounted.width)}`,
+        )
+        const serialized = `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(svg)}`
+        const levelSuffix = levels.length > 1 ? `_${sanitizeFilePart(level.label)}` : ''
+        const date = new Date().toISOString().split('T')[0]
+        downloadBlob(
+          new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' }),
+          `floorplan_${scope}${levelSuffix}_${date}.svg`,
+        )
+      } finally {
+        mounted.cleanup()
+      }
+    }
+  } finally {
+    host.remove()
+  }
+}
+
+/**
+ * Open the live 2D floor plan when needed, align it north-up, and fit every
+ * painted node into the available viewport. The geometry is measured through
+ * the same registry-driven renderer used by SVG/PDF export, so the result does
+ * not depend on the previous pan/zoom pose or on grid bounds.
+ */
+export async function fitFloorplanViewToContent(): Promise<boolean> {
+  const editor = useEditor.getState()
+  if (editor.viewMode === '3d') {
+    editor.setViewMode('2d')
+  }
+
+  // Let the live 2D surface mount before measuring its actual aspect ratio.
+  await nextFrames(2)
+
+  const nodes = useScene.getState().nodes
+  const selectedLevelId = useViewer.getState().selection.levelId as AnyNodeId | null
+  const levelId = selectedLevelId && nodes[selectedLevelId] ? selectedLevelId : firstLevelId(nodes)
+  if (!levelId) return false
+
+  const buildingId = resolveBuildingForLevel(levelId, nodes as Record<AnyNodeId, AnyNode>)
+  const building = buildingId ? nodes[buildingId] : undefined
+  const buildingPosition: [number, number, number] =
+    building?.type === 'building' ? [...building.position] : [0, 0, 0]
+  const buildingRotationY = building?.type === 'building' ? (building.rotation[1] ?? 0) : 0
+  const rotationDeg = FLOORPLAN_VIEW_ROTATION_DEG - (buildingRotationY * 180) / Math.PI
+  const geometries = collectFloorplanGeometry(
+    nodes,
+    levelId,
+    'full',
+    useViewer.getState().unit,
+    rotationDeg,
+  )
+  if (geometries.length === 0) return false
+
+  const surface = document
+    .querySelector<SVGGElement>('[data-floorplan-scene]')
+    ?.closest<SVGSVGElement>('svg')
+  const surfaceRect = surface?.getBoundingClientRect()
+  if (!surfaceRect || !(surfaceRect.width > 0 && surfaceRect.height > 0)) return false
+
+  const host = document.createElement('div')
+  host.style.cssText =
+    'position:fixed;left:-10000px;top:0;width:1px;height:1px;overflow:hidden;pointer-events:none;'
+  document.body.appendChild(host)
+
+  try {
+    const mounted = await mountFloorplanSvg(host, geometries, rotationDeg, '')
+    if (!mounted) return false
+
+    try {
+      const { contentBBox } = mounted
+      const aspect = surfaceRect.width / surfaceRect.height
+      const viewWidth = Math.max(
+        LIVE_FALLBACK_VIEW_SIZE_M,
+        contentBBox.width + LIVE_PADDING_M * 2,
+        (contentBBox.height + LIVE_PADDING_M * 2) * aspect,
+      )
+      const rotatedCenter = {
+        x: contentBBox.x + contentBBox.width / 2,
+        y: contentBBox.y + contentBBox.height / 2,
+      }
+      const localCenter = rotatePoint(rotatedCenter, -rotationDeg)
+      const worldCenter = floorplanLocalToWorldPoint(
+        localCenter,
+        buildingPosition,
+        buildingRotationY,
+      )
+      const targetY = useEditor.getState().navigationSyncPose?.target[1] ?? buildingPosition[1]
+
+      // Mark this as an external camera pose so the live 2D panel consumes it.
+      // Publishing a 2D source would intentionally be ignored by that same
+      // panel to prevent feedback loops with the 3D camera.
+      useEditor.getState().publishNavigationSyncPose({
+        source: '3d',
+        target: [worldCenter.x, targetY, worldCenter.z],
+        azimuth: (FLOORPLAN_VIEW_ROTATION_DEG * Math.PI) / 180,
+        viewWidth,
+      })
+      return true
+    } finally {
+      mounted.cleanup()
+    }
   } finally {
     host.remove()
   }
@@ -145,6 +285,7 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
 
 type MountedFloorplan = {
   svg: SVGSVGElement
+  contentBBox: { x: number; y: number; width: number; height: number }
   /** Padded viewBox dimensions, in meters — used for aspect-preserving fit. */
   width: number
   height: number
@@ -155,6 +296,7 @@ async function mountFloorplanSvg(
   parent: HTMLElement,
   geometries: { id: AnyNodeId; base: FloorplanGeometry }[],
   rotationDeg: number,
+  title: string,
 ): Promise<MountedFloorplan | null> {
   const container = document.createElement('div')
   parent.appendChild(container)
@@ -200,9 +342,9 @@ async function mountFloorplanSvg(
   }
 
   const minX = bbox.x - PADDING_M
-  const minY = bbox.y - PADDING_M
+  const minY = bbox.y - PADDING_M - TITLE_BAND_M
   const width = bbox.width + PADDING_M * 2
-  const height = bbox.height + PADDING_M * 2
+  const height = bbox.height + PADDING_M * 2 + TITLE_BAND_M
   svg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`)
   svg.setAttribute('width', `${width}`)
   svg.setAttribute('height', `${height}`)
@@ -215,38 +357,70 @@ async function mountFloorplanSvg(
   background.setAttribute('fill', '#ffffff')
   svg.insertBefore(background, svg.firstChild)
 
-  return { svg, width, height, cleanup }
+  const titleElement = document.createElementNS(SVG_NS, 'text')
+  titleElement.setAttribute('x', `${minX + 0.2}`)
+  titleElement.setAttribute('y', `${minY + 0.42}`)
+  titleElement.setAttribute('fill', '#111827')
+  titleElement.setAttribute('font-family', '"Microsoft YaHei", "Noto Sans CJK SC", sans-serif')
+  titleElement.setAttribute('font-size', '0.28')
+  titleElement.setAttribute('font-weight', '600')
+  titleElement.textContent = title
+  svg.appendChild(titleElement)
+
+  return {
+    svg,
+    contentBBox: { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height },
+    width,
+    height,
+    cleanup,
+  }
 }
 
-/**
- * Bake `vector-effect: non-scaling-stroke` widths into real user units.
- *
- * svg2pdf ignores the non-scaling hint, so a `stroke-width="1.25"` meant as
- * "1.25 screen px" would otherwise render as 1.25 metres on the page. We
- * rewrite each such width (and any dash pattern) to `px / ptPerUnit` so it
- * lands at ~`px` points once svg2pdf scales the plan by `ptPerUnit`, then drop
- * the now-misleading attribute.
- */
-function inlineNonScalingStrokes(svg: SVGSVGElement, ptPerUnit: number) {
-  if (!Number.isFinite(ptPerUnit) || ptPerUnit <= 0) return
-  for (const el of svg.querySelectorAll('[vector-effect="non-scaling-stroke"]')) {
-    const sw = el.getAttribute('stroke-width')
-    if (sw) {
-      const px = Number.parseFloat(sw)
-      if (Number.isFinite(px)) el.setAttribute('stroke-width', `${px / ptPerUnit}`)
-    }
-    const dash = el.getAttribute('stroke-dasharray')
-    if (dash) {
-      const scaled = dash
-        .split(/[\s,]+/)
-        .map((v) => {
-          const n = Number.parseFloat(v)
-          return Number.isFinite(n) ? `${n / ptPerUnit}` : v
-        })
-        .join(' ')
-      el.setAttribute('stroke-dasharray', scaled)
-    }
-    el.removeAttribute('vector-effect')
+function rotatePoint(point: { x: number; y: number }, rotationDeg: number) {
+  if (rotationDeg === 0) return point
+  const radians = (rotationDeg * Math.PI) / 180
+  const cos = Math.cos(radians)
+  const sin = Math.sin(radians)
+  return {
+    x: point.x * cos - point.y * sin,
+    y: point.x * sin + point.y * cos,
+  }
+}
+
+async function rasterizeFloorplanSvg(
+  svg: SVGSVGElement,
+  width: number,
+  height: number,
+): Promise<string> {
+  const exportWidthPx = 2600
+  const exportHeightPx = Math.max(1, Math.round((exportWidthPx * height) / width))
+  const clone = svg.cloneNode(true) as SVGSVGElement
+  clone.setAttribute('width', `${exportWidthPx}`)
+  clone.setAttribute('height', `${exportHeightPx}`)
+  const serialized = new XMLSerializer().serializeToString(clone)
+  const url = URL.createObjectURL(new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' }))
+
+  try {
+    const image = new Image()
+    image.decoding = 'sync'
+    const loaded = new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve()
+      image.onerror = () => reject(new Error('Failed to rasterize floorplan SVG'))
+    })
+    image.src = url
+    await loaded
+
+    const canvas = document.createElement('canvas')
+    canvas.width = exportWidthPx
+    canvas.height = exportHeightPx
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Canvas 2D context is unavailable')
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+    return canvas.toDataURL('image/png')
+  } finally {
+    URL.revokeObjectURL(url)
   }
 }
 
@@ -255,6 +429,7 @@ function collectFloorplanGeometry(
   levelId: AnyNodeId,
   scope: FloorplanExportScope,
   unit: 'metric' | 'imperial',
+  sceneRotationDeg: number,
 ): { id: AnyNodeId; base: FloorplanGeometry }[] {
   const noLiveOverrides = new Map<string, LiveNodeOverrides>()
   const levelNodeIdsByType = new Map<string, AnyNodeId[]>()
@@ -302,10 +477,74 @@ function collectFloorplanGeometry(
     const ctx = buildContext(node, nodes, { ...NEUTRAL_VIEW_STATE, unit }, levelData)
     const geometry = builder(node, ctx)
     if (!geometry) continue
-    const { base } = splitFloorplanOverlay(geometry)
-    if (base) out.push({ id, base })
+    const { base, overlay } = splitFloorplanOverlay(geometry)
+    const staticOverlay = overlay ? buildStaticExportOverlay(overlay, sceneRotationDeg) : null
+    const children = [base, staticOverlay].filter(
+      (entry): entry is FloorplanGeometry => entry !== null,
+    )
+    if (children.length === 1) out.push({ id, base: children[0]! })
+    else if (children.length > 1) out.push({ id, base: { kind: 'group', children } })
   }
   return out
+}
+
+function buildStaticExportOverlay(
+  geometry: FloorplanGeometry,
+  sceneRotationDeg: number,
+): FloorplanGeometry | null {
+  if (geometry.kind === 'group') {
+    const children = geometry.children
+      .map((child) => buildStaticExportOverlay(child, sceneRotationDeg))
+      .filter((child): child is FloorplanGeometry => child !== null)
+    if (children.length === 0) return null
+    return { kind: 'group', children, transform: geometry.transform }
+  }
+
+  if (geometry.kind === 'text') {
+    if (!geometry.upright) return geometry
+    return {
+      kind: 'group',
+      transform: {
+        translate: [geometry.x, geometry.y],
+        rotate: (-sceneRotationDeg * Math.PI) / 180,
+      },
+      children: [{ ...geometry, x: 0, y: 0, upright: false }],
+    }
+  }
+
+  if (geometry.kind === 'dimension-label') {
+    const rotationDeg = resolveFloorplanLabelAngle(
+      geometry.angle,
+      sceneRotationDeg,
+      geometry.screenUpright,
+    )
+    return {
+      kind: 'group',
+      transform: {
+        translate: [geometry.cx, geometry.cy],
+        rotate: (rotationDeg * Math.PI) / 180,
+      },
+      children: [
+        {
+          kind: 'text',
+          x: 0,
+          y: -(geometry.offsetPx ?? 0) * 0.01,
+          text: geometry.text,
+          fontSize: geometry.appearance === 'outlined' ? 0.12 : 0.1,
+          fill: '#ffffff',
+          stroke: '#4f46e5',
+          strokeWidth: 0.04,
+          paintOrder: 'stroke',
+          fontFamily: '"Microsoft YaHei", "Noto Sans CJK SC", sans-serif',
+          fontWeight: 600,
+          textAnchor: 'middle',
+          dominantBaseline: 'central',
+        },
+      ],
+    }
+  }
+
+  return null
 }
 
 /**
@@ -348,6 +587,32 @@ function levelLabelOf(node: AnyNode): string {
   const name = node.name?.trim()
   if (name) return name
   return `Level ${levelIndexOf(node)}`
+}
+
+function sanitizeFilePart(value: string): string {
+  const printable = Array.from(value, (character) =>
+    character.charCodeAt(0) < 32 ? '-' : character,
+  ).join('')
+  const sanitized = printable
+    .trim()
+    .replace(/[<>:"/\\|?*]+/g, '-')
+    .replace(/\s+/g, '_')
+  return sanitized || 'level'
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.dataset.floorplanDownload = ''
+  link.hidden = true
+  document.body.appendChild(link)
+  link.click()
+  setTimeout(() => {
+    link.remove()
+    URL.revokeObjectURL(url)
+  }, 30_000)
 }
 
 function nextFrames(count: number): Promise<void> {

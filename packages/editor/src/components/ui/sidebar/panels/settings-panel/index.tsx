@@ -2,7 +2,16 @@ import { clearSceneHistory, emitter, useScene, validateBuildJson } from '@pascal
 import { type PascalLocale, usePascalLocale, usePascalTranslation } from '@pascal-app/i18n'
 import { useViewer } from '@pascal-app/viewer'
 import { TreeView, VisualJson } from '@visual-json/react'
-import { Camera, Download, Languages, Map as MapIcon, Save, Trash2, Upload } from 'lucide-react'
+import {
+  Camera,
+  Download,
+  Languages,
+  Map as MapIcon,
+  Maximize2,
+  Save,
+  Trash2,
+  Upload,
+} from 'lucide-react'
 import {
   type KeyboardEvent,
   type SyntheticEvent,
@@ -12,7 +21,11 @@ import {
   useRef,
   useState,
 } from 'react'
-import { exportFloorplanPdf } from '../../../../../lib/floorplan/floorplan-export'
+import {
+  exportFloorplanPdf,
+  exportFloorplanSvg,
+  fitFloorplanViewToContent,
+} from '../../../../../lib/floorplan/floorplan-export'
 import { Button } from './../../../../../components/ui/primitives/button'
 import {
   Dialog,
@@ -382,6 +395,10 @@ export function SettingsPanel({
     setTimeout(() => setIsGeneratingThumbnail(false), 3000)
   }
 
+  const handleFitFullFloorplan = useCallback(() => {
+    void fitFloorplanViewToContent()
+  }, [])
+
   const handleVisibilityChange = async (
     field: 'isPrivate' | 'showScansPublic' | 'showGuidesPublic',
     value: boolean,
@@ -503,11 +520,27 @@ export function SettingsPanel({
           <div className="font-medium text-muted-foreground text-xs">{t('settings.export.floorplan')}</div>
           <Button
             className="w-full justify-start gap-2"
+            onClick={handleFitFullFloorplan}
+            variant="outline"
+          >
+            <Maximize2 className="size-4" />
+            {t('settings.export.fullFloorplan')} · {t('floorplan.alignNorth')}
+          </Button>
+          <Button
+            className="w-full justify-start gap-2"
             onClick={() => exportFloorplanPdf('full')}
             variant="outline"
           >
             <MapIcon className="size-4" />
-            {t('settings.export.fullFloorplan')}
+            {t('settings.export.fullFloorplan')} (PDF)
+          </Button>
+          <Button
+            className="w-full justify-start gap-2"
+            onClick={() => exportFloorplanSvg('full')}
+            variant="outline"
+          >
+            <MapIcon className="size-4" />
+            {t('settings.export.fullFloorplan')} (SVG)
           </Button>
           <Button
             className="w-full justify-start gap-2"
@@ -515,7 +548,7 @@ export function SettingsPanel({
             variant="outline"
           >
             <MapIcon className="size-4" />
-            {t('settings.export.structureOnly')}
+            {t('settings.export.structureOnly')} (PDF)
           </Button>
         </div>
       </div>
