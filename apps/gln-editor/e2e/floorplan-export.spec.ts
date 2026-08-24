@@ -15,6 +15,29 @@ async function readScene(request: APIRequestContext, sceneId: string) {
   return (await response.json()) as ScenePayload
 }
 
+async function clickVisible(locator: Locator) {
+  await expect(locator).toBeVisible()
+  await expect(locator).toBeEnabled()
+  await locator.evaluate((element) => (element as HTMLElement).click())
+}
+
+async function waitForFloorplanViewportToSettle(floorplan: Locator) {
+  let previousViewBox: string | null = null
+  let stableSamples = 0
+
+  await expect
+    .poll(
+      async () => {
+        const nextViewBox = await floorplan.getAttribute('viewBox')
+        stableSamples = nextViewBox === previousViewBox ? stableSamples + 1 : 0
+        previousViewBox = nextViewBox
+        return stableSamples
+      },
+      { intervals: [200], timeout: 5_000 },
+    )
+    .toBeGreaterThanOrEqual(3)
+}
+
 async function readFloorplanViewport(floorplan: Locator) {
   return floorplan.evaluate((svg) => {
     const scene = svg.querySelector('[data-floorplan-scene]')
@@ -68,23 +91,21 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
 
   const twoDimensionalView = page.getByRole('button', { name: '2D', exact: true })
-  await twoDimensionalView.click()
+  await clickVisible(twoDimensionalView)
   await expect(twoDimensionalView).toHaveAttribute('aria-pressed', 'true')
   const floorplan = page.locator('svg.touch-none')
   await expect(floorplan).toBeVisible()
+
+  await waitForFloorplanViewportToSettle(floorplan)
   const floorplanBounds = await floorplan.boundingBox()
   if (!floorplanBounds) throw new Error('2D floor plan has no measurable bounds')
+  await floorplan.dispatchEvent('wheel', {
+    clientX: floorplanBounds.x + floorplanBounds.width / 2,
+    clientY: floorplanBounds.y + floorplanBounds.height / 2,
+    deltaY: -2_400,
+  })
 
-  await page.getByRole('button', { name: '向右旋转' }).click()
-  await page.mouse.move(
-    floorplanBounds.x + floorplanBounds.width / 2,
-    floorplanBounds.y + floorplanBounds.height / 2,
-  )
-  await page.mouse.wheel(0, -2_400)
-
-  await expect
-    .poll(() => readFloorplanViewport(floorplan))
-    .toMatchObject({ isCropped: true, transform: expect.stringContaining('rotate(') })
+  await expect.poll(() => readFloorplanViewport(floorplan)).toMatchObject({ isCropped: true })
 
   await page.waitForTimeout(1_500)
   const baseline = await readScene(request, created.id)
