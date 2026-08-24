@@ -399,7 +399,31 @@ async function rasterizeFloorplanSvg(
   clone.setAttribute('width', `${exportWidthPx}`)
   clone.setAttribute('height', `${exportHeightPx}`)
   const serialized = new XMLSerializer().serializeToString(clone)
-  const url = URL.createObjectURL(new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' }))
+  const blob = new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' })
+  const canvas = document.createElement('canvas')
+  canvas.width = exportWidthPx
+  canvas.height = exportHeightPx
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error('Canvas 2D context is unavailable')
+  context.fillStyle = '#ffffff'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+
+  if (typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(blob)
+      try {
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+        return canvas.toDataURL('image/png')
+      } finally {
+        bitmap.close()
+      }
+    } catch {
+      // Safari does not consistently decode SVG blobs through createImageBitmap.
+      // Retain the object-URL path as a compatibility fallback.
+    }
+  }
+
+  const url = URL.createObjectURL(blob)
 
   try {
     const image = new Image()
@@ -410,14 +434,6 @@ async function rasterizeFloorplanSvg(
     })
     image.src = url
     await loaded
-
-    const canvas = document.createElement('canvas')
-    canvas.width = exportWidthPx
-    canvas.height = exportHeightPx
-    const context = canvas.getContext('2d')
-    if (!context) throw new Error('Canvas 2D context is unavailable')
-    context.fillStyle = '#ffffff'
-    context.fillRect(0, 0, canvas.width, canvas.height)
     context.drawImage(image, 0, 0, canvas.width, canvas.height)
     return canvas.toDataURL('image/png')
   } finally {
