@@ -36,7 +36,10 @@
       "obj": "Export OBJ",
       "floorplan": "Floorplan",
       "fullFloorplan": "Full floorplan",
-      "structureOnly": "Structure only"
+      "fullFloorplanPdf": "Full floorplan (PDF)",
+      "fullFloorplanSvg": "Full floorplan (SVG)",
+      "structureOnly": "Structure only",
+      "structureOnlyPdf": "Structure only (PDF)"
     },
     "thumbnail": {
       "generate": "Generate thumbnail",

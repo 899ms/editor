@@ -532,7 +532,7 @@ export function SettingsPanel({
             variant="outline"
           >
             <MapIcon className="size-4" />
-            {t('settings.export.fullFloorplan')} (PDF)
+            {t('settings.export.fullFloorplanPdf')}
           </Button>
           <Button
             className="w-full justify-start gap-2"
@@ -540,7 +540,7 @@ export function SettingsPanel({
             variant="outline"
           >
             <MapIcon className="size-4" />
-            {t('settings.export.fullFloorplan')} (SVG)
+            {t('settings.export.fullFloorplanSvg')}
           </Button>
           <Button
             className="w-full justify-start gap-2"
@@ -548,7 +548,7 @@ export function SettingsPanel({
             variant="outline"
           >
             <MapIcon className="size-4" />
-            {t('settings.export.structureOnly')} (PDF)
+            {t('settings.export.structureOnlyPdf')}
           </Button>
         </div>
       </div>

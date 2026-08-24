@@ -111,7 +111,7 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
     .toEqual({ isCropped: false, transform: '' })
 
   const svgDownloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: '完整平面图 (SVG)', exact: true }).click()
+  await page.getByRole('button', { name: '完整平面图（SVG）', exact: true }).click()
   const svgDownload = await svgDownloadPromise
   expect(await svgDownload.failure()).toBeNull()
   expect(svgDownload.suggestedFilename()).toMatch(/^floorplan_full_\d{4}-\d{2}-\d{2}\.svg$/)
@@ -124,7 +124,7 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   expect(svgText).toContain('#238aa5')
 
   const pdfDownloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: '完整平面图 (PDF)', exact: true }).click()
+  await page.getByRole('button', { name: '完整平面图（PDF）', exact: true }).click()
   const pdfDownload = await pdfDownloadPromise
   expect(await pdfDownload.failure()).toBeNull()
   expect(pdfDownload.suggestedFilename()).toMatch(/^floorplan_full_\d{4}-\d{2}-\d{2}\.pdf$/)

@@ -36,7 +36,10 @@
       "obj": "导出 OBJ",
       "floorplan": "平面图",
       "fullFloorplan": "完整平面图",
-      "structureOnly": "仅结构"
+      "fullFloorplanPdf": "完整平面图（PDF）",
+      "fullFloorplanSvg": "完整平面图（SVG）",
+      "structureOnly": "仅结构",
+      "structureOnlyPdf": "仅结构（PDF）"
     },
     "thumbnail": {
       "generate": "生成缩略图",
