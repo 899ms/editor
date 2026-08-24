@@ -1390,7 +1390,7 @@ export default function Editor({
     return (
       <>
         {showLoader && (
-          <div className="fixed inset-0 z-60">
+          <div className="fixed inset-0 z-60" data-pascal-scene-loader>
             <SceneLoader className="bg-background" />
           </div>
         )}

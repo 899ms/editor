@@ -89,6 +89,7 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   await page.goto(`${glnBaseUrl}/scene/${created.id}`)
   await expect(page.locator('html')).toHaveAttribute('data-pascal-hydrated', 'true')
   await expect(page.locator('[data-pascal-viewer-3d] canvas')).toBeVisible()
+  await expect(page.locator('[data-pascal-scene-loader]')).toHaveCount(0)
 
   const twoDimensionalView = page.getByRole('button', { name: '2D', exact: true })
   await clickVisible(twoDimensionalView)
