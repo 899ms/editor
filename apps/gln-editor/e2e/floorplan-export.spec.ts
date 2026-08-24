@@ -99,13 +99,19 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   await waitForFloorplanViewportToSettle(floorplan)
   const floorplanBounds = await floorplan.boundingBox()
   if (!floorplanBounds) throw new Error('2D floor plan has no measurable bounds')
-  await floorplan.dispatchEvent('wheel', {
-    clientX: floorplanBounds.x + floorplanBounds.width / 2,
-    clientY: floorplanBounds.y + floorplanBounds.height / 2,
-    deltaY: -2_400,
-  })
-
-  await expect.poll(() => readFloorplanViewport(floorplan)).toMatchObject({ isCropped: true })
+  await expect
+    .poll(
+      async () => {
+        await floorplan.dispatchEvent('wheel', {
+          clientX: floorplanBounds.x + floorplanBounds.width / 2,
+          clientY: floorplanBounds.y + floorplanBounds.height / 2,
+          deltaY: -2_400,
+        })
+        return readFloorplanViewport(floorplan)
+      },
+      { intervals: [200], timeout: 5_000 },
+    )
+    .toMatchObject({ isCropped: true })
 
   await page.waitForTimeout(1_500)
   const baseline = await readScene(request, created.id)
