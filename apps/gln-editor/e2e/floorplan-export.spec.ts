@@ -98,6 +98,12 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   await expect(floorplan).toBeVisible()
 
   await waitForFloorplanViewportToSettle(floorplan)
+  // Headless runners can suspend animation frames after the viewer readiness fallback.
+  // Keep the export regression deterministic by exercising the bounded timer path.
+  await page.evaluate(() => {
+    window.requestAnimationFrame = () => 1
+    window.cancelAnimationFrame = () => {}
+  })
   await page.waitForTimeout(1_500)
   const baseline = await readScene(request, created.id)
   let saveRequestCount = 0

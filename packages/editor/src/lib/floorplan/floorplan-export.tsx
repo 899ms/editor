@@ -52,6 +52,7 @@ const TITLE_BAND_M = 0.7
 /** Matches the live floor-plan viewport's minimum size and content margin. */
 const LIVE_FALLBACK_VIEW_SIZE_M = 12
 const LIVE_PADDING_M = 2
+const FRAME_WAIT_FALLBACK_MS = 500
 
 // Neutral view state — no selection / hover / palette, so builders emit their
 // default appearance (the core palette only carries selection/handle colors).
@@ -617,13 +618,24 @@ function downloadBlob(blob: Blob, filename: string) {
 
 function nextFrames(count: number): Promise<void> {
   return new Promise((resolve) => {
+    let finished = false
+    let frameId = 0
+    let timeoutId = 0
+    const finish = () => {
+      if (finished) return
+      finished = true
+      if (frameId) cancelAnimationFrame(frameId)
+      if (timeoutId) clearTimeout(timeoutId)
+      resolve()
+    }
     const tick = (remaining: number) => {
       if (remaining <= 0) {
-        resolve()
+        finish()
         return
       }
-      requestAnimationFrame(() => tick(remaining - 1))
+      frameId = requestAnimationFrame(() => tick(remaining - 1))
     }
+    timeoutId = window.setTimeout(finish, FRAME_WAIT_FALLBACK_MS)
     tick(count)
   })
 }
