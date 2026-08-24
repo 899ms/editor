@@ -10929,6 +10929,10 @@ export function FloorplanPanel({
   }, [mode])
 
   useEffect(() => {
+    if (!isFloorplanOpen) {
+      return
+    }
+
     const svg = svgRef.current
     if (!svg) {
       return
@@ -10996,7 +11000,7 @@ export function FloorplanPanel({
       svg.removeEventListener('gesturechange', handleGestureChange)
       svg.removeEventListener('gestureend', handleGestureEnd)
     }
-  }, [zoomViewportAtClientPoint])
+  }, [isFloorplanOpen, zoomViewportAtClientPoint])
 
   const restoreGroundLevelStructureSelection = useCallback(() => {
     const sceneNodes = useScene.getState().nodes
