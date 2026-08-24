@@ -99,19 +99,34 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   await waitForFloorplanViewportToSettle(floorplan)
   const floorplanBounds = await floorplan.boundingBox()
   if (!floorplanBounds) throw new Error('2D floor plan has no measurable bounds')
-  await expect
-    .poll(
-      async () => {
-        await floorplan.dispatchEvent('wheel', {
-          clientX: floorplanBounds.x + floorplanBounds.width / 2,
-          clientY: floorplanBounds.y + floorplanBounds.height / 2,
-          deltaY: -2_400,
-        })
-        return readFloorplanViewport(floorplan)
-      },
-      { intervals: [200], timeout: 5_000 },
-    )
-    .toMatchObject({ isCropped: true })
+  const panStart = {
+    clientX: floorplanBounds.x + floorplanBounds.width / 2,
+    clientY: floorplanBounds.y + floorplanBounds.height / 2,
+  }
+  await floorplan.dispatchEvent('pointerdown', {
+    ...panStart,
+    button: 1,
+    buttons: 4,
+    pointerId: 1,
+    pointerType: 'mouse',
+  })
+  await floorplan.dispatchEvent('pointermove', {
+    clientX: panStart.clientX + floorplanBounds.width,
+    clientY: panStart.clientY,
+    button: -1,
+    buttons: 4,
+    pointerId: 1,
+    pointerType: 'mouse',
+  })
+  await floorplan.dispatchEvent('pointerup', {
+    clientX: panStart.clientX + floorplanBounds.width,
+    clientY: panStart.clientY,
+    button: 1,
+    buttons: 0,
+    pointerId: 1,
+    pointerType: 'mouse',
+  })
+  await expect.poll(() => readFloorplanViewport(floorplan)).toMatchObject({ isCropped: true })
 
   await page.waitForTimeout(1_500)
   const baseline = await readScene(request, created.id)
