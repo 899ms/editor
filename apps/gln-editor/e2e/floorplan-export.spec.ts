@@ -18,7 +18,7 @@ async function readScene(request: APIRequestContext, sceneId: string) {
 async function clickVisible(locator: Locator) {
   await expect(locator).toBeVisible()
   await expect(locator).toBeEnabled()
-  await locator.evaluate((element) => (element as HTMLElement).click())
+  await locator.click({ force: true })
 }
 
 async function waitForFloorplanViewportToSettle(floorplan: Locator) {
