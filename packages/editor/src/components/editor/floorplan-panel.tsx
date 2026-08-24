@@ -5241,6 +5241,11 @@ export function FloorplanPanel({
   const ui = useEditorUiText()
   const viewportHostRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
+  const [svgElement, setSvgElement] = useState<SVGSVGElement | null>(null)
+  const handleSvgRef = useCallback((element: SVGSVGElement | null) => {
+    svgRef.current = element
+    setSvgElement(element)
+  }, [])
   const floorplanSceneRef = useRef<SVGGElement>(null)
   const floorplanContentRef = useRef<SVGGElement>(null)
   const panStateRef = useRef<PanState | null>(null)
@@ -10929,11 +10934,7 @@ export function FloorplanPanel({
   }, [mode])
 
   useEffect(() => {
-    if (!isFloorplanOpen) {
-      return
-    }
-
-    const svg = svgRef.current
+    const svg = svgElement
     if (!svg) {
       return
     }
@@ -11000,7 +11001,7 @@ export function FloorplanPanel({
       svg.removeEventListener('gesturechange', handleGestureChange)
       svg.removeEventListener('gestureend', handleGestureEnd)
     }
-  }, [isFloorplanOpen, zoomViewportAtClientPoint])
+  }, [svgElement, zoomViewportAtClientPoint])
 
   const restoreGroundLevelStructureSelection = useCallback(() => {
     const sceneNodes = useScene.getState().nodes
@@ -11325,7 +11326,7 @@ export function FloorplanPanel({
             onPointerUpCapture={
               isMarqueeSelectionToolActive ? undefined : handleRegistryFloorplanToolCommitCapture
             }
-            ref={svgRef}
+            ref={handleSvgRef}
             style={{
               cursor:
                 floorplanNavigationCursor ?? (referenceScaleDraft ? 'crosshair' : EDITOR_CURSOR),
