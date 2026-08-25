@@ -54,6 +54,7 @@ const WALL_ANGLE_BUCKET_RAD = Math.PI / 180
 const DEFAULT_MAX_WALL_JOIN_GAP = 1.25
 const WALL_HEIGHT_TOLERANCE = 0.35
 const OPENING_DUPLICATE_TOLERANCE = 0.05
+const WALL_JUNCTION_TOLERANCE = 0.06
 
 function countNodes(nodes: SceneNodes, type: AnyNode['type']) {
   return Object.values(nodes).filter((node) => node.type === type).length
@@ -215,12 +216,59 @@ function wallIntervalsCompatible(a: WallSegment, b: WallSegment, maxJoinGap: num
   return overlap / Math.min(a.length, b.length) >= 0.5
 }
 
-function wallsCanMerge(a: WallSegment, b: WallSegment, maxJoinGap: number) {
+function cross2D(ax: number, ay: number, bx: number, by: number) {
+  return ax * by - ay * bx
+}
+
+function hasNonCollinearJunctionBetween(
+  a: WallSegment,
+  b: WallSegment,
+  allSegments: WallSegment[],
+) {
+  const overlap = Math.min(a.t1, b.t1) - Math.max(a.t0, b.t0)
+  if (overlap > WALL_JUNCTION_TOLERANCE) return false
+
+  const left = a.t0 <= b.t0 ? a : b
+  const right = left === a ? b : a
+  const connectionStart = left.t1
+  const connectionEnd = right.t0
+  const connectionOffset = (a.offset + b.offset) / 2
+  const connectionPoint = pointOnLine(a, connectionStart, connectionOffset)
+
+  return allSegments.some((candidate) => {
+    if (candidate.id === a.id || candidate.id === b.id) return false
+    if (candidate.parentId !== a.parentId) return false
+    const denominator = cross2D(a.axisX, a.axisY, candidate.axisX, candidate.axisY)
+    if (Math.abs(denominator) < 1e-3) return false
+
+    const candidateStart = pointOnLine(candidate, candidate.t0, candidate.offset)
+    const deltaX = candidateStart[0] - connectionPoint[0]
+    const deltaY = candidateStart[1] - connectionPoint[1]
+    const alongConnection = cross2D(deltaX, deltaY, candidate.axisX, candidate.axisY) / denominator
+    const alongCandidate = cross2D(deltaX, deltaY, a.axisX, a.axisY) / denominator
+    const intersectionT = connectionStart + alongConnection
+
+    return (
+      intersectionT >= connectionStart - WALL_JUNCTION_TOLERANCE &&
+      intersectionT <= connectionEnd + WALL_JUNCTION_TOLERANCE &&
+      alongCandidate >= -WALL_JUNCTION_TOLERANCE &&
+      alongCandidate <= candidate.length + WALL_JUNCTION_TOLERANCE
+    )
+  })
+}
+
+function wallsCanMerge(
+  a: WallSegment,
+  b: WallSegment,
+  maxJoinGap: number,
+  allSegments: WallSegment[],
+) {
   if (a.parentId !== b.parentId) return false
   if (Math.abs(a.angleBucket - b.angleBucket) > 1) return false
   if (Math.abs(a.offset - b.offset) > wallLineTolerance(a, b)) return false
   if (!wallHeightCompatible(a, b)) return false
-  return wallIntervalsCompatible(a, b, maxJoinGap)
+  if (!wallIntervalsCompatible(a, b, maxJoinGap)) return false
+  return !hasNonCollinearJunctionBetween(a, b, allSegments)
 }
 
 function find(parent: number[], index: number): number {
@@ -423,7 +471,7 @@ function mergeWallFragments(
 
     for (let i = 0; i < group.length; i++) {
       for (let j = i + 1; j < group.length; j++) {
-        if (wallsCanMerge(group[i], group[j], options.maxWallJoinGap)) {
+        if (wallsCanMerge(group[i], group[j], options.maxWallJoinGap, segments)) {
           union(parent, i, j)
         }
       }

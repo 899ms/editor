@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import type { AnyNode } from '@pascal-app/core'
+import { type AnyNode, detectSpacesForLevel, type WallNode } from '@pascal-app/core'
 import { simplifyConvertedSceneGraph } from '../src/cleanup'
 
 function level(id = 'level_1', children: string[] = []): AnyNode {
@@ -119,5 +119,43 @@ describe('simplifyConvertedSceneGraph', () => {
     expect(nodes.door_1).toBeDefined()
     expect(nodes.door_2).toBeUndefined()
     expect((nodes.wall_1 as { children: string[] }).children).toEqual(['door_1'])
+  })
+
+  it('preserves collinear wall boundaries at perpendicular junctions', () => {
+    const wallSpecs: Array<[string, [number, number], [number, number]]> = [
+      ['north', [0.2, 0.2], [11.8, 0.2]],
+      ['east', [11.8, 0.2], [11.8, 9.8]],
+      ['south', [11.8, 9.8], [0.2, 9.8]],
+      ['west', [0.2, 9.8], [0.2, 0.2]],
+      ['bedroom_service', [0.2, 3.8], [11.8, 3.8]],
+      ['service_living', [0.2, 5.8], [11.8, 5.8]],
+      ['bedroom_left', [4.4, 0.2], [4.4, 3.8]],
+      ['bedroom_right', [8.2, 0.2], [8.2, 3.8]],
+      ['living_dining', [5.2, 5.8], [5.2, 9.8]],
+      ['dining_kitchen', [8.2, 5.8], [8.2, 9.8]],
+      ['service_left', [4.4, 3.8], [4.4, 5.8]],
+      ['service_center_left', [6.4, 3.8], [6.4, 5.8]],
+      ['service_center_right', [8.2, 3.8], [8.2, 5.8]],
+      ['service_right', [10, 3.8], [10, 5.8]],
+    ]
+    const wallIds = wallSpecs.map(([id]) => `wall_${id}`)
+    const nodes: Record<string, AnyNode> = {
+      level_1: level('level_1', wallIds),
+    }
+    for (const [id, start, end] of wallSpecs) {
+      nodes[`wall_${id}`] = wall(`wall_${id}`, start, end)
+    }
+
+    const beforeWalls = Object.values(nodes).filter(
+      (node): node is WallNode => node.type === 'wall',
+    )
+    expect(detectSpacesForLevel('level_1', beforeWalls).spaces).toHaveLength(11)
+
+    const stats = simplifyConvertedSceneGraph(nodes)
+    const afterWalls = Object.values(nodes).filter((node): node is WallNode => node.type === 'wall')
+
+    expect(stats.removedMergedWalls).toBe(0)
+    expect(afterWalls).toHaveLength(14)
+    expect(detectSpacesForLevel('level_1', afterWalls).spaces).toHaveLength(11)
   })
 })
