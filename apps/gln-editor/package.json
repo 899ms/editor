@@ -5,8 +5,9 @@
   "private": true,
   "scripts": {
     "prepare:assets": "node scripts/sync-editor-public.mjs",
-    "dev": "bun run prepare:assets && dotenv -e ../../.env.local -- next dev --port 3003",
-    "build": "bun run prepare:assets && dotenv -e ../../.env.local -- next build",
+    "prepare:viewer": "bun run --cwd ../../packages/viewer build",
+    "dev": "bun run prepare:assets && bun run prepare:viewer && dotenv -e ../../.env.local -- next dev --port 3003",
+    "build": "bun run prepare:assets && bun run prepare:viewer && dotenv -e ../../.env.local -- next build",
     "start": "next start --port 3003",
     "lint": "biome lint",
     "mcp": "bun scripts/gln-mcp.ts",
