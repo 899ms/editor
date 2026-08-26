@@ -53,7 +53,6 @@ const TITLE_BAND_M = 0.7
 const LIVE_FALLBACK_VIEW_SIZE_M = 12
 const LIVE_PADDING_M = 2
 const FRAME_WAIT_FALLBACK_MS = 500
-const IMAGE_BITMAP_FALLBACK_MS = 500
 
 // Neutral view state — no selection / hover / palette, so builders emit their
 // default appearance (the core palette only carries selection/handle colors).
@@ -400,7 +399,6 @@ async function rasterizeFloorplanSvg(
   clone.setAttribute('width', `${exportWidthPx}`)
   clone.setAttribute('height', `${exportHeightPx}`)
   const serialized = new XMLSerializer().serializeToString(clone)
-  const blob = new Blob([serialized], { type: 'image/svg+xml;charset=utf-8' })
   const canvas = document.createElement('canvas')
   canvas.width = exportWidthPx
   canvas.height = exportHeightPx
@@ -409,55 +407,26 @@ async function rasterizeFloorplanSvg(
   context.fillStyle = '#ffffff'
   context.fillRect(0, 0, canvas.width, canvas.height)
 
-  if (typeof createImageBitmap === 'function') {
-    const bitmap = await createImageBitmapWithFallback(blob)
-    if (bitmap) {
-      try {
-        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-        return canvas.toDataURL('image/png')
-      } finally {
-        bitmap.close()
-      }
-    }
+  // @ts-expect-error canvg 3.0.11 publishes declarations but omits the
+  // `types` export condition, so TypeScript cannot resolve them in bundler mode.
+  const { Canvg } = await import('canvg')
+  const renderer = Canvg.fromString(context, serialized, {
+    enableRedraw: false,
+    ignoreAnimation: true,
+    ignoreDimensions: true,
+    ignoreMouse: true,
+  })
+  try {
+    await renderer.render({
+      enableRedraw: false,
+      ignoreAnimation: true,
+      ignoreDimensions: true,
+      ignoreMouse: true,
+    })
+  } finally {
+    renderer.stop()
   }
-
-  const image = new Image()
-  image.decoding = 'sync'
-  const loaded = new Promise<void>((resolve, reject) => {
-    image.onload = () => resolve()
-    image.onerror = () => reject(new Error('Failed to rasterize floorplan SVG'))
-  })
-  // Use an independent data URL here: a timed-out createImageBitmap call can
-  // retain its Blob decoder, which otherwise also blocks an object-URL retry.
-  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serialized)}`
-  await loaded
-  context.drawImage(image, 0, 0, canvas.width, canvas.height)
   return canvas.toDataURL('image/png')
-}
-
-function createImageBitmapWithFallback(blob: Blob): Promise<ImageBitmap | null> {
-  return new Promise((resolve) => {
-    let finished = false
-    const finish = (bitmap: ImageBitmap | null) => {
-      if (finished) {
-        bitmap?.close()
-        return
-      }
-      finished = true
-      window.clearTimeout(timeoutId)
-      resolve(bitmap)
-    }
-    const timeoutId = window.setTimeout(() => finish(null), IMAGE_BITMAP_FALLBACK_MS)
-
-    try {
-      void createImageBitmap(blob).then(
-        (bitmap) => finish(bitmap),
-        () => finish(null),
-      )
-    } catch {
-      finish(null)
-    }
-  })
 }
 
 function collectFloorplanGeometry(
