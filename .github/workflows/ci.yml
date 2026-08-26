@@ -57,6 +57,8 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run GLN application acceptance
+        env:
+          GLN_E2E_EXCLUDE_FLOORPLAN: "1"
         run: bun run prepare:e2e:gln && bunx playwright test --config apps/gln-editor/playwright.config.ts --shard=${{ matrix.shard }}/4
 
       - name: Upload GLN acceptance artifacts
@@ -64,6 +66,34 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gln-acceptance-artifacts-${{ matrix.shard }}
+          path: |
+            apps/gln-editor/playwright-report
+            apps/gln-editor/test-results
+          if-no-files-found: ignore
+
+  gln-floorplan-export:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run floorplan export acceptance in an isolated browser
+        run: bun run prepare:e2e:gln && bunx playwright test --config apps/gln-editor/playwright.config.ts apps/gln-editor/e2e/floorplan-export.spec.ts
+
+      - name: Upload floorplan export artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gln-floorplan-export-artifacts
           path: |
             apps/gln-editor/playwright-report
             apps/gln-editor/test-results

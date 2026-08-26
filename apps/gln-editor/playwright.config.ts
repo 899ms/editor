@@ -9,6 +9,8 @@ const glnBaseUrl = 'http://127.0.0.1:32103'
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore:
+    process.env.GLN_E2E_EXCLUDE_FLOORPLAN === '1' ? '**/floorplan-export.spec.ts' : undefined,
   timeout: 180_000,
   fullyParallel: false,
   workers: 1,
