@@ -10,6 +10,9 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
+// @ts-expect-error canvg 3.0.11 publishes declarations but omits the
+// `types` export condition, so TypeScript cannot resolve them in bundler mode.
+import { Canvg } from 'canvg'
 import { createElement } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
@@ -411,9 +414,6 @@ async function rasterizeFloorplanSvg(
   context.fillStyle = '#ffffff'
   context.fillRect(0, 0, canvas.width, canvas.height)
 
-  // @ts-expect-error canvg 3.0.11 publishes declarations but omits the
-  // `types` export condition, so TypeScript cannot resolve them in bundler mode.
-  const { Canvg } = await import('canvg')
   const renderer = Canvg.fromString(context, serialized, {
     enableRedraw: false,
     ignoreAnimation: true,

@@ -134,10 +134,7 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   expect(svgText).toContain('#d95f45')
   expect(svgText).toContain('#238aa5')
 
-  // SVG rasterization is CPU-bound in headless Chromium. GitHub's shared
-  // runners can take materially longer than a local production build, while
-  // the test-level timeout still bounds the complete export acceptance.
-  const pdfDownloadPromise = page.waitForEvent('download', { timeout: 90_000 })
+  const pdfDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
   await clickVisible(page.getByRole('button', { name: '完整平面图（PDF）', exact: true }))
   const pdfDownload = await pdfDownloadPromise
   expect(await pdfDownload.failure()).toBeNull()
