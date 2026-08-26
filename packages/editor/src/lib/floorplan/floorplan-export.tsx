@@ -53,6 +53,7 @@ const TITLE_BAND_M = 0.7
 const LIVE_FALLBACK_VIEW_SIZE_M = 12
 const LIVE_PADDING_M = 2
 const FRAME_WAIT_FALLBACK_MS = 500
+const IMAGE_BITMAP_FALLBACK_MS = 500
 
 // Neutral view state — no selection / hover / palette, so builders emit their
 // default appearance (the core palette only carries selection/handle colors).
@@ -409,17 +410,14 @@ async function rasterizeFloorplanSvg(
   context.fillRect(0, 0, canvas.width, canvas.height)
 
   if (typeof createImageBitmap === 'function') {
-    try {
-      const bitmap = await createImageBitmap(blob)
+    const bitmap = await createImageBitmapWithFallback(blob)
+    if (bitmap) {
       try {
         context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
         return canvas.toDataURL('image/png')
       } finally {
         bitmap.close()
       }
-    } catch {
-      // Safari does not consistently decode SVG blobs through createImageBitmap.
-      // Retain the object-URL path as a compatibility fallback.
     }
   }
 
@@ -439,6 +437,31 @@ async function rasterizeFloorplanSvg(
   } finally {
     URL.revokeObjectURL(url)
   }
+}
+
+function createImageBitmapWithFallback(blob: Blob): Promise<ImageBitmap | null> {
+  return new Promise((resolve) => {
+    let finished = false
+    const finish = (bitmap: ImageBitmap | null) => {
+      if (finished) {
+        bitmap?.close()
+        return
+      }
+      finished = true
+      window.clearTimeout(timeoutId)
+      resolve(bitmap)
+    }
+    const timeoutId = window.setTimeout(() => finish(null), IMAGE_BITMAP_FALLBACK_MS)
+
+    try {
+      void createImageBitmap(blob).then(
+        (bitmap) => finish(bitmap),
+        () => finish(null),
+      )
+    } catch {
+      finish(null)
+    }
+  })
 }
 
 function collectFloorplanGeometry(

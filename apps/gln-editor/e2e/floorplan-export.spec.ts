@@ -103,6 +103,10 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   await page.evaluate(() => {
     window.requestAnimationFrame = () => 1
     window.cancelAnimationFrame = () => {}
+    Object.defineProperty(window, 'createImageBitmap', {
+      configurable: true,
+      value: () => new Promise<ImageBitmap>(() => {}),
+    })
   })
   await page.waitForTimeout(1_500)
   const baseline = await readScene(request, created.id)
@@ -140,7 +144,7 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   expect(svgText).toContain('#d95f45')
   expect(svgText).toContain('#238aa5')
 
-  const pdfDownloadPromise = page.waitForEvent('download')
+  const pdfDownloadPromise = page.waitForEvent('download', { timeout: 10_000 })
   await clickVisible(page.getByRole('button', { name: '完整平面图（PDF）', exact: true }))
   const pdfDownload = await pdfDownloadPromise
   expect(await pdfDownload.failure()).toBeNull()
