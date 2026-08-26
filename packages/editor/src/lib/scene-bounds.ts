@@ -73,6 +73,7 @@ export function computeSceneBoundsXZ(
 
   for (const node of list) {
     if (!node || typeof node !== 'object') continue
+    if (node.type === 'guide' || node.type === 'measurement') continue
     const anyNode = node as unknown as Record<string, unknown>
 
     // Wall / fence endpoints in level coordinates.

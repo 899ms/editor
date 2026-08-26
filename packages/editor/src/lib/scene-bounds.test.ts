@@ -163,6 +163,37 @@ describe('computeSceneBoundsXZ', () => {
     expect(bounds!.max).toEqual([7, 8])
   })
 
+  test('ignores guide and measurement annotations when framing model geometry', () => {
+    const nodes: AnyNode[] = [
+      makeWall([0, 0], [12, 10]),
+      {
+        object: 'node',
+        id: 'guide_legend',
+        type: 'guide',
+        parentId: null,
+        visible: true,
+        metadata: {},
+        position: [100, 0, 80],
+      } as unknown as AnyNode,
+      {
+        object: 'node',
+        id: 'measurement_total',
+        type: 'measurement',
+        parentId: null,
+        visible: true,
+        metadata: {},
+        position: [-50, 0, -40],
+      } as unknown as AnyNode,
+    ]
+
+    const bounds = computeSceneBoundsXZ(nodes)
+
+    expect(bounds).not.toBeNull()
+    expect(bounds!.min).toEqual([0, 0])
+    expect(bounds!.max).toEqual([12, 10])
+    expect(bounds!.center).toEqual([6, 5])
+  })
+
   test('handles a single degenerate point with a minimum extent', () => {
     const nodes: AnyNode[] = [makeWall([2, 2], [2, 2])]
     const bounds = computeSceneBoundsXZ(nodes)

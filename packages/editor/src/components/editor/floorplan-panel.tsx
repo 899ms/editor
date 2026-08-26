@@ -90,9 +90,16 @@ import {
   type FloorplanNodeTransform as SharedFloorplanNodeTransform,
   worldToFloorplanLocalPoint,
 } from '../../lib/floorplan'
+import {
+  chooseFloorplanRotationPivot,
+  FLOORPLAN_MIN_ROTATION_RADIUS_PX,
+  getFloorplanPointerAngleDeltaDegrees,
+  getFloorplanRotationViewCenter,
+} from '../../lib/floorplan/navigation-rotation'
 import { guideEmitter } from '../../lib/guide-events'
 import { measurementHint, parseMeasurement } from '../../lib/measurement-parser'
 import { formatLinearMeasurement, linearUnitToMeters } from '../../lib/measurements'
+import { isOrbitTargetNodeEligible } from '../../lib/orbit-target'
 import { sfxEmitter } from '../../lib/sfx-bus'
 import { SITE_BOUNDARY_DRAG_LABEL } from '../../lib/site-boundary'
 import { resolveSlabPlanPointSnap } from '../../lib/slab-plan-snap'
@@ -289,7 +296,7 @@ const FLOORPLAN_GUIDE_HANDLE_HINT_OFFSET = 72
 const FLOORPLAN_GUIDE_HANDLE_HINT_PADDING_X = 92
 const FLOORPLAN_GUIDE_HANDLE_HINT_PADDING_Y = 48
 const FLOORPLAN_GUIDE_ROTATION_SNAP_DEGREES = 15
-const FLOORPLAN_ROTATION_DEGREES_PER_PIXEL = 0.35
+const FLOORPLAN_FALLBACK_ROTATION_DEGREES_PER_PIXEL = 0.35
 const FLOORPLAN_VIEW_ANIMATION_TIME_CONSTANT_MS = 90
 const FLOORPLAN_VIEW_ANIMATION_EPSILON = 0.0005
 const FLOORPLAN_ROTATION_ANIMATION_EPSILON_DEG = 0.01
@@ -341,10 +348,15 @@ type PanState = {
 }
 
 type FloorplanRotationState = {
+  initialSceneRotationDeg: number
   pointerId: number
+  pivotClient: SvgPoint
+  pivotLocal: SvgPoint
+  pivotOffsetFromViewportCenter: SvgPoint
   startClientX: number
+  startClientY: number
   initialUserRotationDeg: number
-  viewportCenterLocal: SvgPoint
+  useAngularRotation: boolean
 }
 
 type FloorplanScreenSelectionState = {
@@ -8870,11 +8882,64 @@ export function FloorplanPanel({
         -floorplanSceneRotationDeg,
       )
 
+      const svg = svgRef.current
+      const sceneCtm = floorplanSceneRef.current?.getScreenCTM()
+      if (!(svg && sceneCtm)) {
+        return
+      }
+
+      const viewportCenterPoint = svg.createSVGPoint()
+      viewportCenterPoint.x = viewportCenterLocal.x
+      viewportCenterPoint.y = viewportCenterLocal.y
+      const viewportCenterScreen = viewportCenterPoint.matrixTransform(sceneCtm)
+
+      const target = event.target instanceof Element ? event.target : null
+      const hitNode = target?.closest('[data-node-id]')
+      let hitCenter: SvgPoint | null = null
+      const hitNodeId = hitNode?.getAttribute('data-node-id')
+      const hitSceneNode = hitNodeId ? useScene.getState().nodes[hitNodeId as AnyNodeId] : undefined
+      if (hitNode instanceof SVGGraphicsElement && isOrbitTargetNodeEligible(hitSceneNode)) {
+        const hitCtm = hitNode.getScreenCTM()
+        if (hitCtm) {
+          const bounds = hitNode.getBBox()
+          const hitCenterPoint = svg.createSVGPoint()
+          hitCenterPoint.x = bounds.x + bounds.width / 2
+          hitCenterPoint.y = bounds.y + bounds.height / 2
+          const hitCenterScreen = hitCenterPoint.matrixTransform(hitCtm)
+          hitCenter = { x: hitCenterScreen.x, y: hitCenterScreen.y }
+        }
+      }
+
+      const pointer = { x: event.clientX, y: event.clientY }
+      const pivotClient = chooseFloorplanRotationPivot({
+        hitCenter,
+        pointer,
+        viewportCenter: {
+          x: viewportCenterScreen.x,
+          y: viewportCenterScreen.y,
+        },
+      })
+      const pivotLocal = getSvgPointFromClientPoint(pivotClient.x, pivotClient.y)
+      if (!pivotLocal) {
+        return
+      }
+
+      const pivotSvg = rotateSvgPoint(pivotLocal, floorplanSceneRotationDeg)
+      const pointerRadius = Math.hypot(pointer.x - pivotClient.x, pointer.y - pivotClient.y)
+
       floorplanRotationStateRef.current = {
+        initialSceneRotationDeg: floorplanSceneRotationDeg,
         pointerId: event.pointerId,
+        pivotClient,
+        pivotLocal,
+        pivotOffsetFromViewportCenter: {
+          x: pivotSvg.x - currentViewport.centerX,
+          y: pivotSvg.y - currentViewport.centerY,
+        },
         startClientX: event.clientX,
+        startClientY: event.clientY,
         initialUserRotationDeg: floorplanUserRotationDeg,
-        viewportCenterLocal,
+        useAngularRotation: pointerRadius >= FLOORPLAN_MIN_ROTATION_RADIUS_PX,
       }
       setIsRotatingFloorplan(true)
       setCursorPoint(null)
@@ -8886,6 +8951,7 @@ export function FloorplanPanel({
       fittedViewport,
       floorplanSceneRotationDeg,
       floorplanUserRotationDeg,
+      getSvgPointFromClientPoint,
       viewport,
       setFloorplanCursorPosition,
       setCursorPoint,
@@ -9161,12 +9227,24 @@ export function FloorplanPanel({
         event.preventDefault()
         event.stopPropagation()
 
-        const angleDeltaDeg =
-          (rotationState.startClientX - event.clientX) * FLOORPLAN_ROTATION_DEGREES_PER_PIXEL
+        const angleDeltaDeg = rotationState.useAngularRotation
+          ? getFloorplanPointerAngleDeltaDegrees(
+              rotationState.pivotClient,
+              { x: rotationState.startClientX, y: rotationState.startClientY },
+              { x: event.clientX, y: event.clientY },
+            )
+          : (rotationState.startClientX - event.clientX) *
+            FLOORPLAN_FALLBACK_ROTATION_DEGREES_PER_PIXEL
         const nextUserRotationDeg = rotationState.initialUserRotationDeg + angleDeltaDeg
+        const nextSceneRotationDeg = rotationState.initialSceneRotationDeg + angleDeltaDeg
+        const nextViewportCenterLocal = getFloorplanRotationViewCenter({
+          nextRotationDegrees: nextSceneRotationDeg,
+          pivotLocal: rotationState.pivotLocal,
+          pivotOffsetFromViewportCenter: rotationState.pivotOffsetFromViewportCenter,
+        })
 
-        smoothFloorplanNavigationView(rotationState.viewportCenterLocal, nextUserRotationDeg)
-        publishFloorplanNavigationPose(rotationState.viewportCenterLocal, nextUserRotationDeg)
+        smoothFloorplanNavigationView(nextViewportCenterLocal, nextUserRotationDeg)
+        publishFloorplanNavigationPose(nextViewportCenterLocal, nextUserRotationDeg)
         setCursorPoint(null)
         return
       }

@@ -18,9 +18,11 @@ import {
   type OrthographicCamera,
   type PerspectiveCamera,
   Spherical,
+  Vector2,
   Vector3,
 } from 'three'
 import { EDITOR_LAYER } from '../../lib/constants'
+import { hasOrbitTargetDragStarted, resolveOrbitTargetIntersection } from '../../lib/orbit-target'
 import useEditor from '../../store/use-editor'
 import {
   useActiveHandleDrag,
@@ -38,6 +40,7 @@ const tempTarget = new Vector3()
 const syncTarget = new Vector3()
 const syncSpherical = new Spherical()
 const keyboardPanSpherical = new Spherical()
+const orbitTargetNdc = new Vector2()
 const DEFAULT_MAX_POLAR_ANGLE = Math.PI / 2 - 0.1
 const DEBUG_MAX_POLAR_ANGLE = Math.PI - 0.05
 const NAVIGATION_SYNC_POSITION_EPSILON = 0.001
@@ -383,6 +386,7 @@ export const CustomCameraControls = () => {
   const camera = useThree((state) => state.camera)
   const gl = useThree((state) => state.gl)
   const raycaster = useThree((state) => state.raycaster)
+  const scene = useThree((state) => state.scene)
   const viewportSize = useThree((state) => state.size)
   useEffect(() => {
     camera.layers.enable(EDITOR_LAYER)
@@ -676,6 +680,8 @@ export const CustomCameraControls = () => {
     let ownsNavigationCursor = false
     let panPointerId: number | null = null
     let panPointerButton: number | null = null
+    let pendingOrbitTarget: { pointerId: number; x: number; y: number; applied: boolean } | null =
+      null
 
     const clearKeyboardPanKeys = () => {
       keyboardPanKeys.current.forward = false
@@ -815,6 +821,14 @@ export const CustomCameraControls = () => {
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node) || !gl.domElement.contains(event.target)) return
       clearPendingFloorplanNavigationPose()
+      if (event.button === 2) {
+        pendingOrbitTarget = {
+          pointerId: event.pointerId,
+          x: event.clientX,
+          y: event.clientY,
+          applied: false,
+        }
+      }
       if (event.button !== 1 && !(event.button === 0 && keyState.space)) return
 
       panPointerId = event.pointerId
@@ -822,11 +836,59 @@ export const CustomCameraControls = () => {
       updateNavigationCursor()
     }
 
+    const onPointerMove = (event: PointerEvent) => {
+      const pending = pendingOrbitTarget
+      if (
+        !pending ||
+        pending.applied ||
+        event.pointerId !== pending.pointerId ||
+        (event.buttons & 2) === 0 ||
+        !hasOrbitTargetDragStarted(
+          { x: pending.x, y: pending.y },
+          { x: event.clientX, y: event.clientY },
+        )
+      ) {
+        return
+      }
+
+      pending.applied = true
+      const control = controls.current
+      if (!control) return
+
+      const rect = gl.domElement.getBoundingClientRect()
+      if (rect.width <= 0 || rect.height <= 0) return
+      orbitTargetNdc.set(
+        ((pending.x - rect.left) / rect.width) * 2 - 1,
+        -((pending.y - rect.top) / rect.height) * 2 + 1,
+      )
+      raycaster.setFromCamera(orbitTargetNdc, camera)
+
+      const registeredNodeIds = new Map(
+        Array.from(sceneRegistry.nodes, ([nodeId, object]) => [object, nodeId] as const),
+      )
+      const intersection = resolveOrbitTargetIntersection(
+        raycaster.intersectObjects(scene.children, true),
+        registeredNodeIds,
+        useScene.getState().nodes,
+      )
+      if (!intersection) return
+
+      clearPendingFloorplanNavigationPose()
+      control.setOrbitPoint(intersection.point.x, intersection.point.y, intersection.point.z)
+    }
+
     const onWheel = () => {
       clearPendingFloorplanNavigationPose()
     }
 
     const onPointerUp = (event: PointerEvent) => {
+      if (
+        pendingOrbitTarget &&
+        (event.type === 'pointercancel' ||
+          (event.pointerId === pendingOrbitTarget.pointerId && event.button === 2))
+      ) {
+        pendingOrbitTarget = null
+      }
       if (panPointerId === null) return
       if (event.type !== 'pointercancel' && event.pointerId !== panPointerId) return
       if (event.type !== 'pointercancel' && event.button !== panPointerButton) return
@@ -841,6 +903,7 @@ export const CustomCameraControls = () => {
       clearKeyboardPanKeys()
       panPointerId = null
       panPointerButton = null
+      pendingOrbitTarget = null
       clearNavigationCursor()
       updateConfig()
     }
@@ -848,6 +911,7 @@ export const CustomCameraControls = () => {
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('keyup', onKeyUp)
     window.addEventListener('pointerdown', onPointerDown, true)
+    window.addEventListener('pointermove', onPointerMove, true)
     window.addEventListener('pointerup', onPointerUp, true)
     window.addEventListener('pointercancel', onPointerUp, true)
     window.addEventListener('blur', onBlur)
@@ -858,6 +922,7 @@ export const CustomCameraControls = () => {
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('pointerdown', onPointerDown, true)
+      window.removeEventListener('pointermove', onPointerMove, true)
       window.removeEventListener('pointerup', onPointerUp, true)
       window.removeEventListener('pointercancel', onPointerUp, true)
       window.removeEventListener('blur', onBlur)
@@ -865,7 +930,16 @@ export const CustomCameraControls = () => {
       clearKeyboardPanKeys()
       clearNavigationCursor()
     }
-  }, [cameraMode, gl, isPreviewMode, isFirstPersonMode, clearPendingFloorplanNavigationPose])
+  }, [
+    camera,
+    cameraMode,
+    gl,
+    isPreviewMode,
+    isFirstPersonMode,
+    raycaster,
+    scene,
+    clearPendingFloorplanNavigationPose,
+  ])
 
   // Cancel any in-progress 2D-origin navigation pose when the user starts
   // dragging (right-click orbit, middle-click pan, touch). `controlstart`
