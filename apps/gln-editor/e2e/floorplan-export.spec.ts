@@ -101,11 +101,29 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   // Headless runners can suspend animation frames after the viewer readiness fallback.
   // Keep the export regression deterministic by exercising the bounded timer path.
   await page.evaluate(() => {
+    const nativeRequestAnimationFrame = window.requestAnimationFrame
+    const nativeCancelAnimationFrame = window.cancelAnimationFrame
+    Object.defineProperty(window, '__glnRestoreAnimationFrames', {
+      configurable: true,
+      value: () => {
+        window.requestAnimationFrame = nativeRequestAnimationFrame
+        window.cancelAnimationFrame = nativeCancelAnimationFrame
+        delete (window as typeof window & { __glnRestoreAnimationFrames?: () => void })
+          .__glnRestoreAnimationFrames
+      },
+    })
     window.requestAnimationFrame = () => 1
     window.cancelAnimationFrame = () => {}
     Object.defineProperty(window, 'createImageBitmap', {
       configurable: true,
       value: () => new Promise<ImageBitmap>(() => {}),
+    })
+    const NativeImage = window.Image
+    Object.defineProperty(window, 'Image', {
+      configurable: true,
+      value: class NeverLoadingImage extends NativeImage {
+        override set src(_value: string) {}
+      },
     })
   })
   await page.waitForTimeout(1_500)
@@ -144,9 +162,16 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   expect(svgText).toContain('#d95f45')
   expect(svgText).toContain('#238aa5')
 
-  // The decoder fault injection above still proves the export cannot depend on
-  // createImageBitmap/Image.onload. Allow enough time for Canvg + jsPDF on a
-  // contended four-shard CI runner while retaining a bounded hang detector.
+  // The bounded-frame fallback was exercised by fit/SVG. Restore real frames
+  // before Canvg is first imported because its third-party raf shim snapshots
+  // the global function at module initialization; decoder faults stay active.
+  await page.evaluate(() => {
+    const testWindow = window as typeof window & { __glnRestoreAnimationFrames?: () => void }
+    testWindow.__glnRestoreAnimationFrames?.()
+  })
+
+  // The decoder fault injection still proves the PDF cannot depend on
+  // createImageBitmap/Image.onload while retaining a bounded hang detector.
   const pdfDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
   await clickVisible(page.getByRole('button', { name: '完整平面图（PDF）', exact: true }))
   const pdfDownload = await pdfDownloadPromise
