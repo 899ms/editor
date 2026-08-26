@@ -5,14 +5,12 @@ import {
   type AnyNodeId,
   type FloorplanGeometry,
   type LiveNodeOverrides,
+  loadAssetUrl,
   nodeRegistry,
   resolveBuildingForLevel,
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
-// @ts-expect-error canvg 3.0.11 publishes declarations but omits the
-// `types` export condition, so TypeScript cannot resolve them in bundler mode.
-import { Canvg } from 'canvg'
 import { createElement } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
@@ -60,7 +58,7 @@ const TITLE_BAND_M = 0.7
 const LIVE_FALLBACK_VIEW_SIZE_M = 12
 const LIVE_PADDING_M = 2
 const FRAME_WAIT_FALLBACK_MS = 500
-const CANVG_ASSET_READY_TIMEOUT_MS = 10_000
+const PDF_IMAGE_LOAD_TIMEOUT_MS = 5_000
 
 // Neutral view state — no selection / hover / palette, so builders emit their
 // default appearance (the core palette only carries selection/handle colors).
@@ -131,7 +129,14 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
         const x = boxX + (boxW - w) / 2
         const y = boxY + (boxH - h) / 2
 
-        const imageData = await rasterizeFloorplanSvg(mounted.svg, mounted.width, mounted.height)
+        const imageData = await rasterizeFloorplanGeometry(
+          geometries,
+          rotationDeg,
+          level.label,
+          mounted.contentBBox,
+          mounted.width,
+          mounted.height,
+        )
         // Embedding the browser-encoded JPEG bytes avoids jsPDF decoding a
         // base64 PNG and recompressing millions of pixels on the main thread.
         // That path could exceed the export timeout after a long 3D session.
@@ -399,17 +404,16 @@ function rotatePoint(point: { x: number; y: number }, rotationDeg: number) {
   }
 }
 
-async function rasterizeFloorplanSvg(
-  svg: SVGSVGElement,
+async function rasterizeFloorplanGeometry(
+  geometries: { id: AnyNodeId; base: FloorplanGeometry }[],
+  rotationDeg: number,
+  title: string,
+  contentBBox: { x: number; y: number; width: number; height: number },
   width: number,
   height: number,
 ): Promise<Uint8Array> {
   const exportWidthPx = PDF_RASTER_WIDTH_PX
   const exportHeightPx = Math.max(1, Math.round((exportWidthPx * height) / width))
-  const clone = svg.cloneNode(true) as SVGSVGElement
-  clone.setAttribute('width', `${exportWidthPx}`)
-  clone.setAttribute('height', `${exportHeightPx}`)
-  const serialized = new XMLSerializer().serializeToString(clone)
   const canvas = document.createElement('canvas')
   canvas.width = exportWidthPx
   canvas.height = exportHeightPx
@@ -418,27 +422,273 @@ async function rasterizeFloorplanSvg(
   context.fillStyle = '#ffffff'
   context.fillRect(0, 0, canvas.width, canvas.height)
 
-  const renderer = Canvg.fromString(context, serialized, {
-    enableRedraw: false,
-    ignoreAnimation: true,
-    ignoreDimensions: true,
-    ignoreMouse: true,
-  })
-  try {
-    // With redraw disabled, `Canvg.render()` does not re-check readiness after
-    // its initial attempt. Poll with a bounded timer so an asset-loading race
-    // cannot leave the export promise pending, then paint one frame directly.
-    await waitForCanvgAssets(renderer)
-    renderer.start({
-      enableRedraw: false,
-      ignoreAnimation: true,
-      ignoreDimensions: true,
-      ignoreMouse: true,
-    })
-  } finally {
-    renderer.stop()
+  const pixelsPerMeter = exportWidthPx / width
+  const minX = contentBBox.x - PADDING_M
+  const minY = contentBBox.y - PADDING_M - TITLE_BAND_M
+  const images = await preloadFloorplanImages(geometries.map(({ base }) => base))
+
+  context.save()
+  context.scale(pixelsPerMeter, pixelsPerMeter)
+  context.translate(-minX, -minY)
+  context.save()
+  context.rotate((rotationDeg * Math.PI) / 180)
+  for (const { base } of geometries) {
+    drawFloorplanGeometry(context, base, pixelsPerMeter, images)
   }
+  context.restore()
+
+  context.fillStyle = '#111827'
+  context.font = '600 0.28px "Microsoft YaHei", "Noto Sans CJK SC", sans-serif'
+  context.textAlign = 'start'
+  context.textBaseline = 'alphabetic'
+  context.fillText(title, minX + 0.2, minY + 0.42)
+  context.restore()
+
   return canvasToJpegBytes(canvas)
+}
+
+type FloorplanImageMap = Map<string, HTMLImageElement | null>
+
+async function preloadFloorplanImages(geometries: FloorplanGeometry[]): Promise<FloorplanImageMap> {
+  const urls = new Set<string>()
+  const visit = (geometry: FloorplanGeometry) => {
+    if (geometry.kind === 'image') urls.add(geometry.url)
+    if (geometry.kind === 'group') geometry.children.forEach(visit)
+  }
+  geometries.forEach(visit)
+
+  const entries = await Promise.all(
+    Array.from(urls, async (url) => {
+      try {
+        const resolvedUrl = await loadAssetUrl(url)
+        if (!resolvedUrl) return [url, null] as const
+        return [url, await loadFloorplanImage(resolvedUrl)] as const
+      } catch {
+        return [url, null] as const
+      }
+    }),
+  )
+  return new Map(entries)
+}
+
+function loadFloorplanImage(url: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const image = new Image()
+    let settled = false
+    const finish = (result: HTMLImageElement | null) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timeoutId)
+      image.onload = null
+      image.onerror = null
+      resolve(result)
+    }
+    const timeoutId = window.setTimeout(() => finish(null), PDF_IMAGE_LOAD_TIMEOUT_MS)
+    image.onload = () => finish(image)
+    image.onerror = () => finish(null)
+    image.crossOrigin = 'anonymous'
+    image.src = url
+  })
+}
+
+function drawFloorplanGeometry(
+  context: CanvasRenderingContext2D,
+  geometry: FloorplanGeometry,
+  pixelsPerMeter: number,
+  images: FloorplanImageMap,
+) {
+  if (geometry.kind === 'group') {
+    context.save()
+    if (geometry.transform?.translate) {
+      context.translate(geometry.transform.translate[0], geometry.transform.translate[1])
+    }
+    if (geometry.transform?.rotate !== undefined) context.rotate(geometry.transform.rotate)
+    for (const child of geometry.children) {
+      drawFloorplanGeometry(context, child, pixelsPerMeter, images)
+    }
+    context.restore()
+    return
+  }
+
+  if (geometry.kind === 'text') {
+    drawFloorplanText(context, geometry)
+    return
+  }
+
+  if (geometry.kind === 'image') {
+    drawFloorplanImage(context, geometry, images.get(geometry.url) ?? null)
+    return
+  }
+
+  let path: Path2D | null = null
+  switch (geometry.kind) {
+    case 'path':
+      path = new Path2D(geometry.d)
+      break
+    case 'polygon':
+    case 'polyline': {
+      path = new Path2D()
+      const [first, ...rest] = geometry.points
+      if (!first) return
+      path.moveTo(first[0], first[1])
+      for (const point of rest) path.lineTo(point[0], point[1])
+      if (geometry.kind === 'polygon') path.closePath()
+      break
+    }
+    case 'rect':
+      path = new Path2D()
+      if ((geometry.rx ?? geometry.ry ?? 0) > 0) {
+        path.roundRect(
+          geometry.x,
+          geometry.y,
+          geometry.width,
+          geometry.height,
+          geometry.rx ?? geometry.ry ?? 0,
+        )
+      } else {
+        path.rect(geometry.x, geometry.y, geometry.width, geometry.height)
+      }
+      break
+    case 'circle':
+      path = new Path2D()
+      path.arc(geometry.cx, geometry.cy, geometry.r, 0, Math.PI * 2)
+      break
+    case 'line':
+      path = new Path2D()
+      path.moveTo(geometry.x1, geometry.y1)
+      path.lineTo(geometry.x2, geometry.y2)
+      break
+    default:
+      return
+  }
+
+  drawFloorplanPath(context, path, geometry, pixelsPerMeter)
+}
+
+function drawFloorplanPath(
+  context: CanvasRenderingContext2D,
+  path: Path2D,
+  style: {
+    fill?: string
+    fillOpacity?: number
+    opacity?: number
+    stroke?: string
+    strokeDasharray?: string
+    strokeLinecap?: 'butt' | 'round' | 'square'
+    strokeLinejoin?: 'miter' | 'round' | 'bevel'
+    strokeOpacity?: number
+    strokeWidth?: number
+    vectorEffect?: 'non-scaling-stroke'
+  },
+  pixelsPerMeter: number,
+) {
+  context.save()
+  const baseOpacity = style.opacity ?? 1
+  if (style.fill && style.fill !== 'none') {
+    context.globalAlpha = baseOpacity * (style.fillOpacity ?? 1)
+    context.fillStyle = style.fill
+    context.fill(path)
+  }
+  if (style.stroke && style.stroke !== 'none') {
+    const strokeScale = style.vectorEffect === 'non-scaling-stroke' ? pixelsPerMeter : 1
+    context.globalAlpha = baseOpacity * (style.strokeOpacity ?? 1)
+    context.strokeStyle = style.stroke
+    context.lineWidth = (style.strokeWidth ?? 1) / strokeScale
+    context.lineCap = style.strokeLinecap ?? 'butt'
+    context.lineJoin = style.strokeLinejoin ?? 'miter'
+    context.setLineDash(
+      parseStrokeDasharray(style.strokeDasharray).map((value) => value / strokeScale),
+    )
+    context.stroke(path)
+  }
+  context.restore()
+}
+
+function parseStrokeDasharray(value?: string): number[] {
+  if (!value) return []
+  return value
+    .split(/[\s,]+/)
+    .map(Number)
+    .filter((entry) => Number.isFinite(entry) && entry >= 0)
+}
+
+function drawFloorplanText(
+  context: CanvasRenderingContext2D,
+  geometry: Extract<FloorplanGeometry, { kind: 'text' }>,
+) {
+  context.save()
+  context.globalAlpha = geometry.opacity ?? 1
+  context.font = `${geometry.fontWeight ?? 400} ${geometry.fontSize}px ${geometry.fontFamily ?? 'sans-serif'}`
+  context.textAlign = geometry.textAnchor === 'middle' ? 'center' : (geometry.textAnchor ?? 'start')
+  context.textBaseline = resolveCanvasTextBaseline(geometry.dominantBaseline)
+  context.fillStyle = geometry.fill ?? '#171717'
+  if (geometry.stroke) {
+    context.strokeStyle = geometry.stroke
+    context.lineWidth = geometry.strokeWidth ?? 1
+    context.lineCap = 'round'
+    context.lineJoin = 'round'
+    if (geometry.paintOrder === 'fill') {
+      context.fillText(geometry.text, geometry.x, geometry.y)
+      context.strokeText(geometry.text, geometry.x, geometry.y)
+      context.restore()
+      return
+    }
+    context.strokeText(geometry.text, geometry.x, geometry.y)
+  }
+  context.fillText(geometry.text, geometry.x, geometry.y)
+  context.restore()
+}
+
+function resolveCanvasTextBaseline(
+  baseline: Extract<FloorplanGeometry, { kind: 'text' }>['dominantBaseline'],
+): CanvasTextBaseline {
+  if (baseline === 'central') return 'middle'
+  if (baseline === 'auto') return 'alphabetic'
+  return baseline ?? 'middle'
+}
+
+function drawFloorplanImage(
+  context: CanvasRenderingContext2D,
+  geometry: Extract<FloorplanGeometry, { kind: 'image' }>,
+  image: HTMLImageElement | null,
+) {
+  context.save()
+  context.translate(geometry.center[0], geometry.center[1])
+  context.rotate(geometry.rotation ?? 0)
+  context.globalAlpha = geometry.opacity ?? 1
+  const x = -geometry.width / 2
+  const y = -geometry.height / 2
+  if (!image) {
+    context.fillStyle = '#f3f4f6'
+    context.strokeStyle = '#9ca3af'
+    context.lineWidth = 0.02
+    context.fillRect(x, y, geometry.width, geometry.height)
+    context.strokeRect(x, y, geometry.width, geometry.height)
+    context.beginPath()
+    context.moveTo(x, y)
+    context.lineTo(x + geometry.width, y + geometry.height)
+    context.moveTo(x + geometry.width, y)
+    context.lineTo(x, y + geometry.height)
+    context.stroke()
+    context.restore()
+    return
+  }
+
+  if (geometry.preserveAspectRatio === 'none') {
+    context.drawImage(image, x, y, geometry.width, geometry.height)
+  } else {
+    const scale =
+      geometry.preserveAspectRatio?.includes('slice') === true
+        ? Math.max(geometry.width / image.naturalWidth, geometry.height / image.naturalHeight)
+        : Math.min(geometry.width / image.naturalWidth, geometry.height / image.naturalHeight)
+    const drawWidth = image.naturalWidth * scale
+    const drawHeight = image.naturalHeight * scale
+    context.beginPath()
+    context.rect(x, y, geometry.width, geometry.height)
+    context.clip()
+    context.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight)
+  }
+  context.restore()
 }
 
 async function canvasToJpegBytes(canvas: HTMLCanvasElement): Promise<Uint8Array> {
@@ -453,16 +703,6 @@ async function canvasToJpegBytes(canvas: HTMLCanvasElement): Promise<Uint8Array>
     )
   })
   return new Uint8Array(await blob.arrayBuffer())
-}
-
-async function waitForCanvgAssets(renderer: { isReady: () => boolean }): Promise<void> {
-  const deadline = performance.now() + CANVG_ASSET_READY_TIMEOUT_MS
-  while (!renderer.isReady()) {
-    if (performance.now() >= deadline) {
-      throw new Error('Floorplan PDF assets did not become ready in time')
-    }
-    await new Promise<void>((resolve) => window.setTimeout(resolve, 25))
-  }
 }
 
 function collectFloorplanGeometry(
