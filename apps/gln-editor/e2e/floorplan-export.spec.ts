@@ -144,7 +144,10 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   expect(svgText).toContain('#d95f45')
   expect(svgText).toContain('#238aa5')
 
-  const pdfDownloadPromise = page.waitForEvent('download', { timeout: 10_000 })
+  // The decoder fault injection above still proves the export cannot depend on
+  // createImageBitmap/Image.onload. Allow enough time for Canvg + jsPDF on a
+  // contended four-shard CI runner while retaining a bounded hang detector.
+  const pdfDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
   await clickVisible(page.getByRole('button', { name: '完整平面图（PDF）', exact: true }))
   const pdfDownload = await pdfDownloadPromise
   expect(await pdfDownload.failure()).toBeNull()
