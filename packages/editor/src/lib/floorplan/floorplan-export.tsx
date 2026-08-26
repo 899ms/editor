@@ -47,12 +47,16 @@ const SVG_NS = 'http://www.w3.org/2000/svg'
 const PADDING_M = 1
 /** PDF page margin, in pt. */
 const PAGE_MARGIN_PT = 36
+/** Roughly 154 DPI across an A4 landscape page: print-readable without making
+ * headless software canvas rasterization disproportionately expensive. */
+const PDF_RASTER_WIDTH_PX = 1800
 /** Extra plan-space height reserved for the level title. */
 const TITLE_BAND_M = 0.7
 /** Matches the live floor-plan viewport's minimum size and content margin. */
 const LIVE_FALLBACK_VIEW_SIZE_M = 12
 const LIVE_PADDING_M = 2
 const FRAME_WAIT_FALLBACK_MS = 500
+const CANVG_ASSET_READY_TIMEOUT_MS = 10_000
 
 // Neutral view state — no selection / hover / palette, so builders emit their
 // default appearance (the core palette only carries selection/handle colors).
@@ -393,7 +397,7 @@ async function rasterizeFloorplanSvg(
   width: number,
   height: number,
 ): Promise<string> {
-  const exportWidthPx = 2600
+  const exportWidthPx = PDF_RASTER_WIDTH_PX
   const exportHeightPx = Math.max(1, Math.round((exportWidthPx * height) / width))
   const clone = svg.cloneNode(true) as SVGSVGElement
   clone.setAttribute('width', `${exportWidthPx}`)
@@ -417,7 +421,11 @@ async function rasterizeFloorplanSvg(
     ignoreMouse: true,
   })
   try {
-    await renderer.render({
+    // With redraw disabled, `Canvg.render()` does not re-check readiness after
+    // its initial attempt. Poll with a bounded timer so an asset-loading race
+    // cannot leave the export promise pending, then paint one frame directly.
+    await waitForCanvgAssets(renderer)
+    renderer.start({
       enableRedraw: false,
       ignoreAnimation: true,
       ignoreDimensions: true,
@@ -427,6 +435,16 @@ async function rasterizeFloorplanSvg(
     renderer.stop()
   }
   return canvas.toDataURL('image/png')
+}
+
+async function waitForCanvgAssets(renderer: { isReady: () => boolean }): Promise<void> {
+  const deadline = performance.now() + CANVG_ASSET_READY_TIMEOUT_MS
+  while (!renderer.isReady()) {
+    if (performance.now() >= deadline) {
+      throw new Error('Floorplan PDF assets did not become ready in time')
+    }
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 25))
+  }
 }
 
 function collectFloorplanGeometry(
