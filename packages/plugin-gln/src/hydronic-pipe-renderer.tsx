@@ -2,6 +2,7 @@
 
 import { type AnyNodeId, useRegistry, useScene } from '@pascal-app/core'
 import { useNodeEvents } from '@pascal-app/viewer'
+import { useFrame } from '@react-three/fiber'
 import { useLayoutEffect, useRef } from 'react'
 import type { Group } from 'three'
 import { useGlnEquipmentStore } from './equipment-store'
@@ -32,6 +33,18 @@ function HiddenGlnHydronicPipe({ node }: { node: GlnHydronicPipeNode }) {
   useLayoutEffect(() => {
     settleHiddenGlnHydronicPipe(node.id as AnyNodeId)
   }, [node])
+
+  // GeometrySystem's mount effects deliberately dirty every geometry-backed
+  // node after child layout effects have run. A concealed pipe has no registry
+  // group for GeometrySystem to consume that later mark, so clear it at frame
+  // priority 0 before SceneReadyTracker checks pending work at priority 10.
+  // This also settles concealed edits regardless of passive-effect ordering.
+  useFrame(() => {
+    const nodeId = node.id as AnyNodeId
+    if (useScene.getState().dirtyNodes.has(nodeId)) {
+      settleHiddenGlnHydronicPipe(nodeId)
+    }
+  })
 
   return null
 }
