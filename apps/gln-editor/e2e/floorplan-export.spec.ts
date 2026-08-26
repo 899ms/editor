@@ -165,9 +165,22 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
 
   await page.evaluate(() => {
     const stages: string[] = []
-    const record = (stage: string) => stages.push(`${Math.round(performance.now())}:${stage}`)
+    const record = (stage: string) => {
+      const entry = `${Math.round(performance.now())}:${stage}`
+      stages.push(entry)
+      console.info(`[gln-pdf-stage] ${entry}`)
+    }
     const testWindow = window as typeof window & { __glnPdfExportStages?: string[] }
     testWindow.__glnPdfExportStages = stages
+
+    const hangingCreateImageBitmap = window.createImageBitmap
+    Object.defineProperty(window, 'createImageBitmap', {
+      configurable: true,
+      value: (...args: unknown[]) => {
+        record('create-image-bitmap')
+        return Reflect.apply(hangingCreateImageBitmap, window, args)
+      },
+    })
 
     const nativeCreateElement = document.createElement.bind(document)
     Object.defineProperty(document, 'createElement', {
