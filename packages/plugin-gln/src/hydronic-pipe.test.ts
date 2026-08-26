@@ -1,4 +1,5 @@
-import { describe, expect, test } from 'bun:test'
+import { afterEach, describe, expect, test } from 'bun:test'
+import { type AnyNodeId, useScene } from '@pascal-app/core'
 import { glnHydronicPipeDefinition } from './hydronic-pipe-definition'
 import { buildGlnHydronicPipeFloorplan } from './hydronic-pipe-floorplan'
 import { buildGlnHydronicPipeGeometry } from './hydronic-pipe-geometry'
@@ -12,6 +13,7 @@ import {
   getGlnHydronicPipePorts,
   isGlnHydronicPortCompatible,
 } from './hydronic-pipe-ports'
+import { settleHiddenGlnHydronicPipe } from './hydronic-pipe-renderer'
 import { GlnHydronicPipeNode } from './hydronic-pipe-schema'
 import { planGlnConcealedRoute } from './hydronic-routing'
 import {
@@ -21,6 +23,19 @@ import {
 } from './hydronic-topology'
 
 describe('GLN hydronic pipe', () => {
+  afterEach(() => {
+    useScene.setState({ dirtyNodes: new Set() })
+  })
+
+  test('settles hidden concealed pipes instead of leaving scene readiness permanently dirty', () => {
+    const pipeId = 'gln-hydronic-pipe_hidden' as AnyNodeId
+    useScene.setState({ dirtyNodes: new Set([pipeId]) })
+
+    settleHiddenGlnHydronicPipe(pipeId)
+
+    expect(useScene.getState().dirtyNodes.has(pipeId)).toBe(false)
+  })
+
   test('stores a system-owned editable multi-point supply path with endpoint references', () => {
     const pipe = GlnHydronicPipeNode.parse({
       systemId: 'gln-system_ground',

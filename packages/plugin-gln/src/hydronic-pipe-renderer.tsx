@@ -15,8 +15,29 @@ import type { GlnHydronicPipeNode } from './hydronic-pipe-schema'
 export default function GlnHydronicPipeRenderer({ node }: { node: GlnHydronicPipeNode }) {
   const showConcealedRoutes = useGlnEquipmentStore((state) => state.showConcealedRoutes)
   const displayMode = useGlnEquipmentStore((state) => state.displayMode)
-  if (node.concealed && !showConcealedRoutes && displayMode === 'edit') return null
+  if (node.concealed && !showConcealedRoutes && displayMode === 'edit') {
+    return <HiddenGlnHydronicPipe node={node} />
+  }
   return <MountedGlnHydronicPipe node={node} />
+}
+
+/**
+ * A concealed pipe deliberately has no 3D registry group in edit mode, so the
+ * generic GeometrySystem has nothing to build. Consume its dirty mark here;
+ * otherwise scene readiness waits for work that can never run. Depending on
+ * the node object makes hidden edits settle too, while remounting the visible
+ * renderer marks the pipe dirty again and builds its geometry normally.
+ */
+function HiddenGlnHydronicPipe({ node }: { node: GlnHydronicPipeNode }) {
+  useLayoutEffect(() => {
+    settleHiddenGlnHydronicPipe(node.id as AnyNodeId)
+  }, [node])
+
+  return null
+}
+
+export function settleHiddenGlnHydronicPipe(nodeId: AnyNodeId) {
+  useScene.getState().clearDirty(nodeId)
 }
 
 function MountedGlnHydronicPipe({ node }: { node: GlnHydronicPipeNode }) {
