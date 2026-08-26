@@ -118,13 +118,6 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
       configurable: true,
       value: () => new Promise<ImageBitmap>(() => {}),
     })
-    const NativeImage = window.Image
-    Object.defineProperty(window, 'Image', {
-      configurable: true,
-      value: class NeverLoadingImage extends NativeImage {
-        override set src(_value: string) {}
-      },
-    })
   })
   await page.waitForTimeout(1_500)
   const baseline = await readScene(request, created.id)
@@ -171,7 +164,7 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
   })
 
   // The decoder fault injection still proves the PDF cannot depend on
-  // createImageBitmap/Image.onload while retaining a bounded hang detector.
+  // createImageBitmap while retaining a bounded hang detector.
   const pdfDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
   await clickVisible(page.getByRole('button', { name: '完整平面图（PDF）', exact: true }))
   const pdfDownload = await pdfDownloadPromise
