@@ -421,22 +421,18 @@ async function rasterizeFloorplanSvg(
     }
   }
 
-  const url = URL.createObjectURL(blob)
-
-  try {
-    const image = new Image()
-    image.decoding = 'sync'
-    const loaded = new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve()
-      image.onerror = () => reject(new Error('Failed to rasterize floorplan SVG'))
-    })
-    image.src = url
-    await loaded
-    context.drawImage(image, 0, 0, canvas.width, canvas.height)
-    return canvas.toDataURL('image/png')
-  } finally {
-    URL.revokeObjectURL(url)
-  }
+  const image = new Image()
+  image.decoding = 'sync'
+  const loaded = new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve()
+    image.onerror = () => reject(new Error('Failed to rasterize floorplan SVG'))
+  })
+  // Use an independent data URL here: a timed-out createImageBitmap call can
+  // retain its Blob decoder, which otherwise also blocks an object-URL retry.
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(serialized)}`
+  await loaded
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/png')
 }
 
 function createImageBitmapWithFallback(blob: Blob): Promise<ImageBitmap | null> {
