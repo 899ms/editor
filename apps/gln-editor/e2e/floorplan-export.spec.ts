@@ -163,11 +163,75 @@ test('fits the complete north-up floor plan and exports GLN SVG/PDF without savi
     testWindow.__glnRestoreAnimationFrames?.()
   })
 
+  await page.evaluate(() => {
+    const stages: string[] = []
+    const record = (stage: string) => stages.push(`${Math.round(performance.now())}:${stage}`)
+    const testWindow = window as typeof window & { __glnPdfExportStages?: string[] }
+    testWindow.__glnPdfExportStages = stages
+
+    const nativeCreateElement = document.createElement.bind(document)
+    Object.defineProperty(document, 'createElement', {
+      configurable: true,
+      value: (tagName: string, options?: ElementCreationOptions) => {
+        const element = nativeCreateElement(tagName, options)
+        if (tagName.toLowerCase() === 'canvas') record('canvas-created')
+        return element
+      },
+    })
+
+    const canvasPrototype = HTMLCanvasElement.prototype
+    const nativeGetContext = canvasPrototype.getContext
+    Object.defineProperty(canvasPrototype, 'getContext', {
+      configurable: true,
+      value: function (...args: unknown[]) {
+        record(`canvas-context:${String(args[0])}`)
+        return Reflect.apply(nativeGetContext, this, args)
+      },
+    })
+    const nativeToDataUrl = canvasPrototype.toDataURL
+    Object.defineProperty(canvasPrototype, 'toDataURL', {
+      configurable: true,
+      value: function (...args: unknown[]) {
+        record('canvas-data-url:begin')
+        const value = Reflect.apply(nativeToDataUrl, this, args)
+        record(`canvas-data-url:end:${value.length}`)
+        return value
+      },
+    })
+
+    const nativeCreateObjectUrl = URL.createObjectURL.bind(URL)
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: (object: Blob | MediaSource) => {
+        record(`blob-url:${object instanceof Blob ? `${object.type}:${object.size}` : 'media'}`)
+        return nativeCreateObjectUrl(object)
+      },
+    })
+    const nativeAnchorClick = HTMLAnchorElement.prototype.click
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+      configurable: true,
+      value: function () {
+        record(`anchor-click:${this.download}`)
+        return Reflect.apply(nativeAnchorClick, this, [])
+      },
+    })
+    window.addEventListener('error', (event) => record(`error:${event.message}`))
+    window.addEventListener('unhandledrejection', (event) =>
+      record(`rejection:${String(event.reason)}`),
+    )
+  })
+
   // The decoder fault injection still proves the PDF cannot depend on
   // createImageBitmap while retaining a bounded hang detector.
   const pdfDownloadPromise = page.waitForEvent('download', { timeout: 30_000 })
   await clickVisible(page.getByRole('button', { name: '完整平面图（PDF）', exact: true }))
-  const pdfDownload = await pdfDownloadPromise
+  const pdfDownload = await pdfDownloadPromise.catch(async (error: unknown) => {
+    const stages = await page.evaluate(
+      () =>
+        (window as typeof window & { __glnPdfExportStages?: string[] }).__glnPdfExportStages ?? [],
+    )
+    throw new Error(`PDF export stages: ${JSON.stringify(stages)}`, { cause: error })
+  })
   expect(await pdfDownload.failure()).toBeNull()
   expect(pdfDownload.suggestedFilename()).toMatch(/^floorplan_full_\d{4}-\d{2}-\d{2}\.pdf$/)
   const pdfPath = await pdfDownload.path()
