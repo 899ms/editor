@@ -50,9 +50,10 @@ const SVG_NS = 'http://www.w3.org/2000/svg'
 const PADDING_M = 1
 /** PDF page margin, in pt. */
 const PAGE_MARGIN_PT = 36
-/** Roughly 154 DPI across an A4 landscape page: print-readable without making
- * headless software canvas rasterization disproportionately expensive. */
+/** Roughly 154 DPI across an A4 landscape page. The PDF embeds a high-quality
+ * JPEG page while the companion SVG remains the lossless vector deliverable. */
 const PDF_RASTER_WIDTH_PX = 1800
+const PDF_JPEG_QUALITY = 0.96
 /** Extra plan-space height reserved for the level title. */
 const TITLE_BAND_M = 0.7
 /** Matches the live floor-plan viewport's minimum size and content margin. */
@@ -131,7 +132,10 @@ export async function exportFloorplanPdf(scope: FloorplanExportScope): Promise<v
         const y = boxY + (boxH - h) / 2
 
         const imageData = await rasterizeFloorplanSvg(mounted.svg, mounted.width, mounted.height)
-        doc.addImage(imageData, 'PNG', x, y, w, h, undefined, 'FAST')
+        // Embedding the browser-encoded JPEG bytes avoids jsPDF decoding a
+        // base64 PNG and recompressing millions of pixels on the main thread.
+        // That path could exceed the export timeout after a long 3D session.
+        doc.addImage(imageData, 'JPEG', x, y, w, h, undefined, 'NONE')
       } finally {
         mounted.cleanup()
       }
@@ -399,7 +403,7 @@ async function rasterizeFloorplanSvg(
   svg: SVGSVGElement,
   width: number,
   height: number,
-): Promise<string> {
+): Promise<Uint8Array> {
   const exportWidthPx = PDF_RASTER_WIDTH_PX
   const exportHeightPx = Math.max(1, Math.round((exportWidthPx * height) / width))
   const clone = svg.cloneNode(true) as SVGSVGElement
@@ -434,7 +438,21 @@ async function rasterizeFloorplanSvg(
   } finally {
     renderer.stop()
   }
-  return canvas.toDataURL('image/png')
+  return canvasToJpegBytes(canvas)
+}
+
+async function canvasToJpegBytes(canvas: HTMLCanvasElement): Promise<Uint8Array> {
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (result) => {
+        if (result) resolve(result)
+        else reject(new Error('Failed to encode floorplan PDF image'))
+      },
+      'image/jpeg',
+      PDF_JPEG_QUALITY,
+    )
+  })
+  return new Uint8Array(await blob.arrayBuffer())
 }
 
 async function waitForCanvgAssets(renderer: { isReady: () => boolean }): Promise<void> {
